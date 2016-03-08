@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">n2android_mobile1</string>
+
+    <string name="dummy_button">Dummy Button</string>
+    <string name="dummy_content">DUMMY\nCONTENT</string>
+
+    <string name="activity_2_name">Second Activity</string>
+    <string name="activity_2_button">Activity 2</string>
+</resources>
