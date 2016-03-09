@@ -19,10 +19,19 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
         <activity
             android:name=".SecondActivity"
             android:configChanges="orientation|keyboardHidden|screenSize"
             android:label="@string/activity_2_name"
+            android:theme="@style/FullscreenTheme"
+            android:parentActivityName=".MainActivity">
+        </activity>
+
+        <activity
+            android:name=".EmbeddedCordovaActivity"
+            android:configChanges="orientation|keyboardHidden|screenSize"
+            android:label="@string/cordova_name"
             android:theme="@style/FullscreenTheme"
             android:parentActivityName=".MainActivity">
         </activity>

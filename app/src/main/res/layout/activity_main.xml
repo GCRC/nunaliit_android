@@ -37,6 +37,15 @@
             tools:ignore="UselessParent">
 
             <Button
+                android:id="@+id/cordova_button"
+                style="?metaButtonBarButtonStyle"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/cordova_button"
+                android:onClick="startCordova"/>
+
+            <Button
                 android:id="@+id/activty_2_button"
                 style="?metaButtonBarButtonStyle"
                 android:layout_width="0dp"

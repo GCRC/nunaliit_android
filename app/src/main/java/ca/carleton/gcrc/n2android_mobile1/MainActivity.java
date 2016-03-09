@@ -116,6 +116,11 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+    public void startCordova(View view){
+        Intent intent = new Intent(this, EmbeddedCordovaActivity.class);
+        startActivity(intent);
+    }
+
     public void startActivity2(View view){
         Intent intent = new Intent(this, SecondActivity.class);
         startActivity(intent);

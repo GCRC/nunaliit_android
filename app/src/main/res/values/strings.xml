@@ -4,6 +4,9 @@
     <string name="dummy_button">Dummy Button</string>
     <string name="dummy_content">DUMMY\nCONTENT</string>
 
+    <string name="cordova_name">Cordova</string>
+    <string name="cordova_button">Start Cordova</string>
+
     <string name="activity_2_name">Second Activity</string>
     <string name="activity_2_button">Activity 2</string>
 </resources>
