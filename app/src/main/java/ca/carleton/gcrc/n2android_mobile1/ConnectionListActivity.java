@@ -9,8 +9,11 @@ import android.os.IBinder;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
+import android.widget.TextView;
+import android.widget.Toast;
 
 import java.util.List;
 
@@ -45,6 +48,21 @@ public class ConnectionListActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
 
         setContentView(R.layout.activity_list_connections);
+
+        ListView lv = (ListView)findViewById(R.id.connnections);
+        lv.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+
+
+                Toast
+                    .makeText(
+                        getApplicationContext(),
+                        "You selected : " + ((TextView) view).getText() + "/"+position+"/"+id,
+                        Toast.LENGTH_SHORT
+                    )
+                    .show();
+            }
+        });
 
         // Bind to CouchDbService
         Intent intent = new Intent(this, CouchDbService.class);
@@ -81,17 +99,19 @@ public class ConnectionListActivity extends AppCompatActivity {
 
     public void drawList() {
         try {
-            List<ConnectionInfo> connectionInfos = mService.getConnections();
-            ListView listView = (ListView)findViewById(R.id.connnections);
+            if( null != mService ){
+                List<ConnectionInfo> connectionInfos = mService.getConnections();
+                ListView listView = (ListView)findViewById(R.id.connnections);
 
-            String[] stringArray = new String[connectionInfos.size()];
-            for(int i=0,e=connectionInfos.size(); i<e; ++i){
-                ConnectionInfo connectionInfo = connectionInfos.get(i);
-                stringArray[i] = connectionInfo.toString();
+                String[] stringArray = new String[connectionInfos.size()];
+                for(int i=0,e=connectionInfos.size(); i<e; ++i){
+                    ConnectionInfo connectionInfo = connectionInfos.get(i);
+                    stringArray[i] = connectionInfo.toString();
+                }
+
+                ArrayAdapter<String> modeAdapter = new ArrayAdapter<String>(this, R.layout.list_connection_item, stringArray);
+                listView.setAdapter(modeAdapter);
             }
-
-            ArrayAdapter<String> modeAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, android.R.id.text1, stringArray);
-            listView.setAdapter(modeAdapter);
 
         } catch(Exception e) {
             Log.e(TAG, "Error obtaining connection list", e);
