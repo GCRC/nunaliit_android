@@ -10,14 +10,22 @@ import android.widget.Toast;
 import com.couchbase.lite.Database;
 import com.couchbase.lite.DatabaseOptions;
 import com.couchbase.lite.Document;
+import com.couchbase.lite.Emitter;
 import com.couchbase.lite.LiveQuery;
 import com.couchbase.lite.Manager;
+import com.couchbase.lite.Mapper;
+import com.couchbase.lite.Query;
+import com.couchbase.lite.QueryEnumerator;
+import com.couchbase.lite.QueryRow;
 import com.couchbase.lite.SavedRevision;
 import com.couchbase.lite.android.AndroidContext;
 import com.couchbase.lite.util.Log;
 
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
+import java.util.Vector;
 
 /**
  * Created by jpfiset on 3/10/16.
@@ -37,7 +45,7 @@ public class CouchDbService extends Service {
 
     // constants
     public static final String DATABASE_NAME = "connections";
-    public static final String designDocName = "local";
+    public static final String VIEW_CONNECTIONS = "connections-by-id";
 
     // couchdb internals
     protected static Manager manager;
@@ -100,26 +108,32 @@ public class CouchDbService extends Service {
         options.setCreate(true);
         database = manager.openDatabase(DATABASE_NAME, options);
 
-        Document doc = database.getDocument("testDoc");
-        SavedRevision currentRevision = doc.getCurrentRevision();
-        if( null == currentRevision ){
-            Log.i(TAG, "testDoc does not exist");
-            Map<String,Object> props = new HashMap<String,Object>();
-            props.put("nunaliit_test","allo");
-            doc.putProperties(props);
-        } else {
-            Log.i(TAG, "testDoc revision: "+currentRevision.getProperties().get("_rev"));
-        }
-//        com.couchbase.lite.View viewItemsByDate = database.getView(String.format("%s/%s", designDocName, byDateViewName));
-//        viewItemsByDate.setMap(new Mapper() {
-//            @Override
-//            public void map(Map<String, Object> document, Emitter emitter) {
-//                Object createdAt = document.get("created_at");
-//                if (createdAt != null) {
-//                    emitter.emit(createdAt.toString(), null);
-//                }
-//            }
-//        }, "1.0");
+//        Document doc = database.getDocument("testDoc");
+//        SavedRevision currentRevision = doc.getCurrentRevision();
+//        if( null == currentRevision ){
+//            Log.i(TAG, "testDoc does not exist");
+//            Map<String,Object> props = new HashMap<String,Object>();
+//            props.put("nunaliit_test","allo");
+//            doc.putProperties(props);
+//        } else {
+//            Log.i(TAG, "testDoc revision: "+currentRevision.getProperties().get("_rev"));
+//        }
+
+        // View: connnections-by-label
+        com.couchbase.lite.View connectionsView = database.getView(VIEW_CONNECTIONS);
+        connectionsView.setMap(new Mapper() {
+            @Override
+            public void map(Map<String, Object> document, Emitter emitter) {
+                Object connInfoObj = document.get("mobile_connection");
+                if( null != connInfoObj && connInfoObj instanceof Map ){
+                    Object idObj = document.get("_id");
+                    if( null != idObj && idObj instanceof String ){
+                        String id = (String)idObj;
+                        emitter.emit(id,null);
+                    }
+                }
+            }
+        }, "1.0");
 //
 //        initItemListAdapter();
 //
@@ -127,5 +141,91 @@ public class CouchDbService extends Service {
 //
 //        startSync();
 
+    }
+
+    public void addConnection(ConnectionInfo connectionInfo) throws Exception {
+
+        try {
+            Document doc = database.createDocument();
+
+            Map<String, Object> connInfo = new HashMap<String, Object>();
+            connInfo.put("name", connectionInfo.getName());
+            connInfo.put("url", connectionInfo.getUrl());
+            connInfo.put("user", connectionInfo.getUser());
+            connInfo.put("password", connectionInfo.getPassword());
+
+            Map<String, Object> props = new HashMap<String, Object>();
+            props.put("mobile_connection", connInfo);
+            doc.putProperties(props);
+
+        } catch(Exception e) {
+            throw new Exception("Unable to save connection information",e);
+        }
+    }
+
+    public List<ConnectionInfo> getConnections() throws Exception {
+
+        try {
+            List<ConnectionInfo> infos = new Vector<ConnectionInfo>();
+
+            Query query = database.getView(VIEW_CONNECTIONS).createQuery();
+
+            QueryEnumerator result = query.run();
+            for (Iterator<QueryRow> it = result; it.hasNext(); ) {
+                QueryRow row = it.next();
+
+                Document connInfoDoc = row.getDocument();
+                Map<String,Object> props = connInfoDoc.getProperties();
+                Object connInfoObj = props.get("mobile_connection");
+                if( null != connInfoObj && connInfoObj instanceof Map ){
+                    Map<String,Object> connInfo = (Map<String,Object>)connInfoObj;
+
+                    ConnectionInfo info = new ConnectionInfo();
+
+                    // name
+                    {
+                        Object nameObj = connInfo.get("name");
+                        if( nameObj != null && nameObj instanceof String ){
+                            String name = (String)nameObj;
+                            info.setName( name );
+                        }
+                    }
+
+                    // url
+                    {
+                        Object urlObj = connInfo.get("url");
+                        if( urlObj != null && urlObj instanceof String ){
+                            String url = (String)urlObj;
+                            info.setUrl(url);
+                        }
+                    }
+
+                    // user
+                    {
+                        Object userObj = connInfo.get("user");
+                        if( userObj != null && userObj instanceof String ){
+                            String user = (String)userObj;
+                            info.setUser(user);
+                        }
+                    }
+
+                    // password
+                    {
+                        Object passwordObj = connInfo.get("password");
+                        if( passwordObj != null && passwordObj instanceof String ){
+                            String password = (String)passwordObj;
+                            info.setPassword(password);
+                        }
+                    }
+
+                    infos.add(info);
+                }
+            }
+
+            return infos;
+
+        } catch(Exception e) {
+            throw new Exception("Unable to load connection information documents",e);
+        }
     }
 }
