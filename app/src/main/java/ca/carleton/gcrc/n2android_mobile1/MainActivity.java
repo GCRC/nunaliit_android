@@ -30,31 +30,15 @@ import java.util.Map;
  */
 public class MainActivity extends AppCompatActivity {
 
-    public static String TAG = "NunaliitMobile";
-
-    // constants
-    public static final String DATABASE_NAME = "connections";
-    public static final String designDocName = "local";
-
-    // couchdb internals
-    protected static Manager manager;
-    private Database database;
-    private LiveQuery liveQuery;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         setContentView(R.layout.activity_main);
 
-        try {
-            startCouchDb();
-        } catch(Exception e) {
-            Toast
-                .makeText(getApplicationContext(), "Error Initializing CouchDB, see logs for details", Toast.LENGTH_LONG)
-                .show();
-            Log.e(TAG, "Error initializing CouchDB", e);
-        }
+        // Start CouchDb service
+        Intent intent = new Intent(this, CouchDbService.class);
+        startService(intent);
     }
 
     @Override
@@ -63,57 +47,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     protected void onDestroy() {
-        if(manager != null) {
-            manager.close();
-            manager = null;
-        }
         super.onDestroy();
-    }
-
-    protected void startCouchDb() throws Exception {
-
-        Manager.enableLogging(TAG, Log.VERBOSE);
-        Manager.enableLogging(Log.TAG, Log.VERBOSE);
-        Manager.enableLogging(Log.TAG_SYNC_ASYNC_TASK, Log.VERBOSE);
-        Manager.enableLogging(Log.TAG_SYNC, Log.VERBOSE);
-        Manager.enableLogging(Log.TAG_QUERY, Log.VERBOSE);
-        Manager.enableLogging(Log.TAG_VIEW, Log.VERBOSE);
-        Manager.enableLogging(Log.TAG_DATABASE, Log.VERBOSE);
-
-        manager = new Manager(new AndroidContext(getApplicationContext()), Manager.DEFAULT_OPTIONS);
-
-        // install a view definition needed by the application
-        DatabaseOptions options = new DatabaseOptions();
-        options.setCreate(true);
-        database = manager.openDatabase(DATABASE_NAME, options);
-
-        Document doc = database.getDocument("testDoc");
-        SavedRevision currentRevision = doc.getCurrentRevision();
-        if( null == currentRevision ){
-            Log.i(TAG, "testDoc does not exist");
-            Map<String,Object> props = new HashMap<String,Object>();
-            props.put("nunaliit_test","allo");
-            doc.putProperties(props);
-        } else {
-            Log.i(TAG, "testDoc revision: "+currentRevision.getProperties().get("_rev"));
-        }
-//        com.couchbase.lite.View viewItemsByDate = database.getView(String.format("%s/%s", designDocName, byDateViewName));
-//        viewItemsByDate.setMap(new Mapper() {
-//            @Override
-//            public void map(Map<String, Object> document, Emitter emitter) {
-//                Object createdAt = document.get("created_at");
-//                if (createdAt != null) {
-//                    emitter.emit(createdAt.toString(), null);
-//                }
-//            }
-//        }, "1.0");
-//
-//        initItemListAdapter();
-//
-//        startLiveQuery(viewItemsByDate);
-//
-//        startSync();
-
     }
 
     public void startCordova(View view){
@@ -123,6 +57,11 @@ public class MainActivity extends AppCompatActivity {
 
     public void startActivity2(View view){
         Intent intent = new Intent(this, SecondActivity.class);
+        startActivity(intent);
+    }
+
+    public void startConnectionListActivity(View view){
+        Intent intent = new Intent(this, ConnectionListActivity.class);
         startActivity(intent);
     }
 }

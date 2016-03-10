@@ -9,4 +9,10 @@
 
     <string name="activity_2_name">Second Activity</string>
     <string name="activity_2_button">Activity 2</string>
+    <string name="connections_button">Connections</string>
+
+    <string name="couchDbService_label">Nunaliit2 Mobile Database Service</string>
+
+    <string name="connection_list_name">Connections</string>
+    <string name="add_connection_name">Add Connection</string>
 </resources>

@@ -35,6 +35,28 @@
             android:theme="@style/FullscreenTheme"
             android:parentActivityName=".MainActivity">
         </activity>
+
+        <activity
+            android:name=".ConnectionListActivity"
+            android:configChanges="orientation|keyboardHidden|screenSize"
+            android:label="@string/connection_list_name"
+            android:theme="@style/FullscreenTheme"
+            android:parentActivityName=".MainActivity">
+        </activity>
+
+        <activity
+            android:name=".AddConnectionActivity"
+            android:configChanges="orientation|keyboardHidden|screenSize"
+            android:label="@string/add_connection_name"
+            android:theme="@style/FullscreenTheme"
+            android:parentActivityName=".ConnectionListActivity">
+        </activity>
+
+        <service
+            android:name=".CouchDbService"
+            android:label="@string/couchDbService_label">
+
+        </service>
     </application>
 
 </manifest>
