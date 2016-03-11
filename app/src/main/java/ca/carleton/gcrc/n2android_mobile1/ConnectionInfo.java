@@ -4,18 +4,25 @@ package ca.carleton.gcrc.n2android_mobile1;
  * Created by jpfiset on 3/10/16.
  */
 public class ConnectionInfo {
+    private String id;
     private String name;
     private String url;
     private String user;
     private String password;
 
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
     public String getName() {
         return name;
     }
 
-    public void setName(String name) {
-        this.name = name;
-    }
+    public void setName(String name) { this.name = name; }
 
     public String getPassword() {
         return password;

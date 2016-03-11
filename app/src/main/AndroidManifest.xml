@@ -45,6 +45,14 @@
         </activity>
 
         <activity
+            android:name=".ConnectionActivity"
+            android:configChanges="orientation|keyboardHidden|screenSize"
+            android:label="@string/connection_name"
+            android:theme="@style/FullscreenTheme"
+            android:parentActivityName=".ConnectionListActivity">
+        </activity>
+
+        <activity
             android:name=".AddConnectionActivity"
             android:configChanges="orientation|keyboardHidden|screenSize"
             android:label="@string/add_connection_name"

@@ -14,5 +14,8 @@
     <string name="couchDbService_label">Nunaliit2 Mobile Database Service</string>
 
     <string name="connection_list_name">Connections</string>
+
+    <string name="connection_name">Connection</string>
+
     <string name="add_connection_name">Add Connection</string>
 </resources>

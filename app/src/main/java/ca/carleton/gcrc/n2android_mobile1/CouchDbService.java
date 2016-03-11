@@ -163,6 +163,72 @@ public class CouchDbService extends Service {
         }
     }
 
+    public ConnectionInfo getConnection(String id) throws Exception {
+
+        try {
+            ConnectionInfo info = null;
+
+            Document doc = database.getDocument(id);
+            Map<String,Object> props = doc.getProperties();
+            Object connInfoObj = props.get("mobile_connection");
+            if( null != connInfoObj && connInfoObj instanceof Map ){
+                Map<String,Object> connInfo = (Map<String,Object>)connInfoObj;
+
+                info = new ConnectionInfo();
+
+                // id
+                {
+                    Object idObj = props.get("_id");
+                    if( idObj != null && idObj instanceof String ){
+                        String cpnnId = (String)idObj;
+                        info.setId(cpnnId);
+                    }
+                }
+
+                // name
+                {
+                    Object nameObj = connInfo.get("name");
+                    if( nameObj != null && nameObj instanceof String ){
+                        String name = (String)nameObj;
+                        info.setName( name );
+                    }
+                }
+
+                // url
+                {
+                    Object urlObj = connInfo.get("url");
+                    if( urlObj != null && urlObj instanceof String ){
+                        String url = (String)urlObj;
+                        info.setUrl(url);
+                    }
+                }
+
+                // user
+                {
+                    Object userObj = connInfo.get("user");
+                    if( userObj != null && userObj instanceof String ){
+                        String user = (String)userObj;
+                        info.setUser(user);
+                    }
+                }
+
+                // password
+                {
+                    Object passwordObj = connInfo.get("password");
+                    if( passwordObj != null && passwordObj instanceof String ){
+                        String password = (String)passwordObj;
+                        info.setPassword(password);
+                    }
+                }
+            }
+
+            return info;
+
+        } catch(Exception e) {
+            throw new Exception("Unable to load connection information for id: "+id,e);
+        }
+    }
+
     public List<ConnectionInfo> getConnections() throws Exception {
 
         try {
@@ -181,6 +247,15 @@ public class CouchDbService extends Service {
                     Map<String,Object> connInfo = (Map<String,Object>)connInfoObj;
 
                     ConnectionInfo info = new ConnectionInfo();
+
+                    // id
+                    {
+                        Object idObj = props.get("_id");
+                        if( idObj != null && idObj instanceof String ){
+                            String id = (String)idObj;
+                            info.setId(id);
+                        }
+                    }
 
                     // name
                     {

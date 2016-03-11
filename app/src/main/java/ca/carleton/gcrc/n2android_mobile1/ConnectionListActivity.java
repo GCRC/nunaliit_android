@@ -42,6 +42,7 @@ public class ConnectionListActivity extends AppCompatActivity {
     };
     private CouchDbService mService;
     private boolean mBound = false;
+    private List<ConnectionInfo> displayedConnections = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -53,14 +54,22 @@ public class ConnectionListActivity extends AppCompatActivity {
         lv.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
 
+                ConnectionInfo selectedConnection = null;
+                if( null != displayedConnections && position < displayedConnections.size()){
+                    selectedConnection = displayedConnections.get(position);
+                }
 
-                Toast
-                    .makeText(
-                        getApplicationContext(),
-                        "You selected : " + ((TextView) view).getText() + "/"+position+"/"+id,
-                        Toast.LENGTH_SHORT
-                    )
-                    .show();
+                if( null != selectedConnection ){
+                    startConnectionActivity(selectedConnection);
+
+                    Toast
+                        .makeText(
+                            getApplicationContext(),
+                            "You selected : " + selectedConnection.toString(),
+                            Toast.LENGTH_SHORT
+                        )
+                        .show();
+                }
             }
         });
 
@@ -111,10 +120,20 @@ public class ConnectionListActivity extends AppCompatActivity {
 
                 ArrayAdapter<String> modeAdapter = new ArrayAdapter<String>(this, R.layout.list_connection_item, stringArray);
                 listView.setAdapter(modeAdapter);
+
+                displayedConnections = connectionInfos;
             }
 
         } catch(Exception e) {
             Log.e(TAG, "Error obtaining connection list", e);
         }
+    }
+
+    public void startConnectionActivity(ConnectionInfo connInfo){
+        Intent intent = new Intent(this, ConnectionActivity.class);
+
+        intent.putExtra(NunaliitMobileConstants.EXTRA_CONNECTION_ID, connInfo.getId());
+
+        startActivity(intent);
     }
 }
