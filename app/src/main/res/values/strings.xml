@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">n2android_mobile1</string>
+    <string name="app_name">Nunaliit Mobile</string>
 
     <string name="dummy_button">Dummy Button</string>
     <string name="dummy_content">DUMMY\nCONTENT</string>
@@ -18,4 +18,5 @@
     <string name="connection_name">Connection</string>
 
     <string name="add_connection_name">Add Connection</string>
+    <string name="action_manage_connections">Manage Connections</string>
 </resources>
