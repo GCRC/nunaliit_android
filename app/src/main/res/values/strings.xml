@@ -17,6 +17,7 @@
 
     <string name="connection_name">Connection</string>
 
+    <string name="add_connection">Add Connection</string>
     <string name="add_connection_name">Add Connection</string>
     <string name="action_manage_connections">Manage Connections</string>
 </resources>

@@ -45,15 +45,7 @@
                 android:text="@string/cordova_button"
                 android:onClick="startCordova"/>
 
-            <Button
-                android:id="@+id/activty_2_button"
-                style="?metaButtonBarButtonStyle"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="@string/activity_2_button"
-                android:onClick="startActivity2"/>
-
+            <!--
             <Button
                 android:id="@+id/connections_button"
                 style="?metaButtonBarButtonStyle"
@@ -62,7 +54,7 @@
                 android:layout_weight="1"
                 android:text="@string/connections_button"
                 android:onClick="startConnectionListActivity"/>
-
+            -->
         </LinearLayout>
     </FrameLayout>
 
