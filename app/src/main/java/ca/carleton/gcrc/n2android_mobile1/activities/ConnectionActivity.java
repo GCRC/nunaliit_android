@@ -1,68 +1,39 @@
-package ca.carleton.gcrc.n2android_mobile1;
+package ca.carleton.gcrc.n2android_mobile1.activities;
 
-import android.content.ComponentName;
-import android.content.Context;
 import android.content.Intent;
-import android.content.ServiceConnection;
 import android.os.Bundle;
-import android.os.IBinder;
-import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
 
+import ca.carleton.gcrc.n2android_mobile1.ConnectionInfo;
+import ca.carleton.gcrc.n2android_mobile1.CouchDbService;
+import ca.carleton.gcrc.n2android_mobile1.NunaliitMobileConstants;
+import ca.carleton.gcrc.n2android_mobile1.R;
+
 /**
  * Created by jpfiset on 3/10/16.
  */
-public class ConnectionActivity extends AppCompatActivity {
+public class ConnectionActivity extends ServiceBasedActivity {
 
     protected String TAG = this.getClass().getSimpleName();
-
-    private ServiceConnection mConnection = new ServiceConnection() {
-
-        @Override
-        public void onServiceConnected(ComponentName className, IBinder service) {
-            // We've bound to LocalService, cast the IBinder and get LocalService instance
-            CouchDbService.CouchDbBinder binder = (CouchDbService.CouchDbBinder) service;
-            mService = binder.getService();
-            mBound = true;
-            refreshDisplay();
-        }
-
-        @Override
-        public void onServiceDisconnected(ComponentName arg0) {
-            mBound = false;
-        }
-    };
-    private CouchDbService mService;
-    private boolean mBound = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         setContentView(R.layout.activity_connection);
-
-        // Bind to CouchDbService
-        Intent intent = new Intent(this, CouchDbService.class);
-        bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
-    }
-
-    @Override
-    protected void onDestroy() {
-        // Unbind from the service
-        if (mBound) {
-            unbindService(mConnection);
-            mBound = false;
-        }
-
-        super.onDestroy();
     }
 
     @Override
     protected void onStart() {
         super.onStart();
 
+        refreshDisplay();
+    }
+
+    @Override
+    public void serviceReporting(CouchDbService service) {
         refreshDisplay();
     }
 
@@ -74,9 +45,10 @@ public class ConnectionActivity extends AppCompatActivity {
         }
 
         ConnectionInfo connInfo = null;
-        if( null != connectionId && null != mService ){
+        CouchDbService service = getService();
+        if( null != connectionId && null != service ){
             try {
-                connInfo = mService.getConnection(connectionId);
+                connInfo = service.getConnection(connectionId);
             } catch (Exception e) {
                 Log.e(TAG, "Unable to retrieve connection info", e);
             }

@@ -36,7 +36,7 @@ public class CouchDbService extends Service {
      * runs in the same process as its clients, we don't need to deal with IPC.
      */
     public class CouchDbBinder extends Binder {
-        CouchDbService getService() {
+        public CouchDbService getService() {
             return CouchDbService.this;
         }
     }
