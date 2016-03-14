@@ -6,7 +6,7 @@
 
     <item
         android:id="@+id/action_manage_connections"
-        android:title="@string/action_manage_connections"
+        android:title="@string/manage_connections"
         app:showAsAction="never"
         />
 </menu>

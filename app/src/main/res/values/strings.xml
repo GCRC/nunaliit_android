@@ -1,23 +1,20 @@
 <resources>
     <string name="app_name">Nunaliit Mobile</string>
-
-    <string name="dummy_button">Dummy Button</string>
-    <string name="dummy_content">DUMMY\nCONTENT</string>
-
-    <string name="cordova_name">Cordova</string>
-    <string name="cordova_button">Start Cordova</string>
-
-    <string name="activity_2_name">Second Activity</string>
-    <string name="activity_2_button">Activity 2</string>
-    <string name="connections_button">Connections</string>
-
-    <string name="couchDbService_label">Nunaliit2 Mobile Database Service</string>
-
-    <string name="connection_list_name">Connections</string>
-
-    <string name="connection_name">Connection</string>
+    <string name="couchDbService_label">Nunaliit Database Service</string>
 
     <string name="add_connection">Add Connection</string>
-    <string name="add_connection_name">Add Connection</string>
-    <string name="action_manage_connections">Manage Connections</string>
+    <string name="connection">Connection</string>
+    <string name="connection_created">"Connection Created"</string>
+    <string name="connections">Connections</string>
+    <string name="cordova">Cordova</string>
+    <string name="create_connection">Create Connection</string>
+    <string name="manage_connections">Manage Connections</string>
+
+    <string name="error_creating_connection">Error while creating connection</string>
+
+    <string name="label_connection_name">Connection Name:</string>
+    <string name="label_name">Name:</string>
+    <string name="label_password">Password:</string>
+    <string name="label_url">URL:</string>
+    <string name="label_user">User:</string>
 </resources>

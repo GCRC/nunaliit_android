@@ -23,7 +23,7 @@
         <activity
             android:name=".activities.EmbeddedCordovaActivity"
             android:configChanges="orientation|keyboardHidden|screenSize"
-            android:label="@string/cordova_name"
+            android:label="@string/cordova"
             android:theme="@style/FullscreenTheme"
             android:parentActivityName=".activities.MainActivity">
         </activity>
@@ -31,7 +31,7 @@
         <activity
             android:name=".activities.ConnectionListActivity"
             android:configChanges="orientation|keyboardHidden|screenSize"
-            android:label="@string/connection_list_name"
+            android:label="@string/manage_connections"
             android:theme="@style/FullscreenTheme"
             android:parentActivityName=".activities.MainActivity">
         </activity>
@@ -39,7 +39,7 @@
         <activity
             android:name=".activities.ConnectionActivity"
             android:configChanges="orientation|keyboardHidden|screenSize"
-            android:label="@string/connection_name"
+            android:label="@string/connection"
             android:theme="@style/FullscreenTheme"
             android:parentActivityName=".activities.ConnectionListActivity">
         </activity>
@@ -47,7 +47,7 @@
         <activity
             android:name=".activities.AddConnectionActivity"
             android:configChanges="orientation|keyboardHidden|screenSize"
-            android:label="@string/add_connection_name"
+            android:label="@string/add_connection"
             android:theme="@style/FullscreenTheme"
             android:parentActivityName=".activities.ConnectionListActivity">
         </activity>

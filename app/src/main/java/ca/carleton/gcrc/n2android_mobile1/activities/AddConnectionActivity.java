@@ -77,9 +77,9 @@ public class AddConnectionActivity extends ServiceBasedActivity {
 
             Toast
                 .makeText(
-                    getApplicationContext(),
-                    "Connection Created",
-                    Toast.LENGTH_LONG
+                        getApplicationContext(),
+                        getResources().getString(R.string.connection_created),
+                        Toast.LENGTH_LONG
                 )
                 .show();
 
@@ -89,7 +89,7 @@ public class AddConnectionActivity extends ServiceBasedActivity {
             Toast
                 .makeText(
                         getApplicationContext(),
-                        "Error while creating connection",
+                        getResources().getString(R.string.error_creating_connection),
                         Toast.LENGTH_LONG
                 )
                 .show();

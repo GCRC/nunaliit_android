@@ -18,14 +18,5 @@
             android:layout_height="wrap_content"
             android:id="@+id/connnections" />
 
-        <!--
-        <Button
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Add Connection"
-            android:id="@+id/add_connection_button"
-            android:onClick="startAddConnectionActivity"/>
-        -->
-
     </LinearLayout>
 </FrameLayout>

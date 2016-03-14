@@ -1,0 +1,20 @@
+<resources>
+    <string name="app_name">Nunaliit Mobile</string>
+    <string name="couchDbService_label">Service Base de Données Nunaliit</string>
+
+    <string name="add_connection">Nouvelle Connexion</string>
+    <string name="connection">Connexion</string>
+    <string name="connection_created">"Connexion Créée"</string>
+    <string name="connections">Connexions</string>
+    <string name="cordova">Cordova</string>
+    <string name="create_connection">Créer Connexion</string>
+    <string name="manage_connections">Gestion des connexions</string>
+
+    <string name="error_creating_connection">Erreur durant la création de connexion</string>
+
+    <string name="label_connection_name">Nom de la connexion:</string>
+    <string name="label_name">Nom:</string>
+    <string name="label_password">Mot de passe:</string>
+    <string name="label_url">URL:</string>
+    <string name="label_user">Usager:</string>
+</resources>
