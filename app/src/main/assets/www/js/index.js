@@ -34,6 +34,24 @@ var app = {
     // function, we must explicitly call 'app.receivedEvent(...);'
     onDeviceReady: function() {
         app.receivedEvent('deviceready');
+
+        nunaliit2.cordovaPlugin.echo(
+            '12345',
+            // success
+            function(msg){
+                console.log('plugin success: '+msg);
+            },
+            // error
+            function(err){
+                console.log('plugin error: '+err);
+            }
+        );
+
+        nunaliit2.cordovaPlugin.getConnectionInfo(
+            function(info){
+                console.log('connection name: '+info.name);
+            }
+        );
     },
     // Update DOM on a Received Event
     receivedEvent: function(id) {
