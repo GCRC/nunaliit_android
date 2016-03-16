@@ -24,6 +24,19 @@ android {
     }
 }
 
+task copyNunaliit2Js(type: Copy) {
+    from('../nunaliit2/nunaliit2-js/src/main/js/nunaliit2')
+    into('src/main/assets/www/nunaliit2')
+}
+
+task copyNunaliit2JsExternal(type: Copy) {
+    from('../nunaliit2/nunaliit2-js-external/src/main/js/js-external')
+    into('src/main/assets/www/js-external')
+}
+
+preBuild.dependsOn copyNunaliit2Js
+preBuild.dependsOn copyNunaliit2JsExternal
+
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
     testCompile 'junit:junit:4.12'

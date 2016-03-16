@@ -1,52 +1,48 @@
-;(function(cordova){
+;(function(cordova,$n2){
     "use strict";
 
     var SERVICE = 'Nunaliit';
 
-    // Nunaliit
-    if( typeof window.nunaliit2 === 'undefined' ){
-        window.nunaliit2 = {};
-    };
-    var $n2 = window.nunaliit2;
-
     // ==================================================================
-    function echo(msg, onSuccess, onError){
+    function echo(opts_){
+        var opts = $n2.extend({
+            msg: null
+            ,onSuccess: function(msg){}
+            ,onError: function(err){}
+        },opts_);
+
         cordova.exec(
             // success
             function(msg){
-                if( typeof onSuccess === 'function' ){
-                    onSuccess(msg);
-                };
+                opts.onSuccess(msg);
             },
             // error
             function(err){
-                if( typeof onError === 'function' ){
-                    onError(err);
-                };
+                opts.onError(err);
             },
             // service
             SERVICE,
             // action
             'echo',
             // Arguments
-            [msg]
+            [opts.msg]
         );
     };
 
     // ==================================================================
-    function getConnectionInfo(onSuccess, onError){
+    function getConnectionInfo(opts_){
+        var opts = $n2.extend({
+            onSuccess: function(info){}
+            ,onError: function(err){}
+        },opts_);
         cordova.exec(
             // success
             function(result){
-                if( typeof onSuccess === 'function' ){
-                    onSuccess(result);
-                };
+                opts.onSuccess(result);
             },
             // error
             function(err){
-                if( typeof onError === 'function' ){
-                    onError(err);
-                };
+                opts.onError(err);
             },
             // service
             SERVICE,
@@ -63,4 +59,4 @@
         ,getConnectionInfo: getConnectionInfo
     };
 
-})(cordova);
+})(cordova,nunaliit2);
