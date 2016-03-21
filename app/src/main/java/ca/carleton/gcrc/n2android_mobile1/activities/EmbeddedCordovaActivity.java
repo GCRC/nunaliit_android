@@ -81,7 +81,7 @@ public class EmbeddedCordovaActivity extends CordovaActivity {
 
             if( null != mService && null != connectionId ){
                 try {
-                    connInfo = mService.getConnection(connectionId);
+                    connInfo = mService.getConnectionInfo(connectionId);
                 } catch(Exception e) {
                     Log.e(TAG,"Unable to retrieve connection info",e);
                 }

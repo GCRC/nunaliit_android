@@ -99,7 +99,7 @@ public class ConnectionListActivity extends ServiceBasedActivity {
         try {
             CouchDbService service = getService();
             if( null != service ){
-                List<ConnectionInfo> connectionInfos = service.getConnections();
+                List<ConnectionInfo> connectionInfos = service.getConnectionInfos();
                 ListView listView = (ListView)findViewById(R.id.connnections);
 
                 String[] stringArray = new String[connectionInfos.size()];

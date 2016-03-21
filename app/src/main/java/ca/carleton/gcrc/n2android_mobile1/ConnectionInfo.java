@@ -9,6 +9,7 @@ public class ConnectionInfo {
     private String url;
     private String user;
     private String password;
+    private String localDocumentDbName;
 
     public String getId() {
         return id;
@@ -46,6 +47,12 @@ public class ConnectionInfo {
 
     public void setUser(String user) {
         this.user = user;
+    }
+
+    public String getLocalDocumentDbName() { return localDocumentDbName; }
+
+    public void setLocalDocumentDbName(String localDocumentDbName) {
+        this.localDocumentDbName = localDocumentDbName;
     }
 
     public String toString(){

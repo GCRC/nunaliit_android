@@ -48,7 +48,7 @@ public class ConnectionActivity extends ServiceBasedActivity {
         CouchDbService service = getService();
         if( null != connectionId && null != service ){
             try {
-                connInfo = service.getConnection(connectionId);
+                connInfo = service.getConnectionInfo(connectionId);
             } catch (Exception e) {
                 Log.e(TAG, "Unable to retrieve connection info", e);
             }
@@ -79,6 +79,15 @@ public class ConnectionActivity extends ServiceBasedActivity {
                 if( null != view && view instanceof TextView ){
                     TextView textView = (TextView)view;
                     textView.setText(connInfo.getUser());
+                }
+            }
+
+            // Local db name
+            {
+                View view = findViewById(R.id.connection_local_db_name);
+                if( null != view && view instanceof TextView ){
+                    TextView textView = (TextView)view;
+                    textView.setText(connInfo.getLocalDocumentDbName());
                 }
             }
         }

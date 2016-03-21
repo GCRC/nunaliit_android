@@ -85,7 +85,6 @@ public class CouchDbService extends Service {
         super.onDestroy();
     }
 
-    @Nullable
     @Override
     public IBinder onBind(Intent intent) {
         return mBinder;
@@ -143,7 +142,50 @@ public class CouchDbService extends Service {
 
     }
 
-    public void addConnection(ConnectionInfo connectionInfo) throws Exception {
+    public boolean databaseExists(String dbName) {
+        boolean exists = false;
+
+        try {
+            DatabaseOptions options = new DatabaseOptions();
+            options.setCreate(false);
+            Database db = manager.openDatabase(dbName, options);
+            exists = db.exists();
+            db.close();
+
+        } catch(Exception e) {
+            Log.e(TAG, "Error checking if database exists: "+dbName, e);
+        }
+        return exists;
+    }
+
+    public void createLocalDatabase(ConnectionInfo connectionInfo){
+        int count = 0;
+        boolean created = false;
+        while( !created && count < 100 ){
+            ++count;
+            String name = "docs_"+count;
+            if( false == databaseExists(name) ){
+                try {
+                    DatabaseOptions options = new DatabaseOptions();
+                    options.setCreate(true);
+                    Database db = manager.openDatabase(name, options);
+                    if( false == db.exists() ){
+                        throw new Exception("Unable to create database: "+name);
+                    }
+                    db.close();
+
+                    created = true;
+                    connectionInfo.setLocalDocumentDbName(name);
+                    Log.i(TAG, "Created local database: "+name);
+
+                } catch(Exception e) {
+                    Log.e(TAG, "Error creating database: "+name, e);
+                }
+            }
+        }
+    }
+
+    public void addConnectionInfo(ConnectionInfo connectionInfo) throws Exception {
 
         try {
             Document doc = database.createDocument();
@@ -153,6 +195,7 @@ public class CouchDbService extends Service {
             connInfo.put("url", connectionInfo.getUrl());
             connInfo.put("user", connectionInfo.getUser());
             connInfo.put("password", connectionInfo.getPassword());
+            connInfo.put("localDocsDb", connectionInfo.getLocalDocumentDbName());
 
             Map<String, Object> props = new HashMap<String, Object>();
             props.put("mobile_connection", connInfo);
@@ -163,64 +206,12 @@ public class CouchDbService extends Service {
         }
     }
 
-    public ConnectionInfo getConnection(String id) throws Exception {
+    public ConnectionInfo getConnectionInfo(String id) throws Exception {
 
         try {
-            ConnectionInfo info = null;
-
             Document doc = database.getDocument(id);
             Map<String,Object> props = doc.getProperties();
-            Object connInfoObj = props.get("mobile_connection");
-            if( null != connInfoObj && connInfoObj instanceof Map ){
-                Map<String,Object> connInfo = (Map<String,Object>)connInfoObj;
-
-                info = new ConnectionInfo();
-
-                // id
-                {
-                    Object idObj = props.get("_id");
-                    if( idObj != null && idObj instanceof String ){
-                        String cpnnId = (String)idObj;
-                        info.setId(cpnnId);
-                    }
-                }
-
-                // name
-                {
-                    Object nameObj = connInfo.get("name");
-                    if( nameObj != null && nameObj instanceof String ){
-                        String name = (String)nameObj;
-                        info.setName( name );
-                    }
-                }
-
-                // url
-                {
-                    Object urlObj = connInfo.get("url");
-                    if( urlObj != null && urlObj instanceof String ){
-                        String url = (String)urlObj;
-                        info.setUrl(url);
-                    }
-                }
-
-                // user
-                {
-                    Object userObj = connInfo.get("user");
-                    if( userObj != null && userObj instanceof String ){
-                        String user = (String)userObj;
-                        info.setUser(user);
-                    }
-                }
-
-                // password
-                {
-                    Object passwordObj = connInfo.get("password");
-                    if( passwordObj != null && passwordObj instanceof String ){
-                        String password = (String)passwordObj;
-                        info.setPassword(password);
-                    }
-                }
-            }
+            ConnectionInfo info = getConnectionInfoFromProps(props);
 
             return info;
 
@@ -229,7 +220,7 @@ public class CouchDbService extends Service {
         }
     }
 
-    public List<ConnectionInfo> getConnections() throws Exception {
+    public List<ConnectionInfo> getConnectionInfos() throws Exception {
 
         try {
             List<ConnectionInfo> infos = new Vector<ConnectionInfo>();
@@ -242,57 +233,9 @@ public class CouchDbService extends Service {
 
                 Document connInfoDoc = row.getDocument();
                 Map<String,Object> props = connInfoDoc.getProperties();
-                Object connInfoObj = props.get("mobile_connection");
-                if( null != connInfoObj && connInfoObj instanceof Map ){
-                    Map<String,Object> connInfo = (Map<String,Object>)connInfoObj;
+                ConnectionInfo info = getConnectionInfoFromProps(props);
 
-                    ConnectionInfo info = new ConnectionInfo();
-
-                    // id
-                    {
-                        Object idObj = props.get("_id");
-                        if( idObj != null && idObj instanceof String ){
-                            String id = (String)idObj;
-                            info.setId(id);
-                        }
-                    }
-
-                    // name
-                    {
-                        Object nameObj = connInfo.get("name");
-                        if( nameObj != null && nameObj instanceof String ){
-                            String name = (String)nameObj;
-                            info.setName( name );
-                        }
-                    }
-
-                    // url
-                    {
-                        Object urlObj = connInfo.get("url");
-                        if( urlObj != null && urlObj instanceof String ){
-                            String url = (String)urlObj;
-                            info.setUrl(url);
-                        }
-                    }
-
-                    // user
-                    {
-                        Object userObj = connInfo.get("user");
-                        if( userObj != null && userObj instanceof String ){
-                            String user = (String)userObj;
-                            info.setUser(user);
-                        }
-                    }
-
-                    // password
-                    {
-                        Object passwordObj = connInfo.get("password");
-                        if( passwordObj != null && passwordObj instanceof String ){
-                            String password = (String)passwordObj;
-                            info.setPassword(password);
-                        }
-                    }
-
+                if( null != info ) {
                     infos.add(info);
                 }
             }
@@ -302,5 +245,72 @@ public class CouchDbService extends Service {
         } catch(Exception e) {
             throw new Exception("Unable to load connection information documents",e);
         }
+    }
+
+    private ConnectionInfo getConnectionInfoFromProps(Map<String,Object> props) {
+        ConnectionInfo info = null;
+
+        Object connInfoObj = props.get("mobile_connection");
+        if (null != connInfoObj && connInfoObj instanceof Map) {
+            Map<String, Object> connInfo = (Map<String, Object>) connInfoObj;
+
+            info = new ConnectionInfo();
+
+            // id
+            {
+                Object idObj = props.get("_id");
+                if (idObj != null && idObj instanceof String) {
+                    String id = (String) idObj;
+                    info.setId(id);
+                }
+            }
+
+            // name
+            {
+                Object nameObj = connInfo.get("name");
+                if (nameObj != null && nameObj instanceof String) {
+                    String name = (String) nameObj;
+                    info.setName(name);
+                }
+            }
+
+            // url
+            {
+                Object urlObj = connInfo.get("url");
+                if (urlObj != null && urlObj instanceof String) {
+                    String url = (String) urlObj;
+                    info.setUrl(url);
+                }
+            }
+
+            // user
+            {
+                Object userObj = connInfo.get("user");
+                if (userObj != null && userObj instanceof String) {
+                    String user = (String) userObj;
+                    info.setUser(user);
+                }
+            }
+
+            // password
+            {
+                Object passwordObj = connInfo.get("password");
+                if (passwordObj != null && passwordObj instanceof String) {
+                    String password = (String) passwordObj;
+                    info.setPassword(password);
+                }
+            }
+
+            // local docs db
+            {
+                Object localDocsDbObj = connInfo.get("localDocsDb");
+                if( localDocsDbObj != null && localDocsDbObj instanceof String ){
+                    String localDocsDb = (String)localDocsDbObj;
+                    info.setLocalDocumentDbName(localDocsDb);
+                }
+            }
+        }
+
+        return info;
     }
 }

@@ -1,13 +1,18 @@
 package ca.carleton.gcrc.n2android_mobile1.activities;
 
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.Message;
 import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.Toast;
 
+import ca.carleton.gcrc.n2android_mobile1.AddConnectionThread;
 import ca.carleton.gcrc.n2android_mobile1.ConnectionInfo;
 import ca.carleton.gcrc.n2android_mobile1.R;
+import ca.carleton.gcrc.n2android_mobile1.connection.Connection;
 
 /**
  * Created by jpfiset on 3/10/16.
@@ -16,11 +21,54 @@ public class AddConnectionActivity extends ServiceBasedActivity {
 
     protected String TAG = this.getClass().getName();
 
+    private AddConnectionThread addConnectionThread = null;
+    private Handler handler = null;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         setContentView(R.layout.activity_add_connection);
+
+        handler = new Handler(Looper.getMainLooper()){
+            @Override
+            public void handleMessage(Message inputMessage) {
+                int code = inputMessage.what;
+
+                Log.i(TAG,"Message received: "+code);
+
+                switch(code){
+                    case AddConnectionThread.CONNECTION_CREATED:
+                        ConnectionInfo info = null;
+                        if( null != inputMessage.obj && inputMessage.obj instanceof ConnectionInfo ){
+                            info = (ConnectionInfo)inputMessage.obj;
+                        }
+                        connectionCreated(info);
+                        break;
+
+                    case AddConnectionThread.CONNECTION_CREATION_ERROR:
+                        Throwable e = null;
+                        if( null != inputMessage.obj && inputMessage.obj instanceof Throwable ){
+                            e = (Throwable)inputMessage.obj;
+                        }
+                        errorOnConnection(e);
+                        break;
+
+                    default:
+                        Log.e(TAG, "Unrecognized message: "+code);
+                }
+            }
+        };
+    }
+
+    @Override
+    protected void onDestroy() {
+        if( null != addConnectionThread ){
+            addConnectionThread.stopTesting();
+            addConnectionThread = null;
+        }
+
+        super.onDestroy();
     }
 
     public void createConnection(View view){
@@ -73,8 +121,19 @@ public class AddConnectionActivity extends ServiceBasedActivity {
             info.setUser(userName);
             info.setPassword(userPassword);
 
-            getService().addConnection(info);
+            if( null != addConnectionThread ){
+                addConnectionThread.stopTesting();
+            }
+            addConnectionThread = new AddConnectionThread(getService(), info, handler);
+            addConnectionThread.start();
 
+        } catch(Exception e) {
+            errorOnConnection(e);
+        }
+    }
+
+    public void connectionCreated(ConnectionInfo info){
+        try {
             Toast
                 .makeText(
                         getApplicationContext(),
@@ -86,15 +145,19 @@ public class AddConnectionActivity extends ServiceBasedActivity {
             finish();
 
         } catch(Exception e) {
-            Toast
-                .makeText(
-                        getApplicationContext(),
-                        getResources().getString(R.string.error_creating_connection),
-                        Toast.LENGTH_LONG
-                )
-                .show();
-
-            Log.e(TAG, "Error while creating connection", e);
+            errorOnConnection(e);
         }
+    }
+
+    public void errorOnConnection(Throwable e){
+        Toast
+            .makeText(
+                getApplicationContext(),
+                getResources().getString(R.string.error_creating_connection),
+                Toast.LENGTH_LONG
+            )
+            .show();
+
+        Log.e(TAG, "Error while creating connection", e);
     }
 }
