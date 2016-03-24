@@ -11,8 +11,8 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import ca.carleton.gcrc.n2android_mobile1.ConnectionInfo;
-import ca.carleton.gcrc.n2android_mobile1.CouchDbService;
+import ca.carleton.gcrc.n2android_mobile1.CouchbaseLiteService;
+import ca.carleton.gcrc.n2android_mobile1.connection.ConnectionInfo;
 import ca.carleton.gcrc.n2android_mobile1.activities.EmbeddedCordovaActivity;
 
 /**
@@ -106,8 +106,8 @@ public class CordovaNunaliitPlugin extends CordovaPlugin {
         return connInfo;
     }
 
-    private CouchDbService getCouchDbService(){
-        CouchDbService service = null;
+    private CouchbaseLiteService getCouchDbService(){
+        CouchbaseLiteService service = null;
 
         Activity activity = null;
         if( null != cordovaInterface ){

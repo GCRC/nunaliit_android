@@ -1,7 +1,6 @@
 package ca.carleton.gcrc.n2android_mobile1.activities;
 
 import android.content.Intent;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
@@ -14,12 +13,11 @@ import android.widget.ListView;
 
 import java.util.List;
 
-import ca.carleton.gcrc.n2android_mobile1.ConnectionInfo;
-import ca.carleton.gcrc.n2android_mobile1.CouchDbService;
+import ca.carleton.gcrc.n2android_mobile1.CouchbaseLiteService;
+import ca.carleton.gcrc.n2android_mobile1.connection.ConnectionInfo;
 import ca.carleton.gcrc.n2android_mobile1.NunaliitMobileConstants;
 import ca.carleton.gcrc.n2android_mobile1.R;
-import ca.carleton.gcrc.n2android_mobile1.activities.ConnectionListActivity;
-import ca.carleton.gcrc.n2android_mobile1.activities.EmbeddedCordovaActivity;
+import ca.carleton.gcrc.n2android_mobile1.services.ConnectionManagementService;
 
 /**
  * An example full-screen activity that shows and hides the system UI (i.e.
@@ -31,13 +29,29 @@ public class MainActivity extends ServiceBasedActivity {
 
     private List<ConnectionInfo> displayedConnections = null;
 
+    public String getTag() {
+        return TAG;
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        Log.v(TAG,"Activity created");
+
+        // Test starting connections
+        {
+            Intent syncIntent = new Intent(getApplicationContext(), ConnectionManagementService.class);
+            getApplicationContext().startService(syncIntent);
+        }
+
         // Start CouchDb service (and keep it up indefinitely)
-        Intent intent = new Intent(this, CouchDbService.class);
-        startService(intent);
+        {
+            Intent intent = new Intent(this, CouchbaseLiteService.class);
+            startService(intent);
+        }
+
+        Log.v(TAG, "Intent sent");
 
         setContentView(R.layout.activity_main);
 
@@ -45,14 +59,14 @@ public class MainActivity extends ServiceBasedActivity {
         lv.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
 
-                ConnectionInfo selectedConnection = null;
-                if (null != displayedConnections && position < displayedConnections.size()) {
-                    selectedConnection = displayedConnections.get(position);
-                }
+            ConnectionInfo selectedConnection = null;
+            if (null != displayedConnections && position < displayedConnections.size()) {
+                selectedConnection = displayedConnections.get(position);
+            }
 
-                if (null != selectedConnection) {
-                    startConnectionActivity(selectedConnection);
-                }
+            if (null != selectedConnection) {
+                startConnectionActivity(selectedConnection);
+            }
             }
         });
     }
@@ -69,7 +83,7 @@ public class MainActivity extends ServiceBasedActivity {
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();
-        inflater.inflate(R.menu.menu_action_bar, menu);
+        inflater.inflate(R.menu.main_action_bar, menu);
         return true;
     }
 
@@ -93,13 +107,13 @@ public class MainActivity extends ServiceBasedActivity {
     }
 
     @Override
-    public void serviceReporting(CouchDbService service) {
+    public void couchbaseServiceReporting(CouchbaseLiteService service) {
         drawList();
     }
 
     public void drawList() {
         try {
-            CouchDbService service = getService();
+            CouchbaseLiteService service = getCouchbaseService();
             if( null != service ){
                 List<ConnectionInfo> connectionInfos = service.getConnectionInfos();
                 ListView listView = (ListView)findViewById(R.id.connnections);

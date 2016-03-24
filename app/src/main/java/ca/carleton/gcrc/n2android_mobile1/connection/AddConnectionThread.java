@@ -1,11 +1,10 @@
-package ca.carleton.gcrc.n2android_mobile1;
+package ca.carleton.gcrc.n2android_mobile1.connection;
 
 import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
 
-import ca.carleton.gcrc.n2android_mobile1.activities.AddConnectionActivity;
-import ca.carleton.gcrc.n2android_mobile1.connection.Connection;
+import ca.carleton.gcrc.n2android_mobile1.CouchbaseLiteService;
 
 /**
  * Created by jpfiset on 3/21/16.
@@ -19,9 +18,9 @@ public class AddConnectionThread extends Thread {
 
     private ConnectionInfo info;
     private Handler handler;
-    private CouchDbService service;
+    private CouchbaseLiteService service;
 
-    public AddConnectionThread(CouchDbService service, ConnectionInfo info, Handler handler){
+    public AddConnectionThread(CouchbaseLiteService service, ConnectionInfo info, Handler handler){
         this.service = service;
         this.info = info;
         this.handler = handler;
@@ -41,6 +40,9 @@ public class AddConnectionThread extends Thread {
             service.createLocalDatabase(info);
 
             service.addConnectionInfo(info);
+
+            ConnectionSyncProcess sync = new ConnectionSyncProcess(service, connection);
+
 
             if( null != handler ){
                 Message message = handler.obtainMessage(CONNECTION_CREATED,info);

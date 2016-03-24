@@ -1,4 +1,4 @@
-package ca.carleton.gcrc.n2android_mobile1;
+package ca.carleton.gcrc.n2android_mobile1.connection;
 
 /**
  * Created by jpfiset on 3/10/16.

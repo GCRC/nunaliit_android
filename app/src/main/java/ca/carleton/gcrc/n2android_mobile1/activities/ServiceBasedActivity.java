@@ -7,64 +7,64 @@ import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.support.v7.app.AppCompatActivity;
-import android.view.View;
-import android.widget.AdapterView;
-import android.widget.ListView;
+import android.util.Log;
 
-import java.util.List;
-
-import ca.carleton.gcrc.n2android_mobile1.CouchDbService;
+import ca.carleton.gcrc.n2android_mobile1.CouchbaseLiteService;
 
 /**
  * Created by jpfiset on 3/14/16.
  */
-public class ServiceBasedActivity extends AppCompatActivity {
+public abstract class ServiceBasedActivity extends AppCompatActivity {
 
-    private ServiceConnection mConnection = new ServiceConnection() {
+    private ServiceConnection mCouchbaseConnection = new ServiceConnection() {
 
         @Override
         public void onServiceConnected(ComponentName className, IBinder service) {
             // We've bound to LocalService, cast the IBinder and get LocalService instance
-            CouchDbService.CouchDbBinder binder = (CouchDbService.CouchDbBinder) service;
-            mService = binder.getService();
-            mBound = true;
-            serviceReporting(mService);
+            CouchbaseLiteService.CouchDbBinder binder = (CouchbaseLiteService.CouchDbBinder) service;
+            mCouchbaseService = binder.getService();
+            mCouchbaseBound = true;
+            couchbaseServiceReporting(mCouchbaseService);
         }
 
         @Override
         public void onServiceDisconnected(ComponentName arg0) {
-            mBound = false;
+            mCouchbaseBound = false;
         }
     };
-    private CouchDbService mService;
-    private boolean mBound = false;
+    private CouchbaseLiteService mCouchbaseService;
+    private boolean mCouchbaseBound = false;
+
+    public abstract String getTag();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        Log.v(getTag(), "Activity Created");
+
         // Bind to CouchDbService
-        Intent intent = new Intent(this, CouchDbService.class);
-        bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
+        Intent intent = new Intent(this, CouchbaseLiteService.class);
+        bindService(intent, mCouchbaseConnection, Context.BIND_AUTO_CREATE);
     }
 
     @Override
     protected void onDestroy() {
         // Unbind from the service
-        if (mBound) {
-            unbindService(mConnection);
-            mBound = false;
+        if (mCouchbaseBound) {
+            unbindService(mCouchbaseConnection);
+            mCouchbaseBound = false;
         }
 
         super.onDestroy();
     }
 
     public boolean isServiceBound(){
-        return mBound;
+        return mCouchbaseBound;
     }
 
-    public CouchDbService getService(){
-        return mService;
+    public CouchbaseLiteService getCouchbaseService(){
+        return mCouchbaseService;
     }
 
     /**
@@ -72,6 +72,6 @@ public class ServiceBasedActivity extends AppCompatActivity {
      * service when it becomes available
      * @param service
      */
-    public void serviceReporting(CouchDbService service){
+    public void couchbaseServiceReporting(CouchbaseLiteService service){
     }
 }

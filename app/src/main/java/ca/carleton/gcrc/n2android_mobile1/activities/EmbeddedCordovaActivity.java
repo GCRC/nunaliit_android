@@ -10,8 +10,8 @@ import android.util.Log;
 
 import org.apache.cordova.CordovaActivity;
 
-import ca.carleton.gcrc.n2android_mobile1.ConnectionInfo;
-import ca.carleton.gcrc.n2android_mobile1.CouchDbService;
+import ca.carleton.gcrc.n2android_mobile1.CouchbaseLiteService;
+import ca.carleton.gcrc.n2android_mobile1.connection.ConnectionInfo;
 import ca.carleton.gcrc.n2android_mobile1.NunaliitMobileConstants;
 
 /**
@@ -26,7 +26,7 @@ public class EmbeddedCordovaActivity extends CordovaActivity {
         @Override
         public void onServiceConnected(ComponentName className, IBinder service) {
             // We've bound to LocalService, cast the IBinder and get LocalService instance
-            CouchDbService.CouchDbBinder binder = (CouchDbService.CouchDbBinder) service;
+            CouchbaseLiteService.CouchDbBinder binder = (CouchbaseLiteService.CouchDbBinder) service;
             mService = binder.getService();
             mBound = true;
             serviceReporting(mService);
@@ -37,7 +37,7 @@ public class EmbeddedCordovaActivity extends CordovaActivity {
             mBound = false;
         }
     };
-    private CouchDbService mService;
+    private CouchbaseLiteService mService;
     private boolean mBound = false;
     ConnectionInfo connectionInfo = null;
 
@@ -46,8 +46,8 @@ public class EmbeddedCordovaActivity extends CordovaActivity {
     {
         super.onCreate(savedInstanceState);
 
-        // Bind to CouchDbService
-        Intent intent = new Intent(this, CouchDbService.class);
+        // Bind to CouchbaseLiteService
+        Intent intent = new Intent(this, CouchbaseLiteService.class);
         bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
 
         // Set by <content src="index.html" /> in config.xml
@@ -65,7 +65,7 @@ public class EmbeddedCordovaActivity extends CordovaActivity {
         super.onDestroy();
     }
 
-    public void serviceReporting(CouchDbService service){
+    public void serviceReporting(CouchbaseLiteService service){
         retrieveConnection();
     }
 
@@ -93,7 +93,7 @@ public class EmbeddedCordovaActivity extends CordovaActivity {
         return connInfo;
     }
 
-    public CouchDbService getCouchDbService(){
+    public CouchbaseLiteService getCouchDbService(){
         return mService;
     }
 }

@@ -88,4 +88,10 @@
             android:text=""
             android:id="@+id/connection_local_db_name" />
     </LinearLayout>
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/synchronize"
+        android:id="@+id/button_sync"/>
 </LinearLayout>

@@ -4,7 +4,7 @@ import android.app.Service;
 import android.content.Intent;
 import android.os.Binder;
 import android.os.IBinder;
-import android.support.annotation.Nullable;
+import android.util.Log;
 import android.widget.Toast;
 
 import com.couchbase.lite.Database;
@@ -17,9 +17,7 @@ import com.couchbase.lite.Mapper;
 import com.couchbase.lite.Query;
 import com.couchbase.lite.QueryEnumerator;
 import com.couchbase.lite.QueryRow;
-import com.couchbase.lite.SavedRevision;
 import com.couchbase.lite.android.AndroidContext;
-import com.couchbase.lite.util.Log;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -27,21 +25,23 @@ import java.util.List;
 import java.util.Map;
 import java.util.Vector;
 
+import ca.carleton.gcrc.n2android_mobile1.connection.ConnectionInfo;
+
 /**
  * Created by jpfiset on 3/10/16.
  */
-public class CouchDbService extends Service {
+public class CouchbaseLiteService extends Service {
     /**
      * Class used for the client Binder.  Because we know this service always
      * runs in the same process as its clients, we don't need to deal with IPC.
      */
     public class CouchDbBinder extends Binder {
-        public CouchDbService getService() {
-            return CouchDbService.this;
+        public CouchbaseLiteService getService() {
+            return CouchbaseLiteService.this;
         }
     }
 
-    public static String TAG = "NunaliitMobile";
+    public static String TAG = "NunaliitMobileDatabase";
 
     // constants
     public static final String DATABASE_NAME = "connections";
@@ -55,6 +55,9 @@ public class CouchDbService extends Service {
     // Binder given to clients
     private final IBinder mBinder = new CouchDbBinder();
 
+    public CouchbaseLiteService(){
+        Log.v(TAG, "Service Created");
+    }
 
     @Override
     public void onCreate() {
@@ -92,13 +95,31 @@ public class CouchDbService extends Service {
 
     protected void startCouchDb() throws Exception {
 
-        Manager.enableLogging(TAG, Log.VERBOSE);
-        Manager.enableLogging(Log.TAG, Log.VERBOSE);
-        Manager.enableLogging(Log.TAG_SYNC_ASYNC_TASK, Log.VERBOSE);
-        Manager.enableLogging(Log.TAG_SYNC, Log.VERBOSE);
-        Manager.enableLogging(Log.TAG_QUERY, Log.VERBOSE);
-        Manager.enableLogging(Log.TAG_VIEW, Log.VERBOSE);
-        Manager.enableLogging(Log.TAG_DATABASE, Log.VERBOSE);
+        Manager.enableLogging(TAG, com.couchbase.lite.util.Log.VERBOSE);
+        Manager.enableLogging(
+            com.couchbase.lite.util.Log.TAG,
+            com.couchbase.lite.util.Log.VERBOSE
+        );
+        Manager.enableLogging(
+            com.couchbase.lite.util.Log.TAG_SYNC_ASYNC_TASK,
+            com.couchbase.lite.util.Log.VERBOSE
+        );
+        Manager.enableLogging(
+            com.couchbase.lite.util.Log.TAG_SYNC,
+            com.couchbase.lite.util.Log.VERBOSE
+        );
+        Manager.enableLogging(
+            com.couchbase.lite.util.Log.TAG_QUERY,
+            com.couchbase.lite.util.Log.VERBOSE
+        );
+        Manager.enableLogging(
+            com.couchbase.lite.util.Log.TAG_VIEW,
+            com.couchbase.lite.util.Log.VERBOSE
+        );
+        Manager.enableLogging(
+            com.couchbase.lite.util.Log.TAG_DATABASE,
+            com.couchbase.lite.util.Log.VERBOSE
+        );
 
         manager = new Manager(new AndroidContext(getApplicationContext()), Manager.DEFAULT_OPTIONS);
 
@@ -149,8 +170,10 @@ public class CouchDbService extends Service {
             DatabaseOptions options = new DatabaseOptions();
             options.setCreate(false);
             Database db = manager.openDatabase(dbName, options);
-            exists = db.exists();
-            db.close();
+            if( null != db ){
+                exists = db.exists();
+                db.close();
+            }
 
         } catch(Exception e) {
             Log.e(TAG, "Error checking if database exists: "+dbName, e);

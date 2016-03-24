@@ -5,10 +5,13 @@
     <string name="add_connection">Nouvelle Connexion</string>
     <string name="connection">Connexion</string>
     <string name="connection_created">"Connexion Créée"</string>
+    <string name="connection_management_service">"Service de gestion des connexions"</string>
     <string name="connections">Connexions</string>
     <string name="cordova">Cordova</string>
     <string name="create_connection">Créer Connexion</string>
+    <string name="database_service">Service de base des données</string>
     <string name="manage_connections">Gestion des connexions</string>
+    <string name="synchronize">Synchroniser</string>
 
     <string name="error_creating_connection">Erreur durant la création de connexion</string>
 

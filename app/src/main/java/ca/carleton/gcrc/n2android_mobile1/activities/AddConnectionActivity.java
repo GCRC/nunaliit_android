@@ -9,10 +9,9 @@ import android.view.View;
 import android.widget.EditText;
 import android.widget.Toast;
 
-import ca.carleton.gcrc.n2android_mobile1.AddConnectionThread;
-import ca.carleton.gcrc.n2android_mobile1.ConnectionInfo;
+import ca.carleton.gcrc.n2android_mobile1.connection.AddConnectionThread;
+import ca.carleton.gcrc.n2android_mobile1.connection.ConnectionInfo;
 import ca.carleton.gcrc.n2android_mobile1.R;
-import ca.carleton.gcrc.n2android_mobile1.connection.Connection;
 
 /**
  * Created by jpfiset on 3/10/16.
@@ -23,6 +22,10 @@ public class AddConnectionActivity extends ServiceBasedActivity {
 
     private AddConnectionThread addConnectionThread = null;
     private Handler handler = null;
+
+    public String getTag() {
+        return TAG;
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -124,7 +127,7 @@ public class AddConnectionActivity extends ServiceBasedActivity {
             if( null != addConnectionThread ){
                 addConnectionThread.stopTesting();
             }
-            addConnectionThread = new AddConnectionThread(getService(), info, handler);
+            addConnectionThread = new AddConnectionThread(getCouchbaseService(), info, handler);
             addConnectionThread.start();
 
         } catch(Exception e) {

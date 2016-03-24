@@ -1,14 +1,16 @@
 <resources>
     <string name="app_name">Nunaliit Mobile</string>
-    <string name="couchDbService_label">Nunaliit Database Service</string>
 
     <string name="add_connection">Add Connection</string>
     <string name="connection">Connection</string>
     <string name="connection_created">"Connection Created"</string>
+    <string name="connection_management_service">"Connection Management Service"</string>
     <string name="connections">Connections</string>
     <string name="cordova">Cordova</string>
     <string name="create_connection">Create Connection</string>
+    <string name="database_service">Database Service</string>
     <string name="manage_connections">Manage Connections</string>
+    <string name="synchronize">Synchronize</string>
 
     <string name="error_creating_connection">Error while creating connection</string>
 

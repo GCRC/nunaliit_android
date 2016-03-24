@@ -13,8 +13,8 @@ import android.widget.ListView;
 
 import java.util.List;
 
-import ca.carleton.gcrc.n2android_mobile1.ConnectionInfo;
-import ca.carleton.gcrc.n2android_mobile1.CouchDbService;
+import ca.carleton.gcrc.n2android_mobile1.connection.ConnectionInfo;
+import ca.carleton.gcrc.n2android_mobile1.CouchbaseLiteService;
 import ca.carleton.gcrc.n2android_mobile1.NunaliitMobileConstants;
 import ca.carleton.gcrc.n2android_mobile1.R;
 
@@ -26,6 +26,10 @@ public class ConnectionListActivity extends ServiceBasedActivity {
     protected String TAG = this.getClass().getSimpleName();
 
     private List<ConnectionInfo> displayedConnections = null;
+
+    public String getTag() {
+        return TAG;
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -91,13 +95,13 @@ public class ConnectionListActivity extends ServiceBasedActivity {
     }
 
     @Override
-    public void serviceReporting(CouchDbService service) {
+    public void couchbaseServiceReporting(CouchbaseLiteService service) {
         drawList();
     }
 
     public void drawList() {
         try {
-            CouchDbService service = getService();
+            CouchbaseLiteService service = getCouchbaseService();
             if( null != service ){
                 List<ConnectionInfo> connectionInfos = service.getConnectionInfos();
                 ListView listView = (ListView)findViewById(R.id.connnections);

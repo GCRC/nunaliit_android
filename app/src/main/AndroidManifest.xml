@@ -58,10 +58,15 @@
         </activity>
 
         <service
-            android:name=".CouchDbService"
-            android:label="@string/couchDbService_label">
+            android:name=".CouchbaseLiteService"
+            android:label="@string/database_service">
 
         </service>
-    </application>
 
+        <service
+            android:name=".services.ConnectionManagementService"
+            android:label="@string/connection_management_service">
+        </service>
+
+    </application>
 </manifest>
