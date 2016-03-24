@@ -136,8 +136,6 @@ public class MainActivity extends ServiceBasedActivity {
                 List<ConnectionInfo> connectionInfos = service.getConnectionInfos();
 
                 displayedConnections = connectionInfos;
-
-                Log.v(TAG, "Service reports number of connections: "+displayedConnections.size());
             }
 
             //drawList();

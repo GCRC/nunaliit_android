@@ -297,10 +297,7 @@ public class CouchbaseDb {
                 row.put("id",doc.getId());
                 row.put("rev",doc.getCurrentRevisionId());
 
-                Log.v(TAG, "query result " + doc.getId() + "/" + doc.getCurrentRevisionId());
-
                 if( query.getIncludeDocs() ){
-                    Log.v(TAG, "include doc");
                     JSONObject jsonDoc = jsonObjectFromDocument(doc);
                     row.put("doc",jsonDoc);
                 }

@@ -11,5 +11,6 @@ public class NunaliitMobileConstants {
 
     public static final String EXTRA_ERROR = "ca.carleton.gcrc.EXTRA_ERROR";
     public static final String EXTRA_CONNECTION_ID = "ca.carleton.gcrc.EXTRA_CONNECTION_ID";
+    public static final String EXTRA_CONNECTION_INFO = "ca.carleton.gcrc.EXTRA_CONNECTION_INFO";
     public static final String EXTRA_CONNECTION_INFOS = "ca.carleton.gcrc.EXTRA_CONNECTION_INFOS";
 }

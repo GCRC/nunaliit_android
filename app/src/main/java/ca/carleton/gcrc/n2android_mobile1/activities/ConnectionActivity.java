@@ -5,7 +5,9 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
+import android.os.Parcelable;
 import android.support.v4.content.LocalBroadcastManager;
+import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -13,7 +15,6 @@ import android.widget.Button;
 import android.widget.TextView;
 
 import ca.carleton.gcrc.n2android_mobile1.connection.ConnectionInfo;
-import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseLiteService;
 import ca.carleton.gcrc.n2android_mobile1.NunaliitMobileConstants;
 import ca.carleton.gcrc.n2android_mobile1.R;
 import ca.carleton.gcrc.n2android_mobile1.connection.ConnectionManagementService;
@@ -21,7 +22,7 @@ import ca.carleton.gcrc.n2android_mobile1.connection.ConnectionManagementService
 /**
  * Created by jpfiset on 3/10/16.
  */
-public class ConnectionActivity extends ServiceBasedActivity {
+public class ConnectionActivity extends AppCompatActivity {
 
     protected String TAG = this.getClass().getSimpleName();
 
@@ -39,6 +40,9 @@ public class ConnectionActivity extends ServiceBasedActivity {
         }
     };
 
+    private String connectionId = null;
+    private ConnectionInfo currentConnection = null;
+
     public String getTag() {
         return TAG;
     }
@@ -47,7 +51,23 @@ public class ConnectionActivity extends ServiceBasedActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        // Retreive connection id
+        {
+            Intent intent = getIntent();
+            if (null != intent) {
+                connectionId = intent.getStringExtra(NunaliitMobileConstants.EXTRA_CONNECTION_ID);
+            }
+        }
+
         LocalBroadcastManager lbm = LocalBroadcastManager.getInstance(this);
+        lbm.registerReceiver(
+                broadcastReceiver,
+                new IntentFilter(ConnectionManagementService.RESULT_GET_CONNECTION_INFO)
+        );
+        lbm.registerReceiver(
+                broadcastReceiver,
+                new IntentFilter(ConnectionManagementService.ERROR_GET_CONNECTION_INFO)
+        );
         lbm.registerReceiver(
                 broadcastReceiver,
                 new IntentFilter(ConnectionManagementService.RESULT_SYNC_COMPLETED)
@@ -65,6 +85,14 @@ public class ConnectionActivity extends ServiceBasedActivity {
                 view.setVisibility(0);
             }
         }
+
+        // Request
+        {
+            Intent intent = new Intent(this,ConnectionManagementService.class);
+            intent.setAction(ConnectionManagementService.ACTION_GET_CONNECTION_INFO);
+            intent.putExtra(NunaliitMobileConstants.EXTRA_CONNECTION_ID, connectionId);
+            startService(intent);
+        }
     }
 
     @Override
@@ -74,35 +102,14 @@ public class ConnectionActivity extends ServiceBasedActivity {
         refreshDisplay();
     }
 
-    @Override
-    public void couchbaseServiceReporting(CouchbaseLiteService service) {
-        refreshDisplay();
-    }
-
     public void refreshDisplay(){
-        String connectionId = null;
-        Intent intent = getIntent();
-        if( null != intent ){
-            connectionId = intent.getStringExtra(NunaliitMobileConstants.EXTRA_CONNECTION_ID);
-        }
-
-        ConnectionInfo connInfo = null;
-        CouchbaseLiteService service = getCouchbaseService();
-        if( null != connectionId && null != service ){
-            try {
-                connInfo = service.getConnectionInfo(connectionId);
-            } catch (Exception e) {
-                Log.e(TAG, "Unable to retrieve connection info", e);
-            }
-        }
-
-        if( null != connInfo ){
+        if( null != currentConnection ){
             // Name
             {
                 View view = findViewById(R.id.connection_name_value);
                 if( null != view && view instanceof TextView ){
                     TextView textView = (TextView)view;
-                    textView.setText(connInfo.getName());
+                    textView.setText(currentConnection.getName());
                 }
             }
 
@@ -111,7 +118,7 @@ public class ConnectionActivity extends ServiceBasedActivity {
                 View view = findViewById(R.id.connection_url_value);
                 if( null != view && view instanceof TextView ){
                     TextView textView = (TextView)view;
-                    textView.setText(connInfo.getUrl());
+                    textView.setText(currentConnection.getUrl());
                 }
             }
 
@@ -120,7 +127,7 @@ public class ConnectionActivity extends ServiceBasedActivity {
                 View view = findViewById(R.id.connection_user_value);
                 if( null != view && view instanceof TextView ){
                     TextView textView = (TextView)view;
-                    textView.setText(connInfo.getUser());
+                    textView.setText(currentConnection.getUser());
                 }
             }
 
@@ -129,7 +136,7 @@ public class ConnectionActivity extends ServiceBasedActivity {
                 View view = findViewById(R.id.connection_local_db_name);
                 if( null != view && view instanceof TextView ){
                     TextView textView = (TextView)view;
-                    textView.setText(connInfo.getLocalDocumentDbName());
+                    textView.setText(currentConnection.getLocalDocumentDbName());
                 }
             }
 
@@ -176,5 +183,16 @@ public class ConnectionActivity extends ServiceBasedActivity {
 
     protected void receiveBroadcast(Intent intent){
         Log.v(TAG,"Received broadcast :"+intent.getAction()+NunaliitMobileConstants.threadId());
+
+        if( ConnectionManagementService.RESULT_GET_CONNECTION_INFO.equals(intent.getAction()) ){
+            Parcelable parcelable = intent.getParcelableExtra(NunaliitMobileConstants.EXTRA_CONNECTION_INFO);
+            if( parcelable instanceof ConnectionInfo ) {
+                ConnectionInfo connInfo = (ConnectionInfo)parcelable;
+                if( connInfo.getId().equals(connectionId) ) {
+                    currentConnection = connInfo;
+                    refreshDisplay();
+                }
+            }
+        }
     }
 }
