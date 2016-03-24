@@ -14,7 +14,7 @@ import android.widget.ListView;
 import java.util.List;
 
 import ca.carleton.gcrc.n2android_mobile1.connection.ConnectionInfo;
-import ca.carleton.gcrc.n2android_mobile1.CouchbaseLiteService;
+import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseLiteService;
 import ca.carleton.gcrc.n2android_mobile1.NunaliitMobileConstants;
 import ca.carleton.gcrc.n2android_mobile1.R;
 

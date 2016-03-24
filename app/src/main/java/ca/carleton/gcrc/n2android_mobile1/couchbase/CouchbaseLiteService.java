@@ -1,4 +1,4 @@
-package ca.carleton.gcrc.n2android_mobile1;
+package ca.carleton.gcrc.n2android_mobile1.couchbase;
 
 import android.app.Service;
 import android.content.Intent;
@@ -179,6 +179,10 @@ public class CouchbaseLiteService extends Service {
             Log.e(TAG, "Error checking if database exists: "+dbName, e);
         }
         return exists;
+    }
+
+    public CouchbaseDb getConnectionsDb(){
+        return new CouchbaseDb(database);
     }
 
     public void createLocalDatabase(ConnectionInfo connectionInfo){

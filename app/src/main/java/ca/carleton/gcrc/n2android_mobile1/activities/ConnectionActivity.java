@@ -13,10 +13,10 @@ import android.widget.Button;
 import android.widget.TextView;
 
 import ca.carleton.gcrc.n2android_mobile1.connection.ConnectionInfo;
-import ca.carleton.gcrc.n2android_mobile1.CouchbaseLiteService;
+import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseLiteService;
 import ca.carleton.gcrc.n2android_mobile1.NunaliitMobileConstants;
 import ca.carleton.gcrc.n2android_mobile1.R;
-import ca.carleton.gcrc.n2android_mobile1.services.ConnectionManagementService;
+import ca.carleton.gcrc.n2android_mobile1.connection.ConnectionManagementService;
 
 /**
  * Created by jpfiset on 3/10/16.
@@ -49,8 +49,8 @@ public class ConnectionActivity extends ServiceBasedActivity {
 
         LocalBroadcastManager lbm = LocalBroadcastManager.getInstance(this);
         lbm.registerReceiver(
-            broadcastReceiver,
-            new IntentFilter(ConnectionManagementService.RESULT_SYNC_COMPLETED)
+                broadcastReceiver,
+                new IntentFilter(ConnectionManagementService.RESULT_SYNC_COMPLETED)
         );
 
         setContentView(R.layout.activity_connection);

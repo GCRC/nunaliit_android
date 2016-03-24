@@ -1,15 +1,42 @@
 package ca.carleton.gcrc.n2android_mobile1.connection;
 
+import android.os.Parcel;
+import android.os.Parcelable;
+
 /**
  * Created by jpfiset on 3/10/16.
  */
-public class ConnectionInfo {
+public class ConnectionInfo implements Parcelable {
+    public static final Parcelable.Creator<ConnectionInfo> CREATOR =
+            new Parcelable.Creator<ConnectionInfo>() {
+        public ConnectionInfo createFromParcel(Parcel in) {
+            return new ConnectionInfo(in);
+        }
+
+        public ConnectionInfo[] newArray(int size) {
+            return new ConnectionInfo[size];
+        }
+    };
+
     private String id;
     private String name;
     private String url;
     private String user;
     private String password;
     private String localDocumentDbName;
+
+    public ConnectionInfo(){
+
+    }
+
+    public ConnectionInfo(Parcel in) {
+        id = in.readString();
+        name = in.readString();
+        url = in.readString();
+        user = in.readString();
+        password = in.readString();
+        localDocumentDbName = in.readString();
+    }
 
     public String getId() {
         return id;
@@ -61,5 +88,20 @@ public class ConnectionInfo {
         }
 
         return name;
+    }
+
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+        dest.writeString(id);
+        dest.writeString(name);
+        dest.writeString(url);
+        dest.writeString(user);
+        dest.writeString(password);
+        dest.writeString(localDocumentDbName);
     }
 }

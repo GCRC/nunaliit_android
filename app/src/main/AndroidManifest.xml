@@ -58,13 +58,13 @@
         </activity>
 
         <service
-            android:name=".CouchbaseLiteService"
+            android:name=".couchbase.CouchbaseLiteService"
             android:label="@string/database_service">
 
         </service>
 
         <service
-            android:name=".services.ConnectionManagementService"
+            android:name=".connection.ConnectionManagementService"
             android:label="@string/connection_management_service">
         </service>
 
