@@ -220,6 +220,16 @@ public class CouchbaseLiteService extends Service {
         }
     }
 
+    public void deleteDb(String dbName) throws Exception {
+        try {
+            Database db = manager.getDatabase(dbName);
+            db.delete();
+
+        } catch(Exception e) {
+            throw new Exception("Error while deleting database "+dbName,e);
+        }
+    }
+
     public void addConnectionInfo(ConnectionInfo connectionInfo) throws Exception {
 
         try {

@@ -9,6 +9,7 @@
     <string name="cordova">Cordova</string>
     <string name="create_connection">Create Connection</string>
     <string name="database_service">Database Service</string>
+    <string name="delete">Delete</string>
     <string name="manage_connections">Manage Connections</string>
     <string name="synchronize">Synchronize</string>
 

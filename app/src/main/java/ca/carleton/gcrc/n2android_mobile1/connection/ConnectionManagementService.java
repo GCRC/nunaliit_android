@@ -87,6 +87,7 @@ public class ConnectionManagementService extends IntentService {
     public static String ACTION_ADD_CONNECTION = ConnectionManagementService.class.getName()+".ADD_CONNECTION";
     public static String ACTION_GET_CONNECTION_INFO = ConnectionManagementService.class.getName()+".GET_CONNECTION_INFO";
     public static String ACTION_GET_CONNECTION_INFOS = ConnectionManagementService.class.getName()+".GET_CONNECTION_INFOS";
+    public static String ACTION_DELETE_CONNECTION = ConnectionManagementService.class.getName()+".DELETE_CONNECTION";
     public static String ACTION_SYNC = ConnectionManagementService.class.getName()+".SYNC";
 
     public static String RESULT_ADD_CONNECTION = ConnectionManagementService.class.getName()+".ADD_CONNECTION_RESULT";
@@ -95,6 +96,8 @@ public class ConnectionManagementService extends IntentService {
     public static String ERROR_GET_CONNECTION_INFO = ConnectionManagementService.class.getName()+".GET_CONNECTION_INFO_ERROR";
     public static String RESULT_GET_CONNECTION_INFOS = ConnectionManagementService.class.getName()+".GET_CONNECTION_INFOS_RESULT";
     public static String ERROR_GET_CONNECTION_INFOS = ConnectionManagementService.class.getName()+".GET_CONNECTION_INFOS_ERROR";
+    public static String RESULT_DELETE_CONNECTION = ConnectionManagementService.class.getName()+".DELETE_CONNECTION_RESULT";
+    public static String ERROR_DELETE_CONNECTION = ConnectionManagementService.class.getName()+".DELETE_CONNECTION_ERROR";
     public static String RESULT_SYNC = ConnectionManagementService.class.getName()+".SYNC_RESULT";
     public static String ERROR_SYNC = ConnectionManagementService.class.getName()+".SYNC_ERROR";
 
@@ -184,6 +187,10 @@ public class ConnectionManagementService extends IntentService {
             String connId = intent.getStringExtra(Nunaliit.EXTRA_CONNECTION_ID);
             getConnectionInfo(connId);
 
+        } else if( ACTION_DELETE_CONNECTION.equals(intent.getAction()) ){
+            String connId = intent.getStringExtra(Nunaliit.EXTRA_CONNECTION_ID);
+            deleteConnection(connId);
+
         } else if( ACTION_SYNC.equals(intent.getAction()) ){
             String connId = intent.getStringExtra(Nunaliit.EXTRA_CONNECTION_ID);
             synchronizeConnection(connId);
@@ -218,8 +225,8 @@ public class ConnectionManagementService extends IntentService {
         waitForCouchbaseService();
 
         try {
-            AddConnectionProcess addConnectionProcess = new AddConnectionProcess(mCouchbaseService, connInfo, this);
-            addConnectionProcess.addConnection();
+            ConnectionProcess connectionProcess = new ConnectionProcess(mCouchbaseService, this);
+            connectionProcess.addConnection(connInfo);
 
             Intent result = new Intent(RESULT_ADD_CONNECTION);
             result.putExtra(Nunaliit.EXTRA_CONNECTION_INFO, connInfo);
@@ -287,6 +294,28 @@ public class ConnectionManagementService extends IntentService {
             Log.e(TAG, "Error while retrieving connection information objects",e);
             Intent result = new Intent(ERROR_GET_CONNECTION_INFOS);
             result.putExtra(Nunaliit.EXTRA_ERROR, e);
+            LocalBroadcastManager.getInstance(this).sendBroadcast(result);
+        }
+    }
+
+    private void deleteConnection(String connId){
+        waitForCouchbaseService();
+
+        try {
+            ConnectionProcess connectionProcess = new ConnectionProcess(mCouchbaseService, this);
+            connectionProcess.deleteConnection(connId);
+
+            Intent result = new Intent(RESULT_DELETE_CONNECTION);
+            result.putExtra(Nunaliit.EXTRA_CONNECTION_ID, connId);
+            Log.v(TAG, "Result: " + result.getAction() + Nunaliit.threadId());
+            LocalBroadcastManager.getInstance(this).sendBroadcast(result);
+
+            getConnectionInfos();
+
+        } catch(Exception e) {
+            Log.e(TAG, "Error while deleting a connection",e);
+            Intent result = new Intent(ERROR_DELETE_CONNECTION);
+            result.putExtra(Nunaliit.EXTRA_ERROR, e.getMessage());
             LocalBroadcastManager.getInstance(this).sendBroadcast(result);
         }
     }

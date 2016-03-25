@@ -33,6 +33,13 @@ public class ConnectionActivity extends AppCompatActivity {
         }
     };
 
+    private OnClickListener btnDeleteListener = new OnClickListener() {
+        @Override
+        public void onClick(View v){
+            deleteConnection();
+        }
+    };
+
     private BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -70,6 +77,14 @@ public class ConnectionActivity extends AppCompatActivity {
         );
         lbm.registerReceiver(
                 broadcastReceiver,
+                new IntentFilter(ConnectionManagementService.RESULT_DELETE_CONNECTION)
+        );
+        lbm.registerReceiver(
+                broadcastReceiver,
+                new IntentFilter(ConnectionManagementService.ERROR_DELETE_CONNECTION)
+        );
+        lbm.registerReceiver(
+                broadcastReceiver,
                 new IntentFilter(ConnectionManagementService.RESULT_SYNC)
         );
 
@@ -82,7 +97,18 @@ public class ConnectionActivity extends AppCompatActivity {
                 Button button = (Button)view;
                 button.setOnClickListener(btnSynchronizeListener);
             } else {
-                view.setVisibility(0);
+                view.setVisibility(View.INVISIBLE);
+            }
+        }
+
+        // Delete button
+        {
+            View view = findViewById(R.id.button_delete);
+            if( view instanceof Button ){
+                Button button = (Button)view;
+                button.setOnClickListener(btnDeleteListener);
+            } else {
+                view.setVisibility(View.INVISIBLE);
             }
         }
 
@@ -140,7 +166,7 @@ public class ConnectionActivity extends AppCompatActivity {
                 }
             }
 
-            // Button
+            // Synchronize Button
             {
                 View view = findViewById(R.id.button_sync);
                 if( null != view && view instanceof Button ){
@@ -148,12 +174,31 @@ public class ConnectionActivity extends AppCompatActivity {
                     button.setVisibility(View.VISIBLE);
                 }
             }
+
+            // Delete Button
+            {
+                View view = findViewById(R.id.button_delete);
+                if( null != view && view instanceof Button ){
+                    Button button = (Button)view;
+                    button.setVisibility(View.VISIBLE);
+                }
+            }
+
         } else {
             // Connection information not yet available
 
-            // Button
+            // Synchronize Button
             {
                 View view = findViewById(R.id.button_sync);
+                if( null != view && view instanceof Button ){
+                    Button button = (Button)view;
+                    button.setVisibility(View.INVISIBLE);
+                }
+            }
+
+            // Delete Button
+            {
+                View view = findViewById(R.id.button_delete);
                 if( null != view && view instanceof Button ){
                     Button button = (Button)view;
                     button.setVisibility(View.INVISIBLE);
@@ -163,36 +208,39 @@ public class ConnectionActivity extends AppCompatActivity {
     }
 
     private void synchronizeConnection() {
-        Log.v(TAG, "Synchronization called");
-
-        String connectionId = null;
-        {
-            Intent intent = getIntent();
-            if (null != intent) {
-                connectionId = intent.getStringExtra(Nunaliit.EXTRA_CONNECTION_ID);
-            }
-        }
-
-        Log.v(TAG,"action:"+ConnectionManagementService.ACTION_SYNC+ Nunaliit.threadId());
-
         Intent syncIntent = new Intent(this, ConnectionManagementService.class);
         syncIntent.setAction(ConnectionManagementService.ACTION_SYNC);
+        Log.v(TAG, "action:" + syncIntent.getAction() + Nunaliit.threadId());
         syncIntent.putExtra(Nunaliit.EXTRA_CONNECTION_ID, connectionId);
         startService(syncIntent);
+    }
+
+    private void deleteConnection() {
+        Intent intent = new Intent(this, ConnectionManagementService.class);
+        intent.setAction(ConnectionManagementService.ACTION_DELETE_CONNECTION);
+        Log.v(TAG, "action:" + intent.getAction() + Nunaliit.threadId());
+        intent.putExtra(Nunaliit.EXTRA_CONNECTION_ID, connectionId);
+        startService(intent);
     }
 
     protected void receiveBroadcast(Intent intent){
         Log.v(TAG,"Received broadcast :"+intent.getAction()+ Nunaliit.threadId());
 
-        if( ConnectionManagementService.RESULT_GET_CONNECTION_INFO.equals(intent.getAction()) ){
+        if( ConnectionManagementService.RESULT_GET_CONNECTION_INFO.equals(intent.getAction()) ) {
             Parcelable parcelable = intent.getParcelableExtra(Nunaliit.EXTRA_CONNECTION_INFO);
-            if( parcelable instanceof ConnectionInfo ) {
-                ConnectionInfo connInfo = (ConnectionInfo)parcelable;
-                if( connInfo.getId().equals(connectionId) ) {
+            if (parcelable instanceof ConnectionInfo) {
+                ConnectionInfo connInfo = (ConnectionInfo) parcelable;
+                if (connInfo.getId().equals(connectionId)) {
                     currentConnection = connInfo;
                     refreshDisplay();
                 }
             }
+
+        } else if( ConnectionManagementService.RESULT_DELETE_CONNECTION.equals(intent.getAction()) ){
+                String connId = intent.getStringExtra(Nunaliit.EXTRA_CONNECTION_ID);
+                if( null != connId && connId.equals(connectionId) ) {
+                    finish();
+                }
 
         } else {
             Log.w(TAG, "Ignoring received intent :" + intent.getAction() + Nunaliit.threadId());

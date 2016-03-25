@@ -277,6 +277,21 @@ public class CouchbaseDb {
         }
     }
 
+    public void deleteDocument(JSONObject jsonDoc) throws Exception {
+        String id = jsonDoc.getString("_id");
+        deleteDocument(id);
+    }
+
+    public void deleteDocument(String docId) throws Exception {
+        try {
+            Document doc = database.getDocument(docId);
+            doc.delete();
+
+        } catch(Exception e) {
+            throw new Exception("Unable to delete document"+docId,e);
+        }
+    }
+
     public CouchbaseQueryResults performQuery(CouchbaseQuery query) throws Exception {
         String viewName = null;
         try {
@@ -295,7 +310,7 @@ public class CouchbaseDb {
                 Document doc = dbRow.getDocument();
 
                 row.put("id",doc.getId());
-                row.put("rev",doc.getCurrentRevisionId());
+                row.put("rev", doc.getCurrentRevisionId());
 
                 if( query.getIncludeDocs() ){
                     JSONObject jsonDoc = jsonObjectFromDocument(doc);
