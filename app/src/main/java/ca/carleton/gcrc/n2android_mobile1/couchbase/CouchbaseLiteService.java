@@ -9,6 +9,7 @@ import android.util.Log;
 import android.widget.Toast;
 
 import ca.carleton.gcrc.n2android_mobile1.Nunaliit;
+import ca.carleton.gcrc.n2android_mobile1.ServiceSupport;
 
 /**
  * Created by jpfiset on 3/10/16.
@@ -101,12 +102,10 @@ public class CouchbaseLiteService extends Service {
     protected void couchbaseInitFailure(Throwable e){
         Log.e(TAG, "Couchbase failed to initialized", e);
 
-        Toast
-            .makeText(
-                    getApplicationContext(),
-                    "Error Initializing Couchbase, see logs for details",
-                    Toast.LENGTH_LONG
-            )
-            .show();
+        ServiceSupport.createToast(
+            this,
+            "Error Initializing Couchbase, see logs for details",
+            Toast.LENGTH_LONG
+        );
     }
 }

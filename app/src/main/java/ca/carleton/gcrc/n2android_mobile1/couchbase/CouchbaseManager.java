@@ -11,6 +11,7 @@ import com.couchbase.lite.Manager;
 import com.couchbase.lite.Mapper;
 import com.couchbase.lite.android.AndroidContext;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import ca.carleton.gcrc.n2android_mobile1.Nunaliit;
@@ -27,9 +28,11 @@ public class CouchbaseManager {
     public static final String VIEW_CONNECTIONS = "connections-by-id";
 
     // couchdb internals
-    protected static Manager manager;
-    private Database database;
+    private Manager manager;
+    private Database connDb;
     private LiveQuery liveQuery;
+    private Map<String,Database> databasesByName = new HashMap<String,Database>();
+
 
     public void startCouchbase(Context context) throws Exception {
 
@@ -66,7 +69,7 @@ public class CouchbaseManager {
         // install a view definition needed by the application
         DatabaseOptions options = new DatabaseOptions();
         options.setCreate(true);
-        database = manager.openDatabase(DATABASE_NAME, options);
+        connDb = manager.openDatabase(DATABASE_NAME, options);
 
 //        Document doc = database.getDocument("testDoc");
 //        SavedRevision currentRevision = doc.getCurrentRevision();
@@ -80,7 +83,7 @@ public class CouchbaseManager {
 //        }
 
         // View: connnections-by-label
-        com.couchbase.lite.View connectionsView = database.getView(VIEW_CONNECTIONS);
+        com.couchbase.lite.View connectionsView = connDb.getView(VIEW_CONNECTIONS);
         connectionsView.setMap(new Mapper() {
             @Override
             public void map(Map<String, Object> document, Emitter emitter) {
@@ -133,8 +136,23 @@ public class CouchbaseManager {
         return exists;
     }
 
+    public CouchbaseDb getDatabase(String dbName) throws Exception {
+        try {
+            Database db = databasesByName.get(dbName);
+            if (null == db) {
+                DatabaseOptions options = new DatabaseOptions();
+                options.setCreate(false);
+                db = manager.openDatabase(dbName, options);
+            }
+            return new CouchbaseDb(db);
+
+        } catch(Exception e) {
+            throw new Exception("Unable to get database "+dbName,e);
+        }
+    }
+
     public CouchbaseDb getConnectionsDb(){
-        return new CouchbaseDb(database);
+        return new CouchbaseDb(connDb);
     }
 
     public void createLocalDatabase(ConnectionInfo connectionInfo){

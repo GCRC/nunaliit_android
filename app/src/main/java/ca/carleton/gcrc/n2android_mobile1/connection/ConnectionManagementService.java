@@ -9,11 +9,14 @@ import android.os.IBinder;
 import android.os.Parcelable;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
+import android.widget.Toast;
 
 import org.json.JSONObject;
 
 import java.util.ArrayList;
 
+import ca.carleton.gcrc.n2android_mobile1.R;
+import ca.carleton.gcrc.n2android_mobile1.ServiceSupport;
 import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseDb;
 import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseLiteService;
 import ca.carleton.gcrc.n2android_mobile1.Nunaliit;
@@ -332,21 +335,33 @@ public class ConnectionManagementService extends IntentService {
 
             JSONObject doc = connectionsDb.getDocument(connId);
             ConnectionInfo connInfo = connectionInfoFromJson(doc);
-            Connection connection = new Connection(connInfo);
+            Connection connection = new Connection(mgr, connInfo);
 
             ConnectionSyncProcess syncProcess = new ConnectionSyncProcess(mCouchbaseService, connection);
             syncProcess.synchronize();
 
             Intent result = new Intent(RESULT_SYNC);
             Log.v(TAG, "Result: " + result.getAction() + Nunaliit.threadId());
-
+            result.putExtra(Nunaliit.EXTRA_CONNECTION_ID, connId);
             LocalBroadcastManager.getInstance(this).sendBroadcast(result);
+
+            ServiceSupport.createToast(
+                    this,
+                    getResources().getString(R.string.synchronization_completed),
+                    Toast.LENGTH_SHORT
+            );
 
         } catch(Exception e) {
             Log.e(TAG, "Error while synchronizing connection "+connId,e);
             Intent result = new Intent(ERROR_SYNC);
             result.putExtra(Nunaliit.EXTRA_ERROR, e);
             LocalBroadcastManager.getInstance(this).sendBroadcast(result);
+
+            ServiceSupport.createToast(
+                this,
+                getResources().getString(R.string.error_synchronization),
+                Toast.LENGTH_LONG
+            );
         }
     }
 }

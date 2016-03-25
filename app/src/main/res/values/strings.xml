@@ -11,9 +11,11 @@
     <string name="database_service">Database Service</string>
     <string name="delete">Delete</string>
     <string name="manage_connections">Manage Connections</string>
+    <string name="synchronization_completed">Synchronization Completed</string>
     <string name="synchronize">Synchronize</string>
 
     <string name="error_creating_connection">Error while creating connection</string>
+    <string name="error_synchronization">Error during connection synchronization</string>
 
     <string name="label_connection_name">Connection Name:</string>
     <string name="label_local_db_name">Local Database:</string>

@@ -52,7 +52,10 @@ public class CouchbaseDb {
         for(String key : props.keySet()){
             Object value = props.get(key);
 
-            if( value instanceof String ){
+            if( value == null ) {
+                obj.put(key, JSONObject.NULL);
+
+            } else if( value instanceof String ){
                 String str = (String)value;
                 obj.put(key,str);
 
@@ -89,9 +92,12 @@ public class CouchbaseDb {
     static public JSONArray jsonArrayFromProperties(List<Object> props) throws Exception {
         JSONArray array = new JSONArray();
 
-        for(Object value : props ) {
+        for(Object value : props) {
 
-            if( value instanceof String ){
+            if( value == null ) {
+                array.put(JSONObject.NULL);
+
+            } else if( value instanceof String ){
                 String str = (String)value;
                 array.put(str);
 
@@ -133,7 +139,10 @@ public class CouchbaseDb {
             String key = keysIt.next();
             Object obj = jsonObject.get(key);
 
-            if( obj instanceof String ){
+            if( obj == JSONObject.NULL ) {
+                props.put(key, null);
+
+            } else if( obj instanceof String ){
                 String str = (String)obj;
                 props.put(key, str);
 
@@ -173,7 +182,10 @@ public class CouchbaseDb {
         for(int i=0,e=jsonArray.length(); i<e; ++i) {
             Object obj = jsonArray.get(i);
 
-            if( obj instanceof String ){
+            if( obj == JSONObject.NULL ) {
+                props.add(null);
+
+            } else if( obj instanceof String ){
                 String str = (String)obj;
                 props.add(str);
 
@@ -224,6 +236,15 @@ public class CouchbaseDb {
         } catch(Exception e) {
             throw new Exception("Unable to load document with identifier: "+docId,e);
         }
+    }
+
+    public boolean documentExists(String docId) {
+        Document doc = database.getExistingDocument(docId);
+        boolean exists = false;
+        if( null != doc ){
+            exists = true;
+        }
+        return exists;
     }
 
     public JSONObject createDocument(JSONObject jsonDoc) throws Exception {

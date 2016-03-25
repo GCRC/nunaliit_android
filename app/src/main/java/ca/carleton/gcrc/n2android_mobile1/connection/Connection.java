@@ -12,6 +12,8 @@ import ca.carleton.gcrc.couch.client.CouchDb;
 import ca.carleton.gcrc.couch.client.CouchFactory;
 import ca.carleton.gcrc.couch.client.CouchServerVersion;
 import ca.carleton.gcrc.couch.client.impl.ConnectionUtils;
+import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseDb;
+import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseManager;
 
 /**
  * Created by jpfiset on 3/21/16.
@@ -20,11 +22,13 @@ public class Connection {
 
     protected final String TAG = this.getClass().getSimpleName();
 
+    private CouchbaseManager manager;
     private ConnectionInfo info;
     private String remoteDbName = null;
 
-    public Connection(ConnectionInfo info){
+    public Connection(CouchbaseManager manager, ConnectionInfo info){
         this.info = info;
+        this.manager = manager;
     }
 
     public ConnectionInfo getConnectionInfo(){
@@ -34,7 +38,7 @@ public class Connection {
     public CouchClient getRemoteCouchClient() throws Exception {
         try {
             URL url = new URL(info.getUrl());
-            URL serverUrl = new URL(url, "server");
+            URL serverUrl = new URL(url, "server/");
 
             CouchFactory factory = new CouchFactory();
             CouchContext context = factory.getContext(info.getUser(),info.getPassword().toCharArray());
@@ -103,5 +107,9 @@ public class Connection {
         return remoteDbName;
     }
 
-
+    public CouchbaseDb getLocalDocumentDb() throws Exception {
+        String localDbName = info.getLocalDocumentDbName();
+        CouchbaseDb db = manager.getDatabase(localDbName);
+        return db;
+    }
 }

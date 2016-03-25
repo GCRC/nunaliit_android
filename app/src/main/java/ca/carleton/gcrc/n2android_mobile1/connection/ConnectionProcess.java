@@ -22,7 +22,7 @@ public class ConnectionProcess {
     }
 
     public void addConnection(ConnectionInfo info) throws Exception {
-        Connection connection = new Connection(info);
+        Connection connection = new Connection(service.getCouchbaseManager(), info);
         try {
             CouchbaseManager mgr = service.getCouchbaseManager();
             CouchbaseDb connectionsDb = mgr.getConnectionsDb();

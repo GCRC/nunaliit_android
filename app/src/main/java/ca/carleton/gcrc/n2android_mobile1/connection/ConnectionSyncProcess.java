@@ -11,6 +11,7 @@ import ca.carleton.gcrc.couch.client.CouchDb;
 import ca.carleton.gcrc.couch.client.CouchDesignDocument;
 import ca.carleton.gcrc.couch.client.CouchQuery;
 import ca.carleton.gcrc.couch.client.CouchQueryResults;
+import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseDb;
 import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseLiteService;
 
 /**
@@ -36,6 +37,9 @@ public class ConnectionSyncProcess {
     public void synchronize() throws Exception {
         try {
             List<JSONObject> docs = getRemoteSkeletonDocs();
+            for(JSONObject doc : docs){
+                updateLocalSkeletonDocument(doc);
+            }
 
             Log.v(TAG, "Number of skeleton docs: "+ docs.size());
 
@@ -76,5 +80,30 @@ public class ConnectionSyncProcess {
             docs.add(doc);
         }
         return docs;
+    }
+
+    public void updateLocalSkeletonDocument(JSONObject doc) throws Exception {
+        try {
+            String remoteRev = doc.optString("_rev",null);
+            if( null != remoteRev ){
+                doc.remove("_rev");
+            }
+
+            CouchbaseDb localDb = connection.getLocalDocumentDb();
+            String docId = doc.getString("_id");
+            if( localDb.documentExists(docId) ) {
+                JSONObject existingDoc = localDb.getDocument(docId);
+                String existingRev = existingDoc.optString("_rev",null);
+                if( null != existingRev ){
+                    doc.put("_rev",existingRev);
+                }
+                localDb.updateDocument(doc);
+            } else {
+                localDb.createDocument(doc);
+            }
+
+        } catch(Exception e) {
+            throw new Exception("Unable to update local skeleton documents",e);
+        }
     }
 }
