@@ -65,7 +65,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/create_connection"
-            android:id="@+id/createConnectionButton"
-            android:onClick="createConnection"/>
+            android:id="@+id/button_create"
+            android:visibility="invisible"/>
     </LinearLayout>
 </FrameLayout>

@@ -1,5 +1,7 @@
 package ca.carleton.gcrc.n2android_mobile1.connection;
 
+import android.util.Log;
+
 import org.json.JSONObject;
 
 import java.util.List;
@@ -15,6 +17,8 @@ import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseLiteService;
  * Created by jpfiset on 3/21/16.
  */
 public class ConnectionSyncProcess {
+
+    protected final String TAG = this.getClass().getSimpleName();
 
     private Connection connection;
     private CouchbaseLiteService service;
@@ -32,6 +36,8 @@ public class ConnectionSyncProcess {
     public void synchronize() throws Exception {
         try {
             List<JSONObject> docs = getRemoteSkeletonDocs();
+
+            Log.v(TAG, "Number of skeleton docs: "+ docs.size());
 
         } catch(Exception e) {
             throw new Exception("Error while synchronizing connection",e);

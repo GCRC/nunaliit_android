@@ -116,7 +116,7 @@ public class MainActivity extends AppCompatActivity {
         // Handle item selection
         switch (item.getItemId()) {
             case R.id.action_manage_connections:
-                startConnectionListActivity(null);
+                startConnectionListActivity();
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
@@ -160,7 +160,7 @@ public class MainActivity extends AppCompatActivity {
         startActivity(intent);
     }
 
-    public void startConnectionListActivity(View view){
+    public void startConnectionListActivity(){
         Intent intent = new Intent(this, ConnectionListActivity.class);
         startActivity(intent);
     }

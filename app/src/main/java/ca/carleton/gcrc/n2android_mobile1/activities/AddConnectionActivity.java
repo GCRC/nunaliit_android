@@ -10,6 +10,8 @@ import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
+import android.view.View.OnClickListener;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
@@ -34,6 +36,13 @@ public class AddConnectionActivity extends AppCompatActivity {
         }
     };
 
+    private OnClickListener btnCreateListener = new OnClickListener() {
+        @Override
+        public void onClick(View v){
+            createConnection();
+        }
+    };
+
     public String getTag() {
         return TAG;
     }
@@ -55,6 +64,16 @@ public class AddConnectionActivity extends AppCompatActivity {
         );
 
         setContentView(R.layout.activity_add_connection);
+
+        // Create button
+        {
+            View view = findViewById(R.id.button_create);
+            if( view instanceof Button){
+                Button button = (Button)view;
+                button.setOnClickListener(btnCreateListener);
+                button.setVisibility(View.VISIBLE);
+            }
+        }
     }
 
     @Override
@@ -64,7 +83,7 @@ public class AddConnectionActivity extends AppCompatActivity {
         Log.v(TAG, "onDestroy" + Nunaliit.threadId());
     }
 
-    public void createConnection(View view){
+    public void createConnection(){
         // Connection name
         String connectionName = null;
         {

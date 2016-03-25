@@ -324,6 +324,15 @@ public class ConnectionManagementService extends IntentService {
         waitForCouchbaseService();
 
         try {
+            CouchbaseDb connectionsDb = mCouchbaseService.getConnectionsDb();
+
+            JSONObject doc = connectionsDb.getDocument(connId);
+            ConnectionInfo connInfo = connectionInfoFromJson(doc);
+            Connection connection = new Connection(connInfo);
+
+            ConnectionSyncProcess syncProcess = new ConnectionSyncProcess(mCouchbaseService, connection);
+            syncProcess.synchronize();
+
             Intent result = new Intent(RESULT_SYNC);
             Log.v(TAG, "Result: " + result.getAction() + Nunaliit.threadId());
 

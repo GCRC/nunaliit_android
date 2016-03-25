@@ -114,14 +114,14 @@ public class ConnectionListActivity extends AppCompatActivity {
         // Handle item selection
         switch (item.getItemId()) {
             case R.id.action_add_connection:
-                startAddConnectionActivity(null);
+                startAddConnectionActivity();
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
         }
     }
 
-    public void startAddConnectionActivity(View view){
+    public void startAddConnectionActivity(){
         Intent intent = new Intent(this, AddConnectionActivity.class);
         startActivity(intent);
     }
