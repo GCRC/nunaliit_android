@@ -10,6 +10,8 @@ import android.util.Log;
 
 import org.apache.cordova.CordovaActivity;
 
+import ca.carleton.gcrc.n2android_mobile1.connection.ConnectionInfoDb;
+import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseDb;
 import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseLiteService;
 import ca.carleton.gcrc.n2android_mobile1.connection.ConnectionInfo;
 import ca.carleton.gcrc.n2android_mobile1.Nunaliit;
@@ -81,7 +83,10 @@ public class EmbeddedCordovaActivity extends CordovaActivity {
 
             if( null != mService && null != connectionId ){
                 try {
-                    connInfo = mService.getConnectionInfo(connectionId);
+                    CouchbaseDb db = mService.getConnectionsDb();
+                    ConnectionInfoDb infoDb = new ConnectionInfoDb(db);
+                    connInfo = infoDb.getConnectionInfo(connectionId);
+
                 } catch(Exception e) {
                     Log.e(TAG,"Unable to retrieve connection info",e);
                 }

@@ -27,11 +27,14 @@ public class ConnectionProcess {
     public void addConnection(ConnectionInfo info) throws Exception {
         Connection connection = new Connection(info);
         try {
+            CouchbaseDb db = service.getConnectionsDb();
+            ConnectionInfoDb infoDb = new ConnectionInfoDb(db);
+
             connection.checkRemoteSite();
 
             service.createLocalDatabase(info);
 
-            service.addConnectionInfo(info);
+            info = infoDb.createConnectionInfo(info);
 
             ConnectionSyncProcess sync = new ConnectionSyncProcess(service, connection);
 
