@@ -51,7 +51,7 @@ public class ConnectionActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // Retreive connection id
+        // Retrieve connection id
         {
             Intent intent = getIntent();
             if (null != intent) {

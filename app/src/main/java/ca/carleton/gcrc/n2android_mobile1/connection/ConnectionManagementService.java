@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.IBinder;
+import android.os.Parcelable;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
@@ -83,10 +84,13 @@ public class ConnectionManagementService extends IntentService {
         return info;
     }
 
+    public static String ACTION_ADD_CONNECTION = ConnectionManagementService.class.getName()+".ADD_CONNECTION";
     public static String ACTION_GET_CONNECTION_INFO = ConnectionManagementService.class.getName()+".GET_CONNECTION_INFO";
     public static String ACTION_GET_CONNECTION_INFOS = ConnectionManagementService.class.getName()+".GET_CONNECTION_INFOS";
     public static String ACTION_SYNC = ConnectionManagementService.class.getName()+".SYNC";
 
+    public static String RESULT_ADD_CONNECTION = ConnectionManagementService.class.getName()+".ADD_CONNECTION_RESULT";
+    public static String ERROR_ADD_CONNECTION = ConnectionManagementService.class.getName()+".ADD_CONNECTION_ERROR";
     public static String RESULT_GET_CONNECTION_INFO = ConnectionManagementService.class.getName()+".GET_CONNECTION_INFO_RESULT";
     public static String ERROR_GET_CONNECTION_INFO = ConnectionManagementService.class.getName()+".GET_CONNECTION_INFO_ERROR";
     public static String RESULT_GET_CONNECTION_INFOS = ConnectionManagementService.class.getName()+".GET_CONNECTION_INFOS_RESULT";
@@ -128,7 +132,7 @@ public class ConnectionManagementService extends IntentService {
     public int onStartCommand(Intent intent, int flags, int startId) {
         super.onStartCommand(intent, flags, startId);
 
-        Log.v(TAG, "onStartCommand: " + intent.getAction()+ Nunaliit.threadId());
+        Log.v(TAG, "onStartCommand: " + intent.getAction() + Nunaliit.threadId());
 
         return IntentService.START_STICKY;
     }
@@ -165,7 +169,15 @@ public class ConnectionManagementService extends IntentService {
     protected void onHandleIntent(Intent intent) {
         Log.v(TAG, "onHandleIntent: "+intent.getAction()+ Nunaliit.threadId());
 
-        if( ACTION_GET_CONNECTION_INFOS.equals(intent.getAction()) ){
+        if( ACTION_ADD_CONNECTION.equals(intent.getAction()) ) {
+            ConnectionInfo connInfo = null;
+            Parcelable parcelable = intent.getParcelableExtra(Nunaliit.EXTRA_CONNECTION_INFO);
+            if( parcelable instanceof ConnectionInfo ){
+                connInfo = (ConnectionInfo)parcelable;
+            }
+            addConnection(connInfo);
+
+        } else if( ACTION_GET_CONNECTION_INFOS.equals(intent.getAction()) ){
             getConnectionInfos();
 
         } else if( ACTION_GET_CONNECTION_INFO.equals(intent.getAction()) ){
@@ -202,6 +214,28 @@ public class ConnectionManagementService extends IntentService {
         }
     }
 
+    private void addConnection(ConnectionInfo connInfo){
+        waitForCouchbaseService();
+
+        try {
+            AddConnectionProcess addConnectionProcess = new AddConnectionProcess(mCouchbaseService, connInfo, this);
+            addConnectionProcess.addConnection();
+
+            Intent result = new Intent(RESULT_ADD_CONNECTION);
+            result.putExtra(Nunaliit.EXTRA_CONNECTION_INFO, connInfo);
+            Log.v(TAG, "Result: " + result.getAction() + Nunaliit.threadId());
+            LocalBroadcastManager.getInstance(this).sendBroadcast(result);
+
+            getConnectionInfos();
+
+        } catch(Exception e) {
+            Log.e(TAG, "Error while adding a connection",e);
+            Intent result = new Intent(ERROR_ADD_CONNECTION);
+            result.putExtra(Nunaliit.EXTRA_ERROR, e.getMessage());
+            LocalBroadcastManager.getInstance(this).sendBroadcast(result);
+        }
+    }
+
     private void getConnectionInfo(String connId){
         waitForCouchbaseService();
 
@@ -219,7 +253,7 @@ public class ConnectionManagementService extends IntentService {
         } catch(Exception e) {
             Log.e(TAG, "Error while retrieving connection information "+connId,e);
             Intent result = new Intent(ERROR_GET_CONNECTION_INFO);
-            result.putExtra(Nunaliit.EXTRA_ERROR, e.getMessage());
+            result.putExtra(Nunaliit.EXTRA_ERROR, e);
             LocalBroadcastManager.getInstance(this).sendBroadcast(result);
         }
     }
@@ -252,7 +286,7 @@ public class ConnectionManagementService extends IntentService {
         } catch(Exception e) {
             Log.e(TAG, "Error while retrieving connection information objects",e);
             Intent result = new Intent(ERROR_GET_CONNECTION_INFOS);
-            result.putExtra(Nunaliit.EXTRA_ERROR, e.getMessage());
+            result.putExtra(Nunaliit.EXTRA_ERROR, e);
             LocalBroadcastManager.getInstance(this).sendBroadcast(result);
         }
     }
@@ -269,7 +303,7 @@ public class ConnectionManagementService extends IntentService {
         } catch(Exception e) {
             Log.e(TAG, "Error while synchronizing connection "+connId,e);
             Intent result = new Intent(ERROR_SYNC);
-            result.putExtra(Nunaliit.EXTRA_ERROR, e.getMessage());
+            result.putExtra(Nunaliit.EXTRA_ERROR, e);
             LocalBroadcastManager.getInstance(this).sendBroadcast(result);
         }
     }
