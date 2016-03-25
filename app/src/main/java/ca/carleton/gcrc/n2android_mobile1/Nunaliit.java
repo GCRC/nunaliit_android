@@ -3,7 +3,7 @@ package ca.carleton.gcrc.n2android_mobile1;
 /**
  * Created by jpfiset on 3/11/16.
  */
-public class NunaliitMobileConstants {
+public class Nunaliit {
 
     public static String threadId() {
         return "(thr-"+Thread.currentThread().getId()+")";

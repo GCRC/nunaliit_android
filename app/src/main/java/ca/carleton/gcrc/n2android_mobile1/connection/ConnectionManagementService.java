@@ -12,14 +12,10 @@ import android.util.Log;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Vector;
 
-import ca.carleton.gcrc.couch.client.CouchQueryResults;
 import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseDb;
 import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseLiteService;
-import ca.carleton.gcrc.n2android_mobile1.NunaliitMobileConstants;
+import ca.carleton.gcrc.n2android_mobile1.Nunaliit;
 import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseQuery;
 import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseQueryResults;
 
@@ -91,11 +87,12 @@ public class ConnectionManagementService extends IntentService {
     public static String ACTION_GET_CONNECTION_INFOS = ConnectionManagementService.class.getName()+".GET_CONNECTION_INFOS";
     public static String ACTION_SYNC = ConnectionManagementService.class.getName()+".SYNC";
 
-    public static String RESULT_SYNC_COMPLETED = ConnectionManagementService.class.getName()+".SYNC_COMPLETED";
     public static String RESULT_GET_CONNECTION_INFO = ConnectionManagementService.class.getName()+".GET_CONNECTION_INFO_RESULT";
     public static String ERROR_GET_CONNECTION_INFO = ConnectionManagementService.class.getName()+".GET_CONNECTION_INFO_ERROR";
     public static String RESULT_GET_CONNECTION_INFOS = ConnectionManagementService.class.getName()+".GET_CONNECTION_INFOS_RESULT";
     public static String ERROR_GET_CONNECTION_INFOS = ConnectionManagementService.class.getName()+".GET_CONNECTION_INFOS_ERROR";
+    public static String RESULT_SYNC = ConnectionManagementService.class.getName()+".SYNC_RESULT";
+    public static String ERROR_SYNC = ConnectionManagementService.class.getName()+".SYNC_ERROR";
 
     public static String TAG = "NunaliitMobileConnections";
 
@@ -108,14 +105,14 @@ public class ConnectionManagementService extends IntentService {
             CouchbaseLiteService.CouchDbBinder binder = (CouchbaseLiteService.CouchDbBinder) service;
             reportCouchbaseService(binder.getService());
 
-            Log.v(TAG, "Bound to CouchbaseService"+NunaliitMobileConstants.threadId());
+            Log.v(TAG, "Bound to CouchbaseService"+ Nunaliit.threadId());
         }
 
         @Override
         public void onServiceDisconnected(ComponentName arg0) {
             mCouchbaseBound = false;
 
-            Log.v(TAG, "Unbound from CouchbaseService"+NunaliitMobileConstants.threadId());
+            Log.v(TAG, "Unbound from CouchbaseService"+ Nunaliit.threadId());
         }
     };
     private CouchbaseLiteService mCouchbaseService;
@@ -124,14 +121,14 @@ public class ConnectionManagementService extends IntentService {
     public ConnectionManagementService(){
         super(TAG);
 
-        Log.v(TAG, "Created Service"+NunaliitMobileConstants.threadId());
+        Log.v(TAG, "Constructor"+ Nunaliit.threadId());
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         super.onStartCommand(intent, flags, startId);
 
-        Log.v(TAG, "onStartCommand: " + intent.getAction()+NunaliitMobileConstants.threadId());
+        Log.v(TAG, "onStartCommand: " + intent.getAction()+ Nunaliit.threadId());
 
         return IntentService.START_STICKY;
     }
@@ -140,24 +137,19 @@ public class ConnectionManagementService extends IntentService {
     public void onCreate() {
         super.onCreate();
 
-        Log.v(TAG, "Request binding to CouchbaseService"+NunaliitMobileConstants.threadId());
+        Log.v(TAG, "onCreate"+ Nunaliit.threadId());
 
         // Bind to CouchbaseLiteService
         Intent intent = new Intent(this, CouchbaseLiteService.class);
         bindService(intent, mCouchbaseConnection, Context.BIND_AUTO_CREATE);
-
-        try {
-
-        } catch(Exception e) {
-        }
     }
 
     @Override
     public void onDestroy() {
+        Log.v(TAG, "onDestroy" + Nunaliit.threadId());
+
         // Unbind from the service
         if (mCouchbaseBound) {
-            Log.v(TAG, "Request unbinding from CouchbaseService"+NunaliitMobileConstants.threadId());
-
             unbindService(mCouchbaseConnection);
             mCouchbaseBound = false;
         }
@@ -171,23 +163,18 @@ public class ConnectionManagementService extends IntentService {
 
     @Override
     protected void onHandleIntent(Intent intent) {
-        Log.v(TAG, "Intent received: "+intent.getAction()+NunaliitMobileConstants.threadId());
+        Log.v(TAG, "onHandleIntent: "+intent.getAction()+ Nunaliit.threadId());
 
         if( ACTION_GET_CONNECTION_INFOS.equals(intent.getAction()) ){
             getConnectionInfos();
 
         } else if( ACTION_GET_CONNECTION_INFO.equals(intent.getAction()) ){
-            String connId = intent.getStringExtra(NunaliitMobileConstants.EXTRA_CONNECTION_ID);
+            String connId = intent.getStringExtra(Nunaliit.EXTRA_CONNECTION_ID);
             getConnectionInfo(connId);
 
         } else if( ACTION_SYNC.equals(intent.getAction()) ){
-            Log.v(TAG, "Action Synchronize Requested: " + intent.getStringExtra(NunaliitMobileConstants.EXTRA_CONNECTION_ID) + NunaliitMobileConstants.threadId());
-            waitForCouchbaseService();
-
-            Intent result = new Intent(RESULT_SYNC_COMPLETED);
-            Log.v(TAG, "Action Synchronize Result: " + result.getAction() + NunaliitMobileConstants.threadId());
-
-            LocalBroadcastManager.getInstance(this).sendBroadcast(result);
+            String connId = intent.getStringExtra(Nunaliit.EXTRA_CONNECTION_ID);
+            synchronizeConnection(connId);
         }
     }
 
@@ -225,14 +212,14 @@ public class ConnectionManagementService extends IntentService {
             ConnectionInfo connInfo = connectionInfoFromJson(doc);
 
             Intent result = new Intent(RESULT_GET_CONNECTION_INFO);
-            result.putExtra(NunaliitMobileConstants.EXTRA_CONNECTION_INFO, connInfo);
-            Log.v(TAG, "Result: " + result.getAction() + NunaliitMobileConstants.threadId());
+            result.putExtra(Nunaliit.EXTRA_CONNECTION_INFO, connInfo);
+            Log.v(TAG, "Result: " + result.getAction() + Nunaliit.threadId());
             LocalBroadcastManager.getInstance(this).sendBroadcast(result);
 
         } catch(Exception e) {
             Log.e(TAG, "Error while retrieving connection information "+connId,e);
             Intent result = new Intent(ERROR_GET_CONNECTION_INFO);
-            result.putExtra(NunaliitMobileConstants.EXTRA_ERROR, e.getMessage());
+            result.putExtra(Nunaliit.EXTRA_ERROR, e.getMessage());
             LocalBroadcastManager.getInstance(this).sendBroadcast(result);
         }
     }
@@ -250,27 +237,39 @@ public class ConnectionManagementService extends IntentService {
 
             ArrayList<ConnectionInfo> connectionInfos = new ArrayList<ConnectionInfo>();
             for(JSONObject row : results.getRows()) {
-                Log.v(TAG,"Reported row ");
                 JSONObject doc = row.getJSONObject("doc");
-                Log.v(TAG,"Reported row doc "+doc);
                 ConnectionInfo connInfo = connectionInfoFromJson(doc);
                 if( null != connInfo ){
-                    Log.v(TAG,"Reported conn "+connInfo);
                     connectionInfos.add(connInfo);
                 }
             }
 
-            Log.v(TAG,"Number of connection objects: "+connectionInfos.size());
-
             Intent result = new Intent(RESULT_GET_CONNECTION_INFOS);
-            result.putParcelableArrayListExtra(NunaliitMobileConstants.EXTRA_CONNECTION_INFOS,connectionInfos);
-            Log.v(TAG, "Result: " + result.getAction() + NunaliitMobileConstants.threadId());
+            result.putParcelableArrayListExtra(Nunaliit.EXTRA_CONNECTION_INFOS, connectionInfos);
+            Log.v(TAG, "Result: " + result.getAction() + Nunaliit.threadId());
             LocalBroadcastManager.getInstance(this).sendBroadcast(result);
 
         } catch(Exception e) {
             Log.e(TAG, "Error while retrieving connection information objects",e);
             Intent result = new Intent(ERROR_GET_CONNECTION_INFOS);
-            result.putExtra(NunaliitMobileConstants.EXTRA_ERROR, e.getMessage());
+            result.putExtra(Nunaliit.EXTRA_ERROR, e.getMessage());
+            LocalBroadcastManager.getInstance(this).sendBroadcast(result);
+        }
+    }
+
+    private void synchronizeConnection(String connId){
+        waitForCouchbaseService();
+
+        try {
+            Intent result = new Intent(RESULT_SYNC);
+            Log.v(TAG, "Result: " + result.getAction() + Nunaliit.threadId());
+
+            LocalBroadcastManager.getInstance(this).sendBroadcast(result);
+
+        } catch(Exception e) {
+            Log.e(TAG, "Error while synchronizing connection "+connId,e);
+            Intent result = new Intent(ERROR_SYNC);
+            result.putExtra(Nunaliit.EXTRA_ERROR, e.getMessage());
             LocalBroadcastManager.getInstance(this).sendBroadcast(result);
         }
     }

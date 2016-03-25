@@ -15,7 +15,7 @@ import android.widget.Button;
 import android.widget.TextView;
 
 import ca.carleton.gcrc.n2android_mobile1.connection.ConnectionInfo;
-import ca.carleton.gcrc.n2android_mobile1.NunaliitMobileConstants;
+import ca.carleton.gcrc.n2android_mobile1.Nunaliit;
 import ca.carleton.gcrc.n2android_mobile1.R;
 import ca.carleton.gcrc.n2android_mobile1.connection.ConnectionManagementService;
 
@@ -55,7 +55,7 @@ public class ConnectionActivity extends AppCompatActivity {
         {
             Intent intent = getIntent();
             if (null != intent) {
-                connectionId = intent.getStringExtra(NunaliitMobileConstants.EXTRA_CONNECTION_ID);
+                connectionId = intent.getStringExtra(Nunaliit.EXTRA_CONNECTION_ID);
             }
         }
 
@@ -70,7 +70,7 @@ public class ConnectionActivity extends AppCompatActivity {
         );
         lbm.registerReceiver(
                 broadcastReceiver,
-                new IntentFilter(ConnectionManagementService.RESULT_SYNC_COMPLETED)
+                new IntentFilter(ConnectionManagementService.RESULT_SYNC)
         );
 
         setContentView(R.layout.activity_connection);
@@ -90,7 +90,7 @@ public class ConnectionActivity extends AppCompatActivity {
         {
             Intent intent = new Intent(this,ConnectionManagementService.class);
             intent.setAction(ConnectionManagementService.ACTION_GET_CONNECTION_INFO);
-            intent.putExtra(NunaliitMobileConstants.EXTRA_CONNECTION_ID, connectionId);
+            intent.putExtra(Nunaliit.EXTRA_CONNECTION_ID, connectionId);
             startService(intent);
         }
     }
@@ -169,23 +169,23 @@ public class ConnectionActivity extends AppCompatActivity {
         {
             Intent intent = getIntent();
             if (null != intent) {
-                connectionId = intent.getStringExtra(NunaliitMobileConstants.EXTRA_CONNECTION_ID);
+                connectionId = intent.getStringExtra(Nunaliit.EXTRA_CONNECTION_ID);
             }
         }
 
-        Log.v(TAG,"action:"+ConnectionManagementService.ACTION_SYNC+NunaliitMobileConstants.threadId());
+        Log.v(TAG,"action:"+ConnectionManagementService.ACTION_SYNC+ Nunaliit.threadId());
 
         Intent syncIntent = new Intent(this, ConnectionManagementService.class);
         syncIntent.setAction(ConnectionManagementService.ACTION_SYNC);
-        syncIntent.putExtra(NunaliitMobileConstants.EXTRA_CONNECTION_ID, connectionId);
+        syncIntent.putExtra(Nunaliit.EXTRA_CONNECTION_ID, connectionId);
         startService(syncIntent);
     }
 
     protected void receiveBroadcast(Intent intent){
-        Log.v(TAG,"Received broadcast :"+intent.getAction()+NunaliitMobileConstants.threadId());
+        Log.v(TAG,"Received broadcast :"+intent.getAction()+ Nunaliit.threadId());
 
         if( ConnectionManagementService.RESULT_GET_CONNECTION_INFO.equals(intent.getAction()) ){
-            Parcelable parcelable = intent.getParcelableExtra(NunaliitMobileConstants.EXTRA_CONNECTION_INFO);
+            Parcelable parcelable = intent.getParcelableExtra(Nunaliit.EXTRA_CONNECTION_INFO);
             if( parcelable instanceof ConnectionInfo ) {
                 ConnectionInfo connInfo = (ConnectionInfo)parcelable;
                 if( connInfo.getId().equals(connectionId) ) {
@@ -193,6 +193,9 @@ public class ConnectionActivity extends AppCompatActivity {
                     refreshDisplay();
                 }
             }
+
+        } else {
+            Log.w(TAG, "Ignoring received intent :" + intent.getAction() + Nunaliit.threadId());
         }
     }
 }

@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Vector;
 
+import ca.carleton.gcrc.n2android_mobile1.Nunaliit;
 import ca.carleton.gcrc.n2android_mobile1.connection.ConnectionInfo;
 
 /**
@@ -56,12 +57,14 @@ public class CouchbaseLiteService extends Service {
     private final IBinder mBinder = new CouchDbBinder();
 
     public CouchbaseLiteService(){
-        Log.v(TAG, "Service Created");
+        Log.v(TAG, "Constructor"+ Nunaliit.threadId());
     }
 
     @Override
     public void onCreate() {
         super.onCreate();
+
+        Log.v(TAG, "onCreate" + Nunaliit.threadId());
 
         try {
             startCouchDb();
@@ -78,6 +81,9 @@ public class CouchbaseLiteService extends Service {
 
     @Override
     public void onDestroy() {
+
+        Log.v(TAG, "onDestroy" + Nunaliit.threadId());
+
         if(manager != null) {
             manager.close();
             manager = null;
@@ -90,6 +96,8 @@ public class CouchbaseLiteService extends Service {
 
     @Override
     public IBinder onBind(Intent intent) {
+        Log.v(TAG, "onBind" + Nunaliit.threadId());
+
         return mBinder;
     }
 

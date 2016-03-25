@@ -12,7 +12,7 @@ import org.apache.cordova.CordovaActivity;
 
 import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseLiteService;
 import ca.carleton.gcrc.n2android_mobile1.connection.ConnectionInfo;
-import ca.carleton.gcrc.n2android_mobile1.NunaliitMobileConstants;
+import ca.carleton.gcrc.n2android_mobile1.Nunaliit;
 
 /**
  * Created by jpfiset on 3/9/16.
@@ -76,7 +76,7 @@ public class EmbeddedCordovaActivity extends CordovaActivity {
             String connectionId = null;
             Intent intent = getIntent();
             if( null != intent ){
-                connectionId = intent.getStringExtra(NunaliitMobileConstants.EXTRA_CONNECTION_ID);
+                connectionId = intent.getStringExtra(Nunaliit.EXTRA_CONNECTION_ID);
             }
 
             if( null != mService && null != connectionId ){

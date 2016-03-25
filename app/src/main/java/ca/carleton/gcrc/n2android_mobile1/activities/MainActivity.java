@@ -7,6 +7,7 @@ import android.content.IntentFilter;
 import android.os.Bundle;
 import android.os.Parcelable;
 import android.support.v4.content.LocalBroadcastManager;
+import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -22,7 +23,7 @@ import java.util.Vector;
 
 import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseLiteService;
 import ca.carleton.gcrc.n2android_mobile1.connection.ConnectionInfo;
-import ca.carleton.gcrc.n2android_mobile1.NunaliitMobileConstants;
+import ca.carleton.gcrc.n2android_mobile1.Nunaliit;
 import ca.carleton.gcrc.n2android_mobile1.R;
 import ca.carleton.gcrc.n2android_mobile1.connection.ConnectionManagementService;
 
@@ -30,7 +31,7 @@ import ca.carleton.gcrc.n2android_mobile1.connection.ConnectionManagementService
  * An example full-screen activity that shows and hides the system UI (i.e.
  * status bar and navigation/system bar) with user interaction.
  */
-public class MainActivity extends ServiceBasedActivity {
+public class MainActivity extends AppCompatActivity {
 
     protected String TAG = this.getClass().getSimpleName();
 
@@ -69,13 +70,6 @@ public class MainActivity extends ServiceBasedActivity {
             startService(intent);
         }
 
-        // Request for list of connection infos
-        {
-            Intent intent = new Intent(this, ConnectionManagementService.class);
-            intent.setAction(ConnectionManagementService.ACTION_GET_CONNECTION_INFOS);
-            startService(intent);
-        }
-
         setContentView(R.layout.activity_main);
 
         ListView lv = (ListView)findViewById(R.id.connnections);
@@ -92,6 +86,13 @@ public class MainActivity extends ServiceBasedActivity {
             }
             }
         });
+
+        // Request for list of connection infos
+        {
+            Intent intent = new Intent(this, ConnectionManagementService.class);
+            intent.setAction(ConnectionManagementService.ACTION_GET_CONNECTION_INFOS);
+            startService(intent);
+        }
     }
 
     @Override
@@ -129,22 +130,6 @@ public class MainActivity extends ServiceBasedActivity {
         drawList();
     }
 
-    @Override
-    public void couchbaseServiceReporting(CouchbaseLiteService service) {
-        try {
-            if( null != service ){
-                List<ConnectionInfo> connectionInfos = service.getConnectionInfos();
-
-                displayedConnections = connectionInfos;
-            }
-
-            //drawList();
-
-        } catch(Exception e) {
-            Log.e(TAG, "Error obtaining connection list", e);
-        }
-    }
-
     public void drawList() {
         try {
             if( null != displayedConnections ){
@@ -170,7 +155,7 @@ public class MainActivity extends ServiceBasedActivity {
     public void startConnectionActivity(ConnectionInfo connInfo){
         Intent intent = new Intent(this, EmbeddedCordovaActivity.class);
 
-        intent.putExtra(NunaliitMobileConstants.EXTRA_CONNECTION_ID, connInfo.getId());
+        intent.putExtra(Nunaliit.EXTRA_CONNECTION_ID, connInfo.getId());
 
         startActivity(intent);
     }
@@ -181,10 +166,10 @@ public class MainActivity extends ServiceBasedActivity {
     }
 
     protected void receiveBroadcast(Intent intent){
-        Log.v(TAG, "Received broadcast :" + intent.getAction() + NunaliitMobileConstants.threadId());
+        Log.v(TAG, "Received broadcast :" + intent.getAction() + Nunaliit.threadId());
 
         if( ConnectionManagementService.RESULT_GET_CONNECTION_INFOS.equals(intent.getAction()) ){
-            ArrayList<Parcelable> parcelables = intent.getParcelableArrayListExtra(NunaliitMobileConstants.EXTRA_CONNECTION_INFOS);
+            ArrayList<Parcelable> parcelables = intent.getParcelableArrayListExtra(Nunaliit.EXTRA_CONNECTION_INFOS);
             List<ConnectionInfo> connectionInfos = new Vector<ConnectionInfo>();
             for(Parcelable parcelable : parcelables){
                 if( parcelable instanceof ConnectionInfo ){
@@ -194,6 +179,9 @@ public class MainActivity extends ServiceBasedActivity {
             }
             displayedConnections = connectionInfos;
             drawList();
+
+        } else {
+            Log.w(TAG, "Ignoring received intent :" + intent.getAction() + Nunaliit.threadId());
         }
     }
 }
