@@ -1,32 +1,14 @@
 package ca.carleton.gcrc.n2android_mobile1.couchbase;
 
 import android.app.Service;
+import android.content.Context;
 import android.content.Intent;
 import android.os.Binder;
 import android.os.IBinder;
 import android.util.Log;
 import android.widget.Toast;
 
-import com.couchbase.lite.Database;
-import com.couchbase.lite.DatabaseOptions;
-import com.couchbase.lite.Document;
-import com.couchbase.lite.Emitter;
-import com.couchbase.lite.LiveQuery;
-import com.couchbase.lite.Manager;
-import com.couchbase.lite.Mapper;
-import com.couchbase.lite.Query;
-import com.couchbase.lite.QueryEnumerator;
-import com.couchbase.lite.QueryRow;
-import com.couchbase.lite.android.AndroidContext;
-
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Vector;
-
 import ca.carleton.gcrc.n2android_mobile1.Nunaliit;
-import ca.carleton.gcrc.n2android_mobile1.connection.ConnectionInfo;
 
 /**
  * Created by jpfiset on 3/10/16.
@@ -44,20 +26,12 @@ public class CouchbaseLiteService extends Service {
 
     public static String TAG = "NunaliitMobileDatabase";
 
-    // constants
-    public static final String DATABASE_NAME = "connections";
-    public static final String VIEW_CONNECTIONS = "connections-by-id";
-
-    // couchdb internals
-    protected static Manager manager;
-    private Database database;
-    private LiveQuery liveQuery;
-
     // Binder given to clients
     private final IBinder mBinder = new CouchDbBinder();
+    private CouchbaseManager couchbaseManager;
 
     public CouchbaseLiteService(){
-        Log.v(TAG, "Constructor"+ Nunaliit.threadId());
+        Log.v(TAG, "Constructor" + Nunaliit.threadId());
     }
 
     @Override
@@ -66,17 +40,21 @@ public class CouchbaseLiteService extends Service {
 
         Log.v(TAG, "onCreate" + Nunaliit.threadId());
 
-        try {
-            startCouchDb();
+        final Context context = getApplicationContext();
+        Thread t = new Thread(){
+            @Override
+            public void run() {
+                try {
+                    CouchbaseManager mgr = new CouchbaseManager();
+                    mgr.startCouchbase(getApplicationContext());
+                    setCouchbaseManager(mgr);
 
-            Log.i(TAG, "CouchDB Initialized");
-
-        } catch(Exception e) {
-            Toast
-                    .makeText(getApplicationContext(), "Error Initializing CouchDB, see logs for details", Toast.LENGTH_LONG)
-                    .show();
-            Log.e(TAG, "Error initializing CouchDB", e);
-        }
+                } catch(Exception e) {
+                    couchbaseInitFailure(e);
+                }
+            }
+        };
+        t.start();
     }
 
     @Override
@@ -84,11 +62,8 @@ public class CouchbaseLiteService extends Service {
 
         Log.v(TAG, "onDestroy" + Nunaliit.threadId());
 
-        if(manager != null) {
-            manager.close();
-            manager = null;
-
-            Log.i(TAG, "CouchDB Finalized");
+        if( null != couchbaseManager ){
+            couchbaseManager.stopCouchbase();
         }
 
         super.onDestroy();
@@ -101,133 +76,37 @@ public class CouchbaseLiteService extends Service {
         return mBinder;
     }
 
-    protected void startCouchDb() throws Exception {
-
-        Manager.enableLogging(TAG, com.couchbase.lite.util.Log.VERBOSE);
-        Manager.enableLogging(
-            com.couchbase.lite.util.Log.TAG,
-            com.couchbase.lite.util.Log.VERBOSE
-        );
-        Manager.enableLogging(
-            com.couchbase.lite.util.Log.TAG_SYNC_ASYNC_TASK,
-            com.couchbase.lite.util.Log.VERBOSE
-        );
-        Manager.enableLogging(
-            com.couchbase.lite.util.Log.TAG_SYNC,
-            com.couchbase.lite.util.Log.VERBOSE
-        );
-        Manager.enableLogging(
-            com.couchbase.lite.util.Log.TAG_QUERY,
-            com.couchbase.lite.util.Log.VERBOSE
-        );
-        Manager.enableLogging(
-            com.couchbase.lite.util.Log.TAG_VIEW,
-            com.couchbase.lite.util.Log.VERBOSE
-        );
-        Manager.enableLogging(
-            com.couchbase.lite.util.Log.TAG_DATABASE,
-            com.couchbase.lite.util.Log.VERBOSE
-        );
-
-        manager = new Manager(new AndroidContext(getApplicationContext()), Manager.DEFAULT_OPTIONS);
-
-        // install a view definition needed by the application
-        DatabaseOptions options = new DatabaseOptions();
-        options.setCreate(true);
-        database = manager.openDatabase(DATABASE_NAME, options);
-
-//        Document doc = database.getDocument("testDoc");
-//        SavedRevision currentRevision = doc.getCurrentRevision();
-//        if( null == currentRevision ){
-//            Log.i(TAG, "testDoc does not exist");
-//            Map<String,Object> props = new HashMap<String,Object>();
-//            props.put("nunaliit_test","allo");
-//            doc.putProperties(props);
-//        } else {
-//            Log.i(TAG, "testDoc revision: "+currentRevision.getProperties().get("_rev"));
-//        }
-
-        // View: connnections-by-label
-        com.couchbase.lite.View connectionsView = database.getView(VIEW_CONNECTIONS);
-        connectionsView.setMap(new Mapper() {
-            @Override
-            public void map(Map<String, Object> document, Emitter emitter) {
-                Object connInfoObj = document.get("mobile_connection");
-                if( null != connInfoObj && connInfoObj instanceof Map ){
-                    Object idObj = document.get("_id");
-                    if( null != idObj && idObj instanceof String ){
-                        String id = (String)idObj;
-                        emitter.emit(id,null);
-                    }
-                }
-            }
-        }, "1.0");
-//
-//        initItemListAdapter();
-//
-//        startLiveQuery(viewItemsByDate);
-//
-//        startSync();
-
-    }
-
-    public boolean databaseExists(String dbName) {
-        boolean exists = false;
-
-        try {
-            DatabaseOptions options = new DatabaseOptions();
-            options.setCreate(false);
-            Database db = manager.openDatabase(dbName, options);
-            if( null != db ){
-                exists = db.exists();
-                db.close();
-            }
-
-        } catch(Exception e) {
-            Log.e(TAG, "Error checking if database exists: "+dbName, e);
-        }
-        return exists;
-    }
-
-    public CouchbaseDb getConnectionsDb(){
-        return new CouchbaseDb(database);
-    }
-
-    public void createLocalDatabase(ConnectionInfo connectionInfo){
-        int count = 0;
-        boolean created = false;
-        while( !created && count < 100 ){
-            ++count;
-            String name = "docs_"+count;
-            if( false == databaseExists(name) ){
+    public CouchbaseManager getCouchbaseManager(){
+        synchronized (this){
+            boolean interrupted = false;
+            while( !interrupted && null == couchbaseManager ){
                 try {
-                    DatabaseOptions options = new DatabaseOptions();
-                    options.setCreate(true);
-                    Database db = manager.openDatabase(name, options);
-                    if( false == db.exists() ){
-                        throw new Exception("Unable to create database: "+name);
-                    }
-                    db.close();
-
-                    created = true;
-                    connectionInfo.setLocalDocumentDbName(name);
-                    Log.i(TAG, "Created local database: "+name);
-
-                } catch(Exception e) {
-                    Log.e(TAG, "Error creating database: "+name, e);
+                    this.wait();
+                } catch(InterruptedException e) {
+                    interrupted = true;
                 }
             }
         }
+        return couchbaseManager;
     }
 
-    public void deleteDb(String dbName) throws Exception {
-        try {
-            Database db = manager.getDatabase(dbName);
-            db.delete();
-
-        } catch(Exception e) {
-            throw new Exception("Error while deleting database "+dbName,e);
+    protected void setCouchbaseManager(CouchbaseManager mgr){
+        synchronized(this){
+            couchbaseManager = mgr;
+            this.notifyAll();
         }
+        Log.i(TAG, "Couchbase Initialized" + Nunaliit.threadId());
     }
 
+    protected void couchbaseInitFailure(Throwable e){
+        Log.e(TAG, "Couchbase failed to initialized", e);
+
+        Toast
+            .makeText(
+                    getApplicationContext(),
+                    "Error Initializing Couchbase, see logs for details",
+                    Toast.LENGTH_LONG
+            )
+            .show();
+    }
 }

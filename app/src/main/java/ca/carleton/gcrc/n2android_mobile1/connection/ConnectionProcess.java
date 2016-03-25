@@ -1,13 +1,10 @@
 package ca.carleton.gcrc.n2android_mobile1.connection;
 
 import android.content.Context;
-import android.content.Intent;
-import android.os.Handler;
-import android.os.Message;
-import android.util.Log;
 
 import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseDb;
 import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseLiteService;
+import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseManager;
 
 /**
  * Created by jpfiset on 3/21/16.
@@ -27,12 +24,13 @@ public class ConnectionProcess {
     public void addConnection(ConnectionInfo info) throws Exception {
         Connection connection = new Connection(info);
         try {
-            CouchbaseDb db = service.getConnectionsDb();
-            ConnectionInfoDb infoDb = new ConnectionInfoDb(db);
+            CouchbaseManager mgr = service.getCouchbaseManager();
+            CouchbaseDb connectionsDb = mgr.getConnectionsDb();
+            ConnectionInfoDb infoDb = new ConnectionInfoDb(connectionsDb);
 
             connection.checkRemoteSite();
 
-            service.createLocalDatabase(info);
+            mgr.createLocalDatabase(info);
 
             info = infoDb.createConnectionInfo(info);
 
@@ -45,8 +43,9 @@ public class ConnectionProcess {
 
     public void deleteConnection(String connId) throws Exception {
         try {
-            CouchbaseDb db = service.getConnectionsDb();
-            ConnectionInfoDb connDb = new ConnectionInfoDb(db);
+            CouchbaseManager mgr = service.getCouchbaseManager();
+            CouchbaseDb connectionsDb = mgr.getConnectionsDb();
+            ConnectionInfoDb connDb = new ConnectionInfoDb(connectionsDb);
 
             ConnectionInfo info = connDb.getConnectionInfo(connId);
 
@@ -56,7 +55,7 @@ public class ConnectionProcess {
             }
 
             if( null != localDbName ){
-                service.deleteDb(localDbName);
+                mgr.deleteDatabase(localDbName);
             }
 
             connDb.deleteConnectionInfo(info);

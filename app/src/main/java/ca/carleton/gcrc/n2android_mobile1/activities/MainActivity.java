@@ -52,7 +52,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        Log.v(TAG, "Activity created");
+        Log.v(TAG, "onCreate" + Nunaliit.threadId());
 
         LocalBroadcastManager lbm = LocalBroadcastManager.getInstance(this);
         lbm.registerReceiver(
@@ -95,13 +95,10 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    @Override
-    protected void onPostCreate(Bundle savedInstanceState) {
-        super.onPostCreate(savedInstanceState);
-    }
-
     protected void onDestroy() {
         super.onDestroy();
+
+        Log.v(TAG, "onDestroy" + Nunaliit.threadId());
     }
 
     @Override
@@ -126,6 +123,8 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onStart() {
         super.onStart();
+
+        Log.v(TAG, "onStart" + Nunaliit.threadId());
 
         drawList();
     }

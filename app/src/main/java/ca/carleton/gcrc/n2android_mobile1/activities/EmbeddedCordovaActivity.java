@@ -15,6 +15,7 @@ import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseDb;
 import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseLiteService;
 import ca.carleton.gcrc.n2android_mobile1.connection.ConnectionInfo;
 import ca.carleton.gcrc.n2android_mobile1.Nunaliit;
+import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseManager;
 
 /**
  * Created by jpfiset on 3/9/16.
@@ -83,7 +84,8 @@ public class EmbeddedCordovaActivity extends CordovaActivity {
 
             if( null != mService && null != connectionId ){
                 try {
-                    CouchbaseDb db = mService.getConnectionsDb();
+                    CouchbaseManager couchbaseMgr = mService.getCouchbaseManager();
+                    CouchbaseDb db = couchbaseMgr.getConnectionsDb();
                     ConnectionInfoDb infoDb = new ConnectionInfoDb(db);
                     connInfo = infoDb.getConnectionInfo(connectionId);
 

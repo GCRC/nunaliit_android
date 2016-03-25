@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseDb;
 import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseLiteService;
 import ca.carleton.gcrc.n2android_mobile1.Nunaliit;
+import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseManager;
 import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseQuery;
 import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseQueryResults;
 
@@ -247,7 +248,8 @@ public class ConnectionManagementService extends IntentService {
         waitForCouchbaseService();
 
         try {
-            CouchbaseDb connectionsDb = mCouchbaseService.getConnectionsDb();
+            CouchbaseManager mgr = mCouchbaseService.getCouchbaseManager();
+            CouchbaseDb connectionsDb = mgr.getConnectionsDb();
 
             JSONObject doc = connectionsDb.getDocument(connId);
             ConnectionInfo connInfo = connectionInfoFromJson(doc);
@@ -269,10 +271,11 @@ public class ConnectionManagementService extends IntentService {
         waitForCouchbaseService();
 
         try {
-            CouchbaseDb connectionsDb = mCouchbaseService.getConnectionsDb();
+            CouchbaseManager mgr = mCouchbaseService.getCouchbaseManager();
+            CouchbaseDb connectionsDb = mgr.getConnectionsDb();
 
             CouchbaseQuery query = new CouchbaseQuery();
-            query.setViewName(CouchbaseLiteService.VIEW_CONNECTIONS);
+            query.setViewName(CouchbaseManager.VIEW_CONNECTIONS);
             query.setIncludeDocs(true);
             CouchbaseQueryResults results = connectionsDb.performQuery(query);
 
@@ -324,7 +327,8 @@ public class ConnectionManagementService extends IntentService {
         waitForCouchbaseService();
 
         try {
-            CouchbaseDb connectionsDb = mCouchbaseService.getConnectionsDb();
+            CouchbaseManager mgr = mCouchbaseService.getCouchbaseManager();
+            CouchbaseDb connectionsDb = mgr.getConnectionsDb();
 
             JSONObject doc = connectionsDb.getDocument(connId);
             ConnectionInfo connInfo = connectionInfoFromJson(doc);
