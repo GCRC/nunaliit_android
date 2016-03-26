@@ -1,15 +1,51 @@
 package ca.carleton.gcrc.n2android_mobile1.connection;
 
+import com.couchbase.lite.Emitter;
+import com.couchbase.lite.Mapper;
+
 import org.json.JSONObject;
 
+import java.util.List;
 import java.util.Map;
+import java.util.Vector;
 
 import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseDb;
+import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseManager;
+import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseQuery;
+import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseQueryResults;
+import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseView;
 
 /**
  * Created by jpfiset on 3/24/16.
  */
 public class ConnectionInfoDb {
+
+    public static final CouchbaseView viewConnectionsById = new CouchbaseView(){
+        @Override
+        public String getName() { return "connections-by-id"; }
+
+        @Override
+        public String getVersion() { return "1"; }
+
+        @Override
+        public Mapper getMapper() {
+            return mapper;
+        }
+
+        private Mapper mapper = new Mapper(){
+            @Override
+            public void map(Map<String, Object> document, Emitter emitter) {
+                Object connInfoObj = document.get("mobile_connection");
+                if (null != connInfoObj && connInfoObj instanceof Map) {
+                    Object idObj = document.get("_id");
+                    if (null != idObj && idObj instanceof String) {
+                        String id = (String) idObj;
+                        emitter.emit(id, null);
+                    }
+                }
+            }
+        };
+    };
 
     public static ConnectionInfo connectionInfoFromJson(JSONObject jsonObj) {
         ConnectionInfo info = null;
@@ -145,8 +181,10 @@ public class ConnectionInfoDb {
 
     private CouchbaseDb connDb;
 
-    public ConnectionInfoDb(CouchbaseDb connDb){
+    public ConnectionInfoDb(CouchbaseDb connDb) throws Exception {
         this.connDb = connDb;
+
+        this.connDb.installView(viewConnectionsById);
     }
 
     public ConnectionInfo createConnectionInfo(ConnectionInfo info) throws Exception {
@@ -169,6 +207,29 @@ public class ConnectionInfoDb {
 
         } catch(Exception e) {
             throw new Exception("Error while creating connection info document",e);
+        }
+    }
+
+    public List<ConnectionInfo> getConnectionInfos() throws Exception {
+        try {
+            CouchbaseQuery query = new CouchbaseQuery();
+            query.setViewName(CouchbaseManager.VIEW_CONNECTIONS);
+            query.setIncludeDocs(true);
+            CouchbaseQueryResults results = connDb.performQuery(query);
+
+            List<ConnectionInfo> connectionInfos = new Vector<ConnectionInfo>();
+            for(JSONObject row : results.getRows()) {
+                JSONObject doc = row.getJSONObject("doc");
+                ConnectionInfo connInfo = connectionInfoFromJson(doc);
+                if( null != connInfo ){
+                    connectionInfos.add(connInfo);
+                }
+            }
+
+            return connectionInfos;
+
+        } catch(Exception e) {
+            throw new Exception("Error while creating list of connection info documents",e);
         }
     }
 

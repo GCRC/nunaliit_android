@@ -227,6 +227,10 @@ public class CouchbaseDb {
         this.database = database;
     }
 
+    protected Database getCouchbaseDatabase() {
+        return database;
+    }
+
     public JSONObject getDocument(String docId) throws Exception {
         try {
             Document doc = database.getDocument(docId);
@@ -345,6 +349,35 @@ public class CouchbaseDb {
 
         } catch(Exception e) {
             throw new Exception("Error during view query "+viewName, e);
+        }
+    }
+
+    public void installView(CouchbaseView view) throws Exception {
+        try {
+            String viewName = view.getName();
+
+            com.couchbase.lite.View internalView = database.getView(viewName);
+
+            boolean mustInstall = false;
+
+            if( null == internalView ){
+                mustInstall = true;
+            } else if( null == internalView.getMapVersion() ){
+                mustInstall = true;
+            }
+
+            if( mustInstall ){
+                internalView.setMap(view.getMapper(), view.getVersion());
+
+                Log.v(TAG, "Installed view: " + view.getName());
+            }
+
+        } catch(Exception e) {
+            String label = "";
+            if( null != view ){
+                label = " "+view.getName();
+            }
+            throw new Exception("Error while installing a view"+label,e);
         }
     }
 

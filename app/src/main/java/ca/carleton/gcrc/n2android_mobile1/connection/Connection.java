@@ -108,8 +108,14 @@ public class Connection {
     }
 
     public CouchbaseDb getLocalDocumentDb() throws Exception {
-        String localDbName = info.getLocalDocumentDbName();
-        CouchbaseDb db = manager.getDatabase(localDbName);
+        String dbName = info.getLocalDocumentDbName();
+        CouchbaseDb db = manager.getDatabase(dbName);
+        return db;
+    }
+
+    public CouchbaseDb getLocalRevisionDb() throws Exception {
+        String dbName = info.getLocalRevisionDbName();
+        CouchbaseDb db = manager.getDatabase(dbName);
         return db;
     }
 }

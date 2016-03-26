@@ -69,40 +69,6 @@ public class CouchbaseManager {
         DatabaseOptions options = new DatabaseOptions();
         options.setCreate(true);
         connDb = manager.openDatabase(DATABASE_NAME, options);
-
-//        Document doc = database.getDocument("testDoc");
-//        SavedRevision currentRevision = doc.getCurrentRevision();
-//        if( null == currentRevision ){
-//            Log.i(TAG, "testDoc does not exist");
-//            Map<String,Object> props = new HashMap<String,Object>();
-//            props.put("nunaliit_test","allo");
-//            doc.putProperties(props);
-//        } else {
-//            Log.i(TAG, "testDoc revision: "+currentRevision.getProperties().get("_rev"));
-//        }
-
-        // View: connnections-by-label
-        com.couchbase.lite.View connectionsView = connDb.getView(VIEW_CONNECTIONS);
-        connectionsView.setMap(new Mapper() {
-            @Override
-            public void map(Map<String, Object> document, Emitter emitter) {
-                Object connInfoObj = document.get("mobile_connection");
-                if( null != connInfoObj && connInfoObj instanceof Map ){
-                    Object idObj = document.get("_id");
-                    if( null != idObj && idObj instanceof String ){
-                        String id = (String)idObj;
-                        emitter.emit(id,null);
-                    }
-                }
-            }
-        }, "1.0");
-//
-//        initItemListAdapter();
-//
-//        startLiveQuery(viewItemsByDate);
-//
-//        startSync();
-
     }
 
     public void stopCouchbase() {

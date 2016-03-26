@@ -11,9 +11,8 @@ import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.widget.Toast;
 
-import org.json.JSONObject;
-
 import java.util.ArrayList;
+import java.util.List;
 
 import ca.carleton.gcrc.n2android_mobile1.R;
 import ca.carleton.gcrc.n2android_mobile1.ServiceSupport;
@@ -21,80 +20,11 @@ import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseDb;
 import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseLiteService;
 import ca.carleton.gcrc.n2android_mobile1.Nunaliit;
 import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseManager;
-import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseQuery;
-import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseQueryResults;
 
 /**
  * Created by jpfiset on 3/22/16.
  */
 public class ConnectionManagementService extends IntentService {
-
-    public static ConnectionInfo connectionInfoFromJson(JSONObject jsonObject){
-        ConnectionInfo info = null;
-
-        JSONObject connInfo = jsonObject.optJSONObject("mobile_connection");
-        if( null != connInfo ) {
-            info = new ConnectionInfo();
-
-            // id
-            {
-                String id = jsonObject.optString("_id", null);
-                if( id != null ) {
-                    info.setId(id);
-                }
-            }
-
-            // name
-            {
-                String name = connInfo.optString("name", null);
-                if( name != null ) {
-                    info.setName(name);
-                }
-            }
-
-            // url
-            {
-                String url = connInfo.optString("url", null);
-                if( url != null ) {
-                    info.setUrl(url);
-                }
-            }
-
-            // user
-            {
-                String user = connInfo.optString("user", null);
-                if( user != null ) {
-                    info.setUser(user);
-                }
-            }
-
-            // password
-            {
-                String password = connInfo.optString("password", null);
-                if (password != null ) {
-                    info.setPassword(password);
-                }
-            }
-
-            // local docs db
-            {
-                String localDocsDb = connInfo.optString("localDocsDb", null);
-                if( localDocsDb != null ){
-                    info.setLocalDocumentDbName(localDocsDb);
-                }
-            }
-
-            // local revs db
-            {
-                String localRevsDb = connInfo.optString("localRevsDb", null);
-                if( localRevsDb != null ){
-                    info.setLocalRevisionDbName(localRevsDb);
-                }
-            }
-        }
-
-        return info;
-    }
 
     public static String ACTION_ADD_CONNECTION = ConnectionManagementService.class.getName()+".ADD_CONNECTION";
     public static String ACTION_GET_CONNECTION_INFO = ConnectionManagementService.class.getName()+".GET_CONNECTION_INFO";
@@ -261,9 +191,9 @@ public class ConnectionManagementService extends IntentService {
         try {
             CouchbaseManager mgr = mCouchbaseService.getCouchbaseManager();
             CouchbaseDb connectionsDb = mgr.getConnectionsDb();
+            ConnectionInfoDb connInfoDb = new ConnectionInfoDb(connectionsDb);
 
-            JSONObject doc = connectionsDb.getDocument(connId);
-            ConnectionInfo connInfo = connectionInfoFromJson(doc);
+            ConnectionInfo connInfo = connInfoDb.getConnectionInfo(connId);
 
             Intent result = new Intent(RESULT_GET_CONNECTION_INFO);
             result.putExtra(Nunaliit.EXTRA_CONNECTION_INFO, connInfo);
@@ -284,20 +214,12 @@ public class ConnectionManagementService extends IntentService {
         try {
             CouchbaseManager mgr = mCouchbaseService.getCouchbaseManager();
             CouchbaseDb connectionsDb = mgr.getConnectionsDb();
+            ConnectionInfoDb connInfoDb = new ConnectionInfoDb(connectionsDb);
 
-            CouchbaseQuery query = new CouchbaseQuery();
-            query.setViewName(CouchbaseManager.VIEW_CONNECTIONS);
-            query.setIncludeDocs(true);
-            CouchbaseQueryResults results = connectionsDb.performQuery(query);
+            List<ConnectionInfo> list = connInfoDb.getConnectionInfos();
 
-            ArrayList<ConnectionInfo> connectionInfos = new ArrayList<ConnectionInfo>();
-            for(JSONObject row : results.getRows()) {
-                JSONObject doc = row.getJSONObject("doc");
-                ConnectionInfo connInfo = connectionInfoFromJson(doc);
-                if( null != connInfo ){
-                    connectionInfos.add(connInfo);
-                }
-            }
+            // Convert to array list for intent
+            ArrayList<ConnectionInfo> connectionInfos = new ArrayList<ConnectionInfo>(list);
 
             Intent result = new Intent(RESULT_GET_CONNECTION_INFOS);
             result.putParcelableArrayListExtra(Nunaliit.EXTRA_CONNECTION_INFOS, connectionInfos);
@@ -340,9 +262,9 @@ public class ConnectionManagementService extends IntentService {
         try {
             CouchbaseManager mgr = mCouchbaseService.getCouchbaseManager();
             CouchbaseDb connectionsDb = mgr.getConnectionsDb();
+            ConnectionInfoDb connInfoDb = new ConnectionInfoDb(connectionsDb);
 
-            JSONObject doc = connectionsDb.getDocument(connId);
-            ConnectionInfo connInfo = connectionInfoFromJson(doc);
+            ConnectionInfo connInfo = connInfoDb.getConnectionInfo(connId);
             Connection connection = new Connection(mgr, connInfo);
 
             ConnectionSyncProcess syncProcess = new ConnectionSyncProcess(mCouchbaseService, connection);
