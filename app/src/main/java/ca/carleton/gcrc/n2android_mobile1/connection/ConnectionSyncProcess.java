@@ -25,6 +25,8 @@ public class ConnectionSyncProcess {
     private CouchbaseLiteService service;
     private CouchDb couchDb;
     private CouchDesignDocument atlasDesign;
+    private DocumentDb documentDb;
+    private RevisionDb revisionDb;
 
     public ConnectionSyncProcess(CouchbaseLiteService service, Connection connection) throws Exception {
         this.service = service;
@@ -32,6 +34,9 @@ public class ConnectionSyncProcess {
 
         couchDb = connection.getRemoteCouchDb();
         atlasDesign = couchDb.getDesignDocument("atlas");
+
+        documentDb = connection.getLocalDocumentDb();
+        revisionDb = connection.getLocalRevisionDb();
     }
 
     public void synchronize() throws Exception {
@@ -84,22 +89,22 @@ public class ConnectionSyncProcess {
 
     public void updateLocalSkeletonDocument(JSONObject doc) throws Exception {
         try {
-            String remoteRev = doc.optString("_rev",null);
+            String docId = doc.getString("_id");
+            String remoteRev = doc.optString("_rev", null);
+
             if( null != remoteRev ){
                 doc.remove("_rev");
             }
 
-            CouchbaseDb localDb = connection.getLocalDocumentDb();
-            String docId = doc.getString("_id");
-            if( localDb.documentExists(docId) ) {
-                JSONObject existingDoc = localDb.getDocument(docId);
+            if( documentDb.documentExists(docId) ) {
+                JSONObject existingDoc = documentDb.getDocument(docId);
                 String existingRev = existingDoc.optString("_rev",null);
                 if( null != existingRev ){
                     doc.put("_rev",existingRev);
                 }
-                localDb.updateDocument(doc);
+                documentDb.updateDocument(doc);
             } else {
-                localDb.createDocument(doc);
+                documentDb.createDocument(doc);
             }
 
         } catch(Exception e) {
