@@ -5,16 +5,14 @@ import android.util.Log;
 
 import com.couchbase.lite.Database;
 import com.couchbase.lite.DatabaseOptions;
-import com.couchbase.lite.Emitter;
-import com.couchbase.lite.LiveQuery;
 import com.couchbase.lite.Manager;
-import com.couchbase.lite.Mapper;
 import com.couchbase.lite.android.AndroidContext;
 
 import java.util.HashMap;
 import java.util.Map;
 
 import ca.carleton.gcrc.n2android_mobile1.Nunaliit;
+import ca.carleton.gcrc.n2android_mobile1.connection.ConnectionInfoDb;
 
 /**
  * Created by jpfiset on 3/25/16.
@@ -29,7 +27,6 @@ public class CouchbaseManager {
     // couchdb internals
     private Manager manager;
     private Database connDb;
-    private LiveQuery liveQuery;
     private Map<String,Database> databasesByName = new HashMap<String,Database>();
 
 
@@ -112,7 +109,7 @@ public class CouchbaseManager {
         return exists;
     }
 
-    public CouchbaseDb getDatabase(String dbName) throws Exception {
+    public Database getDatabase(String dbName) throws Exception {
         try {
             Database db = databasesByName.get(dbName);
             if (null == db) {
@@ -120,15 +117,15 @@ public class CouchbaseManager {
                 options.setCreate(false);
                 db = manager.openDatabase(dbName, options);
             }
-            return new CouchbaseDb(db);
+            return db;
 
         } catch(Exception e) {
             throw new Exception("Unable to get database "+dbName,e);
         }
     }
 
-    public CouchbaseDb getConnectionsDb(){
-        return new CouchbaseDb(connDb);
+    public ConnectionInfoDb getConnectionsDb() throws Exception {
+        return new ConnectionInfoDb(connDb);
     }
 
     public void createDatabase(String dbName) throws Exception {
@@ -141,7 +138,7 @@ public class CouchbaseManager {
             }
             db.close();
 
-            Log.i(TAG, "Created local database: "+dbName);
+            Log.i(TAG, "Created local database: " + dbName);
 
         } catch(Exception e) {
             throw new Exception("Error while creating database "+dbName,e);

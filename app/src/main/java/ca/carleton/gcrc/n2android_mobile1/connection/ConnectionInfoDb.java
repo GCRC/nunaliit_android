@@ -1,5 +1,6 @@
 package ca.carleton.gcrc.n2android_mobile1.connection;
 
+import com.couchbase.lite.Database;
 import com.couchbase.lite.Emitter;
 import com.couchbase.lite.Mapper;
 
@@ -18,7 +19,7 @@ import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseView;
 /**
  * Created by jpfiset on 3/24/16.
  */
-public class ConnectionInfoDb {
+public class ConnectionInfoDb extends CouchbaseDb {
 
     public static final CouchbaseView viewConnectionsById = new CouchbaseView(){
         @Override
@@ -179,18 +180,16 @@ public class ConnectionInfoDb {
         return jsonObj;
     }
 
-    private CouchbaseDb connDb;
+    public ConnectionInfoDb(Database database) throws Exception {
+        super(database);
 
-    public ConnectionInfoDb(CouchbaseDb connDb) throws Exception {
-        this.connDb = connDb;
-
-        this.connDb.installView(viewConnectionsById);
+        installView(viewConnectionsById);
     }
 
     public ConnectionInfo createConnectionInfo(ConnectionInfo info) throws Exception {
         try {
             JSONObject jsonInfo = jsonFromConnectionInfo(info);
-            JSONObject docInfo = connDb.createDocument(jsonInfo);
+            JSONObject docInfo = createDocument(jsonInfo);
             info.setId(docInfo.optString("id"));
             return info;
 
@@ -201,7 +200,7 @@ public class ConnectionInfoDb {
 
     public ConnectionInfo getConnectionInfo(String docId) throws Exception {
         try {
-            JSONObject jsonInfo = connDb.getDocument(docId);
+            JSONObject jsonInfo = getDocument(docId);
             ConnectionInfo info = connectionInfoFromJson(jsonInfo);
             return info;
 
@@ -215,7 +214,7 @@ public class ConnectionInfoDb {
             CouchbaseQuery query = new CouchbaseQuery();
             query.setViewName(CouchbaseManager.VIEW_CONNECTIONS);
             query.setIncludeDocs(true);
-            CouchbaseQueryResults results = connDb.performQuery(query);
+            CouchbaseQueryResults results = performQuery(query);
 
             List<ConnectionInfo> connectionInfos = new Vector<ConnectionInfo>();
             for(JSONObject row : results.getRows()) {
@@ -236,7 +235,7 @@ public class ConnectionInfoDb {
     public void updateConnectionInfo(ConnectionInfo info) throws Exception {
         try {
             JSONObject jsonInfo = jsonFromConnectionInfo(info);
-            connDb.updateDocument(jsonInfo);
+            updateDocument(jsonInfo);
 
         } catch(Exception e) {
             throw new Exception("Error while updating connection info document",e);
@@ -246,7 +245,7 @@ public class ConnectionInfoDb {
     public void deleteConnectionInfo(ConnectionInfo info) throws Exception {
         try {
             JSONObject jsonInfo = jsonFromConnectionInfo(info);
-            connDb.deleteDocument(jsonInfo);
+            deleteDocument(jsonInfo);
 
         } catch(Exception e) {
             throw new Exception("Error while deleting connection info document",e);

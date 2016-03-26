@@ -190,8 +190,7 @@ public class ConnectionManagementService extends IntentService {
 
         try {
             CouchbaseManager mgr = mCouchbaseService.getCouchbaseManager();
-            CouchbaseDb connectionsDb = mgr.getConnectionsDb();
-            ConnectionInfoDb connInfoDb = new ConnectionInfoDb(connectionsDb);
+            ConnectionInfoDb connInfoDb = mgr.getConnectionsDb();
 
             ConnectionInfo connInfo = connInfoDb.getConnectionInfo(connId);
 
@@ -213,8 +212,7 @@ public class ConnectionManagementService extends IntentService {
 
         try {
             CouchbaseManager mgr = mCouchbaseService.getCouchbaseManager();
-            CouchbaseDb connectionsDb = mgr.getConnectionsDb();
-            ConnectionInfoDb connInfoDb = new ConnectionInfoDb(connectionsDb);
+            ConnectionInfoDb connInfoDb = mgr.getConnectionsDb();
 
             List<ConnectionInfo> list = connInfoDb.getConnectionInfos();
 
@@ -261,8 +259,7 @@ public class ConnectionManagementService extends IntentService {
 
         try {
             CouchbaseManager mgr = mCouchbaseService.getCouchbaseManager();
-            CouchbaseDb connectionsDb = mgr.getConnectionsDb();
-            ConnectionInfoDb connInfoDb = new ConnectionInfoDb(connectionsDb);
+            ConnectionInfoDb connInfoDb = mgr.getConnectionsDb();
 
             ConnectionInfo connInfo = connInfoDb.getConnectionInfo(connId);
             Connection connection = new Connection(mgr, connInfo);

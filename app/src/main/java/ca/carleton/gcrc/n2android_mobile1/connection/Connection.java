@@ -2,6 +2,8 @@ package ca.carleton.gcrc.n2android_mobile1.connection;
 
 import android.util.Log;
 
+import com.couchbase.lite.Database;
+
 import org.json.JSONObject;
 
 import java.net.URL;
@@ -107,15 +109,17 @@ public class Connection {
         return remoteDbName;
     }
 
-    public CouchbaseDb getLocalDocumentDb() throws Exception {
+    public DocumentDb getLocalDocumentDb() throws Exception {
         String dbName = info.getLocalDocumentDbName();
-        CouchbaseDb db = manager.getDatabase(dbName);
-        return db;
+        Database db = manager.getDatabase(dbName);
+        DocumentDb docDb = new DocumentDb(db);
+        return docDb;
     }
 
-    public CouchbaseDb getLocalRevisionDb() throws Exception {
-        String dbName = info.getLocalRevisionDbName();
-        CouchbaseDb db = manager.getDatabase(dbName);
-        return db;
+    public RevisionDb getLocalRevisionDb() throws Exception {
+        String dbName = info.getLocalDocumentDbName();
+        Database db = manager.getDatabase(dbName);
+        RevisionDb revDb = new RevisionDb(db);
+        return revDb;
     }
 }

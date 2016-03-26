@@ -85,8 +85,7 @@ public class EmbeddedCordovaActivity extends CordovaActivity {
             if( null != mService && null != connectionId ){
                 try {
                     CouchbaseManager couchbaseMgr = mService.getCouchbaseManager();
-                    CouchbaseDb db = couchbaseMgr.getConnectionsDb();
-                    ConnectionInfoDb infoDb = new ConnectionInfoDb(db);
+                    ConnectionInfoDb infoDb = couchbaseMgr.getConnectionsDb();
                     connInfo = infoDb.getConnectionInfo(connectionId);
 
                 } catch(Exception e) {

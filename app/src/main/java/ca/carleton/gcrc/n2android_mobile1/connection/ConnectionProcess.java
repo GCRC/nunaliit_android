@@ -26,8 +26,7 @@ public class ConnectionProcess {
         Connection connection = new Connection(service.getCouchbaseManager(), info);
         try {
             CouchbaseManager mgr = service.getCouchbaseManager();
-            CouchbaseDb connectionsDb = mgr.getConnectionsDb();
-            ConnectionInfoDb infoDb = new ConnectionInfoDb(connectionsDb);
+            ConnectionInfoDb infoDb = mgr.getConnectionsDb();
 
             connection.checkRemoteSite();
 
@@ -45,8 +44,7 @@ public class ConnectionProcess {
     public void deleteConnection(String connId) throws Exception {
         try {
             CouchbaseManager mgr = service.getCouchbaseManager();
-            CouchbaseDb connectionsDb = mgr.getConnectionsDb();
-            ConnectionInfoDb connDb = new ConnectionInfoDb(connectionsDb);
+            ConnectionInfoDb connDb = mgr.getConnectionsDb();
 
             ConnectionInfo info = connDb.getConnectionInfo(connId);
 
