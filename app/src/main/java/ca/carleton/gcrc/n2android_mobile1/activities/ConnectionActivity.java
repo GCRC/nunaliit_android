@@ -157,12 +157,21 @@ public class ConnectionActivity extends AppCompatActivity {
                 }
             }
 
-            // Local db name
+            // Local docs db name
             {
-                View view = findViewById(R.id.connection_local_db_name);
+                View view = findViewById(R.id.connection_local_docs_db_name);
                 if( null != view && view instanceof TextView ){
                     TextView textView = (TextView)view;
                     textView.setText(currentConnection.getLocalDocumentDbName());
+                }
+            }
+
+            // Local revs db name
+            {
+                View view = findViewById(R.id.connection_local_revs_db_name);
+                if( null != view && view instanceof TextView ){
+                    TextView textView = (TextView)view;
+                    textView.setText(currentConnection.getLocalRevisionDbName());
                 }
             }
 

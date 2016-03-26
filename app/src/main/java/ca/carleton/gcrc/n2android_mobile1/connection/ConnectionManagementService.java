@@ -83,6 +83,14 @@ public class ConnectionManagementService extends IntentService {
                     info.setLocalDocumentDbName(localDocsDb);
                 }
             }
+
+            // local revs db
+            {
+                String localRevsDb = connInfo.optString("localRevsDb", null);
+                if( localRevsDb != null ){
+                    info.setLocalRevisionDbName(localRevsDb);
+                }
+            }
         }
 
         return info;
@@ -352,15 +360,15 @@ public class ConnectionManagementService extends IntentService {
             );
 
         } catch(Exception e) {
-            Log.e(TAG, "Error while synchronizing connection "+connId,e);
+            Log.e(TAG, "Error while synchronizing connection " + connId, e);
             Intent result = new Intent(ERROR_SYNC);
             result.putExtra(Nunaliit.EXTRA_ERROR, e);
             LocalBroadcastManager.getInstance(this).sendBroadcast(result);
 
             ServiceSupport.createToast(
-                this,
-                getResources().getString(R.string.error_synchronization),
-                Toast.LENGTH_LONG
+                    this,
+                    getResources().getString(R.string.error_synchronization),
+                    Toast.LENGTH_LONG
             );
         }
     }

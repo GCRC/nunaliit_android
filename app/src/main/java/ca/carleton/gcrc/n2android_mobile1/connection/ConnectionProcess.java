@@ -1,6 +1,7 @@
 package ca.carleton.gcrc.n2android_mobile1.connection;
 
 import android.content.Context;
+import android.util.Log;
 
 import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseDb;
 import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseLiteService;
@@ -30,7 +31,7 @@ public class ConnectionProcess {
 
             connection.checkRemoteSite();
 
-            mgr.createLocalDatabase(info);
+            createLocalDatabases(info);
 
             info = infoDb.createConnectionInfo(info);
 
@@ -62,6 +63,57 @@ public class ConnectionProcess {
 
         } catch(Exception e) {
             throw new Exception("Error while deleting connection "+connId,e);
+        }
+    }
+
+    private void createLocalDatabases(ConnectionInfo connectionInfo){
+        CouchbaseManager mgr = service.getCouchbaseManager();
+
+        int count = 0;
+        boolean created = false;
+        while( !created && count < 100 ){
+            ++count;
+            String docDbName = "docs_"+count;
+            String revDbName = "revs_"+count;
+            if( false == mgr.databaseExists(docDbName)
+                && false == mgr.databaseExists(revDbName) ){
+
+                // Create doc db
+                boolean docDbCreated = false;
+                try {
+                    mgr.createDatabase(docDbName);
+                    docDbCreated = true;
+
+                } catch(Exception e) {
+                    Log.e(TAG, "Error creating database: "+docDbName, e);
+                }
+
+                // Create rev db
+                boolean revDbCreated = false;
+                if( docDbCreated ){
+                    try {
+                        mgr.createDatabase(revDbName);
+                        revDbCreated = true;
+
+                    } catch(Exception e) {
+                        Log.e(TAG, "Error creating database: "+revDbName, e);
+                    }
+                }
+
+                if( revDbCreated ){
+                    created = true;
+                    connectionInfo.setLocalDocumentDbName(docDbName);
+                    connectionInfo.setLocalRevisionDbName(revDbName);
+
+                } else if( docDbCreated ) {
+                    try {
+                        mgr.deleteDatabase(docDbName);
+
+                    } catch(Exception e) {
+                        Log.e(TAG, "Unable to delete database: "+docDbName, e);
+                    }
+                }
+            }
         }
     }
 }

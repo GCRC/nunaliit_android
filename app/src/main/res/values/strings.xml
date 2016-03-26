@@ -18,7 +18,8 @@
     <string name="error_synchronization">Error during connection synchronization</string>
 
     <string name="label_connection_name">Connection Name:</string>
-    <string name="label_local_db_name">Local Database:</string>
+    <string name="label_local_docs_db_name">Documents database:</string>
+    <string name="label_local_revs_db_name">Revisions database:</string>
     <string name="label_name">Name:</string>
     <string name="label_password">Password:</string>
     <string name="label_url">URL:</string>

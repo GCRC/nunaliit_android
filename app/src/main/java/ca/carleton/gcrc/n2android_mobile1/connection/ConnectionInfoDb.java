@@ -65,6 +65,14 @@ public class ConnectionInfoDb {
                     info.setLocalDocumentDbName(localDocsDb);
                 }
             }
+
+            // local revs db
+            {
+                String localRevsDb = jsonConnInfo.optString("localRevsDb", null);
+                if( localRevsDb != null ){
+                    info.setLocalRevisionDbName(localRevsDb);
+                }
+            }
         }
 
         return info;
@@ -121,6 +129,14 @@ public class ConnectionInfoDb {
             String localDocsDb = info.getLocalDocumentDbName();
             if( localDocsDb != null ){
                 jsonConnInfo.put("localDocsDb", localDocsDb);
+            }
+        }
+
+        // local revs db
+        {
+            String localRevsDb = info.getLocalRevisionDbName();
+            if( localRevsDb != null ){
+                jsonConnInfo.put("localRevsDb", localRevsDb);
             }
         }
 

@@ -78,15 +78,35 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textAppearance="?android:attr/textAppearanceLarge"
-            android:text="@string/label_local_db_name"
-            android:id="@+id/connection_local_db_name_label" />
+            android:text="@string/label_local_docs_db_name"
+            android:id="@+id/connection_local_docs_db_name_label" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textAppearance="?android:attr/textAppearanceMedium"
             android:text=""
-            android:id="@+id/connection_local_db_name" />
+            android:id="@+id/connection_local_docs_db_name" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+    <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:text="@string/label_local_revs_db_name"
+            android:id="@+id/connection_local_revs_db_name_label" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceMedium"
+            android:text=""
+            android:id="@+id/connection_local_revs_db_name" />
     </LinearLayout>
 
     <Button

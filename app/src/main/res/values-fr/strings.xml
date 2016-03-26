@@ -19,7 +19,8 @@
     <string name="error_synchronization">Erreur durant la synchronisation de la connexion</string>
 
     <string name="label_connection_name">Nom de la connexion:</string>
-    <string name="label_local_db_name">Base de données locale:</string>
+    <string name="label_local_docs_db_name">Base de données des documents:</string>
+    <string name="label_local_revs_db_name">Base de données des révisions:</string>
     <string name="label_name">Nom:</string>
     <string name="label_password">Mot de passe:</string>
     <string name="label_url">URL:</string>

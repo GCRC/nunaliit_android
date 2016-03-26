@@ -15,7 +15,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import ca.carleton.gcrc.n2android_mobile1.Nunaliit;
-import ca.carleton.gcrc.n2android_mobile1.connection.ConnectionInfo;
 
 /**
  * Created by jpfiset on 3/25/16.
@@ -110,6 +109,17 @@ public class CouchbaseManager {
 
         Log.v(TAG,"stopCouchbase" + Nunaliit.threadId());
 
+        if( null != connDb ){
+            connDb.close();
+            connDb = null;
+        }
+
+        for(String dbName : databasesByName.keySet()){
+            Database db = databasesByName.get(dbName);
+            db.close();
+            databasesByName.remove(dbName);
+        }
+
         if( manager != null ) {
             manager.close();
             manager = null;
@@ -155,30 +165,20 @@ public class CouchbaseManager {
         return new CouchbaseDb(connDb);
     }
 
-    public void createLocalDatabase(ConnectionInfo connectionInfo){
-        int count = 0;
-        boolean created = false;
-        while( !created && count < 100 ){
-            ++count;
-            String name = "docs_"+count;
-            if( false == databaseExists(name) ){
-                try {
-                    DatabaseOptions options = new DatabaseOptions();
-                    options.setCreate(true);
-                    Database db = manager.openDatabase(name, options);
-                    if( false == db.exists() ){
-                        throw new Exception("Unable to create database: "+name);
-                    }
-                    db.close();
-
-                    created = true;
-                    connectionInfo.setLocalDocumentDbName(name);
-                    Log.i(TAG, "Created local database: "+name);
-
-                } catch(Exception e) {
-                    Log.e(TAG, "Error creating database: "+name, e);
-                }
+    public void createDatabase(String dbName) throws Exception {
+        try {
+            DatabaseOptions options = new DatabaseOptions();
+            options.setCreate(true);
+            Database db = manager.openDatabase(dbName, options);
+            if( false == db.exists() ){
+                throw new Exception("Database does not exist after creation");
             }
+            db.close();
+
+            Log.i(TAG, "Created local database: "+dbName);
+
+        } catch(Exception e) {
+            throw new Exception("Error while creating database "+dbName,e);
         }
     }
 
@@ -186,6 +186,9 @@ public class CouchbaseManager {
         try {
             Database db = manager.getDatabase(dbName);
             db.delete();
+            db.close();
+
+            databasesByName.remove(dbName);
 
         } catch(Exception e) {
             throw new Exception("Error while deleting database "+dbName,e);
