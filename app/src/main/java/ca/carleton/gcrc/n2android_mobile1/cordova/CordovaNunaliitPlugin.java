@@ -12,6 +12,9 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 
+import java.util.List;
+import java.util.Vector;
+
 import ca.carleton.gcrc.n2android_mobile1.connection.Connection;
 import ca.carleton.gcrc.n2android_mobile1.connection.DocumentDb;
 import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseDocInfo;
@@ -60,6 +63,10 @@ public class CordovaNunaliitPlugin extends CordovaPlugin {
             this.getConnectionInfo(callbackContext);
             return true;
 
+        } else if( "couchbaseGetDatabaseInfo".equals(action) ) {
+            this.couchbaseGetDatabaseInfo(callbackContext);
+            return true;
+
         } else if( "couchbaseGetDocumentRevision".equals(action) ) {
             String docId = args.getString(0);
             this.couchbaseGetDocumentRevision(docId, callbackContext);
@@ -83,6 +90,33 @@ public class CordovaNunaliitPlugin extends CordovaPlugin {
         } else if( "couchbaseGetDocument".equals(action) ) {
             String docId = args.getString(0);
             this.couchbaseGetDocument(docId, callbackContext);
+            return true;
+
+        } else if( "couchbaseGetDocuments".equals(action) ) {
+            List<String> docIds = new Vector<String>();
+            JSONArray jsonDocIds = args.getJSONArray(0);
+            for(int i=0,e=jsonDocIds.length(); i<e; ++i){
+                Object objId = jsonDocIds.get(i);
+                if( objId instanceof String ){
+                    String docId = (String)objId;
+                    docIds.add(docId);
+                } else {
+                    String className = ""+objId;
+                    if( null != objId ){
+                        className = objId.getClass().getName();
+                    }
+                    Log.w(TAG, "couchbaseGetDocuments: invalid docId: "+className);
+                }
+            }
+            this.couchbaseGetDocuments(docIds, callbackContext);
+            return true;
+
+        } else if( "couchbaseGetAllDocuments".equals(action) ) {
+            this.couchbaseGetAllDocuments(callbackContext);
+            return true;
+
+        } else if( "couchbaseGetAllDocumentIds".equals(action) ) {
+            this.couchbaseGetAllDocumentIds(callbackContext);
             return true;
         }
 
@@ -113,6 +147,19 @@ public class CordovaNunaliitPlugin extends CordovaPlugin {
             }
         } else {
             callbackContext.error("Unable to retrieve connection information");
+        }
+    }
+
+    private void couchbaseGetDatabaseInfo(CallbackContext callbackContext) {
+        try {
+            DocumentDb docDb = getDocumentDb();
+
+            JSONObject dbInfo = docDb.getInfo();
+
+            callbackContext.success(dbInfo);
+
+        } catch(Exception e) {
+            callbackContext.error("Error while performing couchbaseGetDatabaseInfo(): "+e.getMessage());
         }
     }
 
@@ -190,6 +237,68 @@ public class CordovaNunaliitPlugin extends CordovaPlugin {
 
         } catch(Exception e) {
             callbackContext.error("Error while performing couchbaseGetDocument(): "+e.getMessage());
+        }
+    }
+
+    private void couchbaseGetDocuments(List<String> docIds, CallbackContext callbackContext) {
+        try {
+            DocumentDb docDb = getDocumentDb();
+
+            List<JSONObject> docs = docDb.getDocuments(docIds);
+
+            JSONArray jsonDocs = new JSONArray();
+            for(JSONObject doc : docs){
+                jsonDocs.put(doc);
+            }
+
+
+            JSONObject result = new JSONObject();
+            result.put("docs", jsonDocs);
+            callbackContext.success(result);
+
+        } catch(Exception e) {
+            callbackContext.error("Error while performing couchbaseGetDocuments(): "+e.getMessage());
+        }
+    }
+
+    private void couchbaseGetAllDocuments(CallbackContext callbackContext) {
+        try {
+            DocumentDb docDb = getDocumentDb();
+
+            List<JSONObject> docs = docDb.getAllDocuments();
+
+            JSONArray jsonDocs = new JSONArray();
+            for(JSONObject doc : docs){
+                jsonDocs.put(doc);
+            }
+
+
+            JSONObject result = new JSONObject();
+            result.put("docs", jsonDocs);
+            callbackContext.success(result);
+
+        } catch(Exception e) {
+            callbackContext.error("Error while performing couchbaseGetAllDocuments(): "+e.getMessage());
+        }
+    }
+
+    private void couchbaseGetAllDocumentIds(CallbackContext callbackContext) {
+        try {
+            DocumentDb docDb = getDocumentDb();
+
+            List<String> docIds = docDb.getAllDocumentIds();
+
+            JSONArray jsonIds = new JSONArray();
+            for(String docId : docIds){
+                jsonIds.put(docId);
+            }
+
+            JSONObject result = new JSONObject();
+            result.put("ids", jsonIds);
+            callbackContext.success(result);
+
+        } catch(Exception e) {
+            callbackContext.error("Error while performing couchbaseGetAllDocumentIds(): "+e.getMessage());
         }
     }
 

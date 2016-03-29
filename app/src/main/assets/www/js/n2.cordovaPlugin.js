@@ -54,6 +54,32 @@
     };
 
     // ==================================================================
+    function couchbaseGetDatabaseInfo(opts_){
+        var opts = $n2.extend({
+            onSuccess: function(info){}
+            ,onError: function(err){}
+        },opts_);
+
+        cordova.exec(
+            // success
+            function(result){
+                opts.onSuccess(result);
+            },
+            // error
+            function(err){
+                opts.onError(err);
+            },
+            // service
+            SERVICE,
+            // action
+            'couchbaseGetDatabaseInfo',
+            // Arguments
+            [
+            ]
+        );
+    };
+
+    // ==================================================================
     function couchbaseGetDocumentRevision(opts_){
         var opts = $n2.extend({
             docId: null
@@ -214,14 +240,102 @@
     };
 
     // ==================================================================
+    function couchbaseGetDocuments(opts_){
+        var opts = $n2.extend({
+            docIds: null
+            ,onSuccess: function(doc){}
+            ,onError: function(err){}
+        },opts_);
+
+        if( !$n2.isArray(opts.docIds) ){
+            throw 'cordovaPlugin.couchbaseGetDocuments(): docIds must be an array';
+        };
+
+        cordova.exec(
+            // success
+            function(result){
+                opts.onSuccess(result);
+            },
+            // error
+            function(err){
+                opts.onError(err);
+            },
+            // service
+            SERVICE,
+            // action
+            'couchbaseGetDocuments',
+            // Arguments
+            [
+                opts.docIds
+            ]
+        );
+    };
+
+    // ==================================================================
+    function couchbaseGetAllDocumentIds(opts_){
+        var opts = $n2.extend({
+            onSuccess: function(result){}
+            ,onError: function(err){}
+        },opts_);
+
+        cordova.exec(
+            // success
+            function(result){
+                opts.onSuccess(result);
+            },
+            // error
+            function(err){
+                opts.onError(err);
+            },
+            // service
+            SERVICE,
+            // action
+            'couchbaseGetAllDocumentIds',
+            // Arguments
+            [
+            ]
+        );
+    };
+
+    // ==================================================================
+    function couchbaseGetAllDocuments(opts_){
+        var opts = $n2.extend({
+            onSuccess: function(result){}
+            ,onError: function(err){}
+        },opts_);
+
+        cordova.exec(
+            // success
+            function(result){
+                opts.onSuccess(result);
+            },
+            // error
+            function(err){
+                opts.onError(err);
+            },
+            // service
+            SERVICE,
+            // action
+            'couchbaseGetAllDocuments',
+            // Arguments
+            [
+            ]
+        );
+    };
+
+    // ==================================================================
     $n2.cordovaPlugin = {
         echo: echo
         ,getConnectionInfo: getConnectionInfo
+        ,couchbaseGetDatabaseInfo: couchbaseGetDatabaseInfo
         ,couchbaseGetDocumentRevision: couchbaseGetDocumentRevision
         ,couchbaseCreateDocument: couchbaseCreateDocument
         ,couchbaseUpdateDocument: couchbaseUpdateDocument
         ,couchbaseDeleteDocument: couchbaseDeleteDocument
         ,couchbaseGetDocument: couchbaseGetDocument
+        ,couchbaseGetDocuments: couchbaseGetDocuments
+        ,couchbaseGetAllDocumentIds: couchbaseGetAllDocumentIds
+        ,couchbaseGetAllDocuments: couchbaseGetAllDocuments
     };
 
 })(cordova,nunaliit2);

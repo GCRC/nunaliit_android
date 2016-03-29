@@ -6,6 +6,7 @@ import com.couchbase.lite.Database;
 import com.couchbase.lite.Document;
 import com.couchbase.lite.Query;
 import com.couchbase.lite.QueryEnumerator;
+import com.couchbase.lite.QueryOptions;
 import com.couchbase.lite.QueryRow;
 
 import org.json.JSONArray;
@@ -231,6 +232,32 @@ public class CouchbaseDb {
         return database;
     }
 
+    public JSONObject getInfo() throws Exception {
+        try {
+            JSONObject jsonInfo = new JSONObject();
+
+            {
+                String name = database.getName();
+                jsonInfo.put("db_name", name);
+            }
+
+            {
+                int count = database.getDocumentCount();
+                jsonInfo.put("doc_count", count);
+            }
+
+            {
+                long seqNum = database.getLastSequenceNumber();
+                jsonInfo.put("committed_update_seq", seqNum);
+            }
+
+            return jsonInfo;
+
+        } catch(Exception e) {
+            throw new Exception("Error while creating database information",e);
+        }
+    }
+
     public JSONObject getDocument(String docId) throws Exception {
         try {
             Document doc = database.getDocument(docId);
@@ -239,6 +266,68 @@ public class CouchbaseDb {
 
         } catch(Exception e) {
             throw new Exception("Unable to load document with identifier: "+docId,e);
+        }
+    }
+
+    public List<JSONObject> getDocuments(List<String> docIds) throws Exception {
+        try {
+            List<JSONObject> docs = new Vector<JSONObject>();
+            for(String docId : docIds){
+                Document doc = database.getExistingDocument(docId);
+                if( null != doc ){
+                    JSONObject jsonDoc = jsonObjectFromDocument(doc);
+                    if( null != jsonDoc ){
+                        docs.add(jsonDoc);
+                    }
+                }
+            }
+            return docs;
+
+        } catch(Exception e) {
+            throw new Exception("Unable to load documents with identifiers",e);
+        }
+    }
+
+    public List<JSONObject> getAllDocuments() throws Exception {
+        try {
+            List<JSONObject> docs = new Vector<JSONObject>();
+            Query query = database.createAllDocumentsQuery();
+            query.setAllDocsMode(Query.AllDocsMode.ALL_DOCS);
+            QueryEnumerator result = query.run();
+            for (Iterator<QueryRow> it = result; it.hasNext(); ) {
+                QueryRow row = it.next();
+                Document doc = row.getDocument();
+                if( null != doc ){
+                    JSONObject jsonDoc = jsonObjectFromDocument(doc);
+                    if( null != jsonDoc ){
+                        docs.add(jsonDoc);
+                    }
+                }
+            }
+            return docs;
+
+        } catch(Exception e) {
+            throw new Exception("Unable to load documents with identifiers",e);
+        }
+    }
+
+    public List<String> getAllDocumentIds() throws Exception {
+        try {
+            List<String> docIds = new Vector<String>();
+
+            Query query = database.createAllDocumentsQuery();
+            query.setAllDocsMode(Query.AllDocsMode.ALL_DOCS);
+            QueryEnumerator result = query.run();
+            for (Iterator<QueryRow> it = result; it.hasNext(); ) {
+                QueryRow row = it.next();
+                String docId = row.getSourceDocumentId();
+                docIds.add(docId);
+            }
+
+            return docIds;
+
+        } catch(Exception e) {
+            throw new Exception("Unable to fecth all document ids",e);
         }
     }
 

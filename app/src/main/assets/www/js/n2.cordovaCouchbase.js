@@ -1100,49 +1100,18 @@ var Database = $n2.Class({
 			,opts_
 		);
 
-		if( JSON && JSON.stringify ) {
-			// OK
-		} else {
-			opts.onError('json.js is required to query multiple documents');
-			return;
+		var _s = this;
+
+		if( !$n2.isArray(opts.docIds) ){
+    		throw 'Couchbase.Database.getDocuments(): docIds must be an array';
 		};
 
-		if( !opts.docIds ) {
-			opts.onError('No docIds set. Can not retrieve documents');
-			return;
-		};
-
-		var viewUrl = this.dbUrl + '_all_docs?include_docs=true';
-
-		var data = {
-			keys: opts.docIds // requires POST
-		};
-
-		$.ajax({
-	    	url: viewUrl
-	    	,type: 'POST'
-	    	,async: true
-	    	,data: JSON.stringify(data)
-	    	,contentType: 'application/json'
-	    	,dataType: 'json'
-	    	,success: function(queryResult) {
-	    		if( queryResult.rows ) {
-	    			var docs = [];
-	    			for(var i=0,e=queryResult.rows.length; i<e; ++i) {
-	    				var row = queryResult.rows[i];
-	    				if( row && row.doc ) {
-	    					docs.push(row.doc);
-	    				}
-	    			};
-	    			opts.onSuccess(docs);
-	    		} else {
-		    		opts.onError('Unexpected response during query of multiple documents');
-	    		};
-	    	}
-	    	,error: function(XMLHttpRequest, textStatus, errorThrown) {
-				var errStr = httpJsonError(XMLHttpRequest, textStatus);
-	    		opts.onError('Error during query of multiple documents: '+errStr);
-	    	}
+		$n2.cordovaPlugin.couchbaseGetDocuments({
+		    docIds: opts.docIds
+		    ,onSuccess: function(result){
+	    		opts.onSuccess(result.docs);
+		    }
+		    ,onError: opts.onError
 		});
 	}
 
@@ -1154,31 +1123,11 @@ var Database = $n2.Class({
 			,opts_
 		);
 
-		var viewUrl = this.dbUrl + '_all_docs?include_docs=false';
-
-		$.ajax({
-	    	url: viewUrl
-	    	,type: 'GET'
-	    	,async: true
-	    	,dataType: 'json'
-	    	,success: function(queryResult) {
-	    		if( queryResult.rows ) {
-	    			var docIds = [];
-	    			for(var i=0,e=queryResult.rows.length; i<e; ++i) {
-	    				var row = queryResult.rows[i];
-	    				if( row && row.id ) {
-	    					docIds.push(row.id);
-	    				}
-	    			};
-	    			opts.onSuccess(docIds);
-	    		} else {
-		    		opts.onError('Unexpected response during listing of all documents');
-	    		};
-	    	}
-	    	,error: function(XMLHttpRequest, textStatus, errorThrown) {
-				var errStr = httpJsonError(XMLHttpRequest, textStatus);
-	    		opts.onError('Error during listing of all documents: '+errStr);
-	    	}
+		$n2.cordovaPlugin.couchbaseGetAllDocumentIds({
+		    onSuccess: function(result){
+	    		opts.onSuccess(result.ids);
+		    }
+		    ,onError: opts.onError
 		});
 	}
 
@@ -1190,31 +1139,11 @@ var Database = $n2.Class({
 			,opts_
 		);
 
-		var viewUrl = this.dbUrl + '_all_docs?include_docs=true';
-
-		$.ajax({
-	    	url: viewUrl
-	    	,type: 'GET'
-	    	,async: true
-	    	,dataType: 'json'
-	    	,success: function(queryResult) {
-	    		if( queryResult.rows ) {
-	    			var docs = [];
-	    			for(var i=0,e=queryResult.rows.length; i<e; ++i) {
-	    				var row = queryResult.rows[i];
-	    				if( row && row.doc ) {
-	    					docs.push(row.doc);
-	    				}
-	    			};
-	    			opts.onSuccess(docs);
-	    		} else {
-		    		opts.onError('Unexpected response during retrieval of all documents');
-	    		};
-	    	}
-	    	,error: function(XMLHttpRequest, textStatus, errorThrown) {
-				var errStr = httpJsonError(XMLHttpRequest, textStatus);
-	    		opts.onError('Error during retrieval of all documents: '+errStr);
-	    	}
+		$n2.cordovaPlugin.couchbaseGetAllDocuments({
+		    onSuccess: function(result){
+	    		opts.onSuccess(result.docs);
+		    }
+		    ,onError: opts.onError
 		});
 	}
 
@@ -1226,26 +1155,13 @@ var Database = $n2.Class({
 			,opts_
 		);
 
-		var data = {};
-
-		$.ajax({
-	    	url: this.dbUrl
-	    	,type: 'GET'
-	    	,async: true
-	    	,dataType: 'json'
-	    	,data: data
-	    	,success: function(dbInfo) {
-	    		if( dbInfo.error ) {
-		    		opts.onError(dbInfo.error);
-	    		} else {
-		    		opts.onSuccess(dbInfo);
-	    		};
-	    	}
-	    	,error: function(XMLHttpRequest, textStatus, errorThrown) {
-				var errStr = httpJsonError(XMLHttpRequest, textStatus);
-	    		opts.onError('Error during databse infro: '+errStr);
-	    	}
+		$n2.cordovaPlugin.couchbaseGetDatabaseInfo({
+		    onSuccess: function(info){
+	    		opts.onSuccess(info);
+		    }
+		    ,onError: opts.onError
 		});
+
 	}
 
 	,queryTemporaryView: function(opts_){
@@ -1256,39 +1172,7 @@ var Database = $n2.Class({
 			,onError: $n2.reportErrorForced
 		},opts_);
 
-		if( !opts.map ) {
-			opts.onError('"map" must be provided in temporary view');
-		};
-
-		var data = {
-			map: opts.map
-		};
-
-		if( opts.reduce ) {
-			data.reduce = opts.reduce;
-		};
-
-		var viewUrl = this.dbUrl + '_temp_view';
-
-		$.ajax({
-	    	url: viewUrl
-	    	,type: 'post'
-	    	,async: true
-	    	,dataType: 'json'
-	    	,data: JSON.stringify( data )
-	    	,contentType: 'application/json'
-	    	,success: function(queryResult) {
-	    		if( queryResult.rows ) {
-	    			opts.onSuccess(queryResult.rows);
-	    		} else {
-		    		opts.onError('Unexpected response during query of temporary view');
-	    		};
-	    	}
-	    	,error: function(XMLHttpRequest, textStatus, errorThrown) {
-				var errStr = httpJsonError(XMLHttpRequest, textStatus);
-	    		opts.onError('Error during query temporary view: '+errStr);
-	    	}
-		});
+		throw 'Couchbase.Database.queryTemporaryView() not implemented';
 	}
 });
 

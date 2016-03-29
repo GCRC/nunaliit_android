@@ -42,6 +42,17 @@
             var db = server.getDb({
                 dbName: 'docs'
             });
+            db.getInfo({
+                onSuccess: function(info){
+                    for(var key in info){
+                        var value = info[key];
+                        console.log('getInfo '+key+': '+value);
+                    };
+                }
+                ,onError: function(err){
+                    console.log('error during db getInfo: '+err);
+                }
+            });
             db.createDocument({
                 data: {
                     test: 'This is just a test'
@@ -54,6 +65,53 @@
                     console.log('error during document creation: '+err);
                 }
             });
+            db.listAllDocuments({
+				onSuccess: function(docIds){
+				    for(var i=0,e=docIds.length; i<e; ++i){
+				        var docId = docIds[i];
+				        console.log('list all: '+docId);
+				    };
+				    allDocIdsReported(docIds);
+				}
+                ,onError: function(err){
+                    console.log('error during listing of all documents: '+err);
+                }
+            });
+            db.getAllDocuments({
+				onSuccess: function(docs){
+				    for(var i=0,e=docs.length; i<e; ++i){
+				        var doc = docs[i];
+				        console.log('getAllDocuments: '+doc._id);
+				    };
+				}
+                ,onError: function(err){
+                    console.log('error during fetching of all documents: '+err);
+                }
+            });
+
+            function allDocIdsReported(docIds){
+                var someDocIds = [];
+                for(var i=0,e=docIds.length; i<e && i<5; ++i){
+                    var docId = docIds[i];
+                    someDocIds.push(docId);
+                };
+                someDocIds.push('abbccddee');
+
+                console.log('someDocIds.length: '+someDocIds.length);
+
+                db.getDocuments({
+                    docIds: someDocIds
+                    ,onSuccess: function(docs){
+                        for(var i=0,e=docs.length; i<e; ++i){
+                            var doc = docs[i];
+                            console.log('getDocuments: '+doc._id);
+                        };
+                    }
+                    ,onError: function(err){
+                        console.log('error during getting documents: '+err);
+                    }
+                });
+            };
 
             function docCreated(docId){
                 db.getDocumentRevision({
