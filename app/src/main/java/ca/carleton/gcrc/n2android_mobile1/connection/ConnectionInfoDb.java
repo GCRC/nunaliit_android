@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.Vector;
 
 import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseDb;
+import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseDocInfo;
 import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseManager;
 import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseQuery;
 import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseQueryResults;
@@ -189,8 +190,8 @@ public class ConnectionInfoDb extends CouchbaseDb {
     public ConnectionInfo createConnectionInfo(ConnectionInfo info) throws Exception {
         try {
             JSONObject jsonInfo = jsonFromConnectionInfo(info);
-            JSONObject docInfo = createDocument(jsonInfo);
-            info.setId(docInfo.optString("id"));
+            CouchbaseDocInfo docInfo = createDocument(jsonInfo);
+            info.setId(docInfo.getId());
             return info;
 
         } catch(Exception e) {

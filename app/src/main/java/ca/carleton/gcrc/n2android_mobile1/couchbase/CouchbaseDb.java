@@ -251,7 +251,17 @@ public class CouchbaseDb {
         return exists;
     }
 
-    public JSONObject createDocument(JSONObject jsonDoc) throws Exception {
+    public String getDocumentRevision(String docId) throws Exception {
+        try {
+            Document doc = database.getDocument(docId);
+            return doc.getCurrentRevisionId();
+
+        } catch(Exception e) {
+            throw new Exception("Unable to load document with identifier: "+docId,e);
+        }
+    }
+
+    public CouchbaseDocInfo createDocument(JSONObject jsonDoc) throws Exception {
         String id = null;
         try {
             Document doc = null;
@@ -267,10 +277,10 @@ public class CouchbaseDb {
             // Creation happens here
             doc.putProperties(props);
 
-            JSONObject docInfo = new JSONObject();
-            docInfo.put("id",doc.getId());
-            docInfo.put("rev",doc.getCurrentRevisionId());
-            return docInfo;
+            CouchbaseDocInfo info = new CouchbaseDocInfo();
+            info.setId(doc.getId());
+            info.setRev(doc.getCurrentRevisionId());
+            return info;
 
         } catch(Exception e) {
             String label = "";
@@ -281,7 +291,7 @@ public class CouchbaseDb {
         }
     }
 
-    public JSONObject updateDocument(JSONObject jsonDoc) throws Exception {
+    public CouchbaseDocInfo updateDocument(JSONObject jsonDoc) throws Exception {
         String id = null;
         try {
             id = jsonDoc.getString("_id");
@@ -292,19 +302,41 @@ public class CouchbaseDb {
             // Update happens here
             doc.putProperties(props);
 
-            JSONObject docInfo = new JSONObject();
-            docInfo.put("id",doc.getId());
-            docInfo.put("rev",doc.getCurrentRevisionId());
-            return docInfo;
+            CouchbaseDocInfo info = new CouchbaseDocInfo();
+            info.setId(doc.getId());
+            info.setRev(doc.getCurrentRevisionId());
+            return info;
 
         } catch(Exception e) {
             throw new Exception("Unable to update document "+id,e);
         }
     }
 
-    public void deleteDocument(JSONObject jsonDoc) throws Exception {
-        String id = jsonDoc.getString("_id");
-        deleteDocument(id);
+    public CouchbaseDocInfo deleteDocument(JSONObject jsonDoc) throws Exception {
+        String id = null;
+        try {
+            id = jsonDoc.getString("_id");
+            String rev = jsonDoc.getString("_rev");
+
+            Document doc = database.getDocument(id);
+            String currentRev = doc.getCurrentRevisionId();
+
+            if( currentRev != null && currentRev.equals(rev) ){
+                // OK
+            } else {
+                throw new Exception("Revision must match current on deletion");
+            }
+
+            doc.delete();
+
+            CouchbaseDocInfo info = new CouchbaseDocInfo();
+            info.setId(id);
+            info.setRev(currentRev);
+            return info;
+
+        } catch(Exception e) {
+            throw new Exception("Unable to delete document"+id,e);
+        }
     }
 
     public void deleteDocument(String docId) throws Exception {

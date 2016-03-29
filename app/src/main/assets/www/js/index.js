@@ -37,6 +37,74 @@
                     console.log('connection name: '+info.name);
                 }
             });
+
+            var server = $n2.cordovaCouchbase.getServer();
+            var db = server.getDb({
+                dbName: 'docs'
+            });
+            db.createDocument({
+                data: {
+                    test: 'This is just a test'
+                }
+                ,onSuccess: function(info){
+                    console.log('document created: '+info.id+'/'+info.rev);
+                    docCreated(info.id);
+                }
+                ,onError: function(err){
+                    console.log('error during document creation: '+err);
+                }
+            });
+
+            function docCreated(docId){
+                db.getDocumentRevision({
+                    docId: docId
+                    ,onSuccess: function(rev){
+                        console.log('document revision: '+rev);
+                    }
+                    ,onError: function(err){
+                        console.log('error while fetching document revision: '+err);
+                    }
+                });
+
+                db.getDocument({
+                    docId: docId
+                    ,onSuccess: function(doc){
+                        console.log('document fetched: '+doc._id);
+                        docFetched(doc);
+                    }
+                    ,onError: function(err){
+                        console.log('error while fetching document: '+err);
+                    }
+                });
+            };
+
+            function docFetched(doc){
+                doc.updated = 'Updated!';
+                db.updateDocument({
+                    data: doc
+                    ,onSuccess: function(info){
+                        console.log('document updated: '+info.rev);
+
+                        doc._rev = info.rev;
+                        docUpdated(doc);
+                    }
+                    ,onError: function(err){
+                        console.log('error while updating document: '+err);
+                    }
+                });
+            };
+
+            function docUpdated(doc){
+                db.deleteDocument({
+                    data: doc
+                    ,onSuccess: function(info){
+                        console.log('document deleted: '+info.id+'/'+info.rev);
+                    }
+                    ,onError: function(err){
+                        console.log('error while deleting document: '+err);
+                    }
+                });
+            };
         },
         // Update DOM on a Received Event
         receivedEvent: function(id) {
