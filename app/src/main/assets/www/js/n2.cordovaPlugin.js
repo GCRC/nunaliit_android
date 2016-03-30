@@ -324,6 +324,44 @@
     };
 
     // ==================================================================
+    function couchbasePerformQuery(opts_){
+        var opts = $n2.extend({
+		    designName: null
+		    ,query: null
+            ,onSuccess: function(result){}
+            ,onError: function(err){}
+        },opts_);
+
+        if( typeof opts.designName !== 'string' ){
+            throw 'cordovaPlugin.couchbasePerformQuery(): designName must be a string';
+        };
+
+        if( typeof opts.query !== 'object' ){
+            throw 'cordovaPlugin.couchbasePerformQuery(): query must be an object';
+        };
+
+        cordova.exec(
+            // success
+            function(result){
+                opts.onSuccess(result);
+            },
+            // error
+            function(err){
+                opts.onError(err);
+            },
+            // service
+            SERVICE,
+            // action
+            'couchbasePerformQuery',
+            // Arguments
+            [
+                opts.designName
+                ,opts.query
+            ]
+        );
+    };
+
+    // ==================================================================
     $n2.cordovaPlugin = {
         echo: echo
         ,getConnectionInfo: getConnectionInfo
@@ -336,6 +374,7 @@
         ,couchbaseGetDocuments: couchbaseGetDocuments
         ,couchbaseGetAllDocumentIds: couchbaseGetAllDocumentIds
         ,couchbaseGetAllDocuments: couchbaseGetAllDocuments
+        ,couchbasePerformQuery: couchbasePerformQuery
     };
 
 })(cordova,nunaliit2);

@@ -302,14 +302,11 @@ var Session = $n2.Class({
 // =============================================
 
 var designDoc = $n2.Class({
-	ddUrl: null
-
-	,ddName: null
+	ddName: null
 
 	,initialize: function(opts_) {
 		var opts = $n2.extend({
-			ddUrl: null
-			,ddName: null
+			ddName: null
 			,db: null
 		},opts_);
 
@@ -326,11 +323,7 @@ var designDoc = $n2.Class({
 			,opts_
 		);
 
-		if( opts.listName ) {
-			return this.ddUrl + '_list/' + opts.listName + '/' + opts.viewName;
-		} else {
-			return this.ddUrl + '_view/' + opts.viewName;
-		};
+		throw 'Couchbase.DesignDoc.getQueryUrl() is not implemented';
 	}
 
 	,queryView: function(options_) {
@@ -353,102 +346,61 @@ var designDoc = $n2.Class({
 			,options_
 		);
 
-		if( JSON && JSON.stringify ) {
-			// OK
-		} else {
-			opts.onError('json.js is required to query a view');
+		if( opts.viewUrl ){
+    		throw 'Couchbase.DesignDoc.queryView() does not support option: viewUrl';
+		};
+		if( opts.listName ){
+    		throw 'Couchbase.DesignDoc.queryView() does not support option: listName';
+		};
+		if( opts.rawResponse ){
+    		throw 'Couchbase.DesignDoc.queryView() does not support option: rawResponse';
 		};
 
-		var viewUrl = opts.viewUrl;
-		if( !viewUrl ) {
-			if( opts.listName ) {
-				viewUrl = this.ddUrl + '_list/' + opts.listName + '/' + opts.viewName;
-			} else {
-				viewUrl = this.ddUrl + '_view/' + opts.viewName;
-			};
+		var req = {};
+
+		if( typeof opts.viewName !== 'string' ){
+    		throw 'Couchbase.DesignDoc.queryView() option viewName must be a string';
+		};
+		req.viewName = opts.viewName;
+
+		if( opts.startkey ){
+		    req.startkey = opts.startkey;
 		};
 
-		var mustBePost = false;
-		var queryCount = 0;
-		var query = {};
-		var data = {};
-		for(var k in opts) {
-			if( k === 'viewName'
-			 || k === 'listName'
-			 || k === 'viewUrl'
-			 || k === 'onlyRows'
-			 || k === 'rawResponse'
-			 || k === 'onSuccess'
-			 || k === 'onError'
-			 || typeof(opts[k]) === 'undefined'
-			 || opts[k] === null
-			 ) {
-			 // Nothing to do
-			} else if ( k === 'keys' ) {
-				mustBePost = true;
-				data[k] = opts[k];
-			} else {
-				++queryCount;
-				query[k] = JSON.stringify( opts[k] );
-			};
+		if( opts.endkey ){
+		    req.endkey = opts.endkey;
 		};
 
-		var dataType = 'json';
-		if( opts.rawResponse ) {
-			dataType = 'text';
+		if( opts.keys ){
+            if( !$n2.isArray(opts.keys) ){
+                throw 'Couchbase.DesignDoc.queryView() if option keys is specified, it must be an array';
+            };
+            req.keys = opts.keys;
 		};
 
-		if( mustBePost ) {
-			var jsonData = JSON.stringify( data );
-
-			var effectiveUrl = viewUrl;
-			if( queryCount > 0 ){
-				var params = $.param(query);
-				effectiveUrl = viewUrl + '?' + params;
-			};
-
-			$.ajax({
-		    	url: effectiveUrl
-		    	,type: 'POST'
-		    	,async: true
-		    	,data: jsonData
-		    	,contentType: 'application/json'
-		    	,dataType: dataType
-		    	,success: processResponse
-		    	,error: function(XMLHttpRequest, textStatus, errorThrown) {
-					var errStr = httpJsonError(XMLHttpRequest, textStatus);
-		    		opts.onError('Error during view query '+opts.viewName+': '+errStr);
-		    	}
-			});
-
-		} else {
-			$.ajax({
-		    	url: viewUrl
-		    	,type: 'GET'
-		    	,async: true
-		    	,cache: false
-		    	,data: query
-		    	,dataType: dataType
-		    	,success: processResponse
-		    	,error: function(XMLHttpRequest, textStatus, errorThrown) {
-					var errStr = httpJsonError(XMLHttpRequest, textStatus);
-		    		opts.onError('Error during view query '+opts.viewName+': '+errStr);
-		    	}
-			});
+		if( opts.include_docs ){
+    		req.include_docs = true;
 		};
 
-		function processResponse(queryResponse) {
-			if( opts.onlyRows ) {
-	    		if( queryResponse.rows ) {
-	    			opts.onSuccess(queryResponse.rows);
-	    		} else {
-		    		opts.onError('Unexpected response during view query '+opts.view);
-	    		};
-    		} else {
-    			// Send the whole response
-    			opts.onSuccess(queryResponse);
-    		};
+		if( null !== opts.limit && typeof opts.limit !== 'undefined' ){
+		    // Limit is specified
+		    if( typeof opts.limit !== 'number' ){
+                throw 'Couchbase.DesignDoc.queryView() if option limit is specified, it must be a number';
+		    };
 		};
+
+		if( opts.reduce ){
+    		req.reduce = true;
+		};
+
+		$n2.cordovaPlugin.couchbasePerformQuery({
+		    designName: this.ddName
+		    ,query: req
+		    ,onSuccess: function(result) {
+		        opts.onSuccess(result.rows);
+		    }
+		    ,onError: opts.onError
+		});
 	}
 });
 
@@ -764,8 +716,8 @@ var Database = $n2.Class({
 			,opts_
 		);
 
-		if( !ddOpts.ddUrl ) {
-			ddOpts.ddUrl = this.dbUrl + '_design/' + ddOpts.ddName + '/';
+		if( ddOpts.ddUrl ) {
+			throw 'Couchbase.Database.getDesignDoc() option ddUrl is not supported';
 		};
 
 		ddOpts.db = this;

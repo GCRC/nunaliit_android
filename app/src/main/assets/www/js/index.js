@@ -88,6 +88,51 @@
                     console.log('error during fetching of all documents: '+err);
                 }
             });
+            var designDoc = db.getDesignDoc({
+                ddName: 'atlas'
+            });
+            designDoc.queryView({
+                viewName: 'schemas-root'
+                ,onSuccess: function(rows){
+                    console.log('*** query results: '+rows.length);
+                    for(var i=0,e=rows.length; i<e; ++i){
+                        var row = rows[i];
+                        console.log('query: '+row.id+'/'+row.key);
+                    };
+                }
+                ,onError: function(err){
+                    console.log('error during query: '+err);
+                }
+            });
+            designDoc.queryView({
+                viewName: 'nunaliit-schema'
+                ,startkey: 'module'
+                ,endkey: 'module'
+                ,onSuccess: function(rows){
+                    console.log('*** query (start/end) results: '+rows.length);
+                    for(var i=0,e=rows.length; i<e; ++i){
+                        var row = rows[i];
+                        console.log('query (start/end): '+row.id+'/'+row.key);
+                    };
+                }
+                ,onError: function(err){
+                    console.log('error during query (start/end): '+err);
+                }
+            });
+            designDoc.queryView({
+                viewName: 'nunaliit-schema'
+                ,keys: ['module']
+                ,onSuccess: function(rows){
+                    console.log('*** query (keys) results: '+rows.length);
+                    for(var i=0,e=rows.length; i<e; ++i){
+                        var row = rows[i];
+                        console.log('query (keys): '+row.id+'/'+row.key);
+                    };
+                }
+                ,onError: function(err){
+                    console.log('error during query (keys): '+err);
+                }
+            });
 
             function allDocIdsReported(docIds){
                 var someDocIds = [];

@@ -9,9 +9,10 @@ import java.util.List;
  */
 public class CouchbaseQuery {
     private String viewName = null;
-    private String startKey = null;
-    private String endKey = null;
-    private String keys = null;
+    private Object startKey = null;
+    private Object endKey = null;
+    private JSONArray keys = null;
+    private Integer limit = null;
     private boolean includeDocs = false;
     private boolean reduce = false;
 
@@ -22,29 +23,25 @@ public class CouchbaseQuery {
         this.viewName = viewName;
     }
 
-    public String getStartKey() {
+    public Object getStartKey() {
         return startKey;
     }
-    public void setStartKey(String startKey) {
+    public void setStartKey(Object startKey) {
         this.startKey = startKey;
     }
 
-    public String getEndKey() {
+    public Object getEndKey() {
         return endKey;
     }
-    public void setEndKey(String endKey) {
+    public void setEndKey(Object endKey) {
         this.endKey = endKey;
     }
 
-    public String getKeys() {
+    public JSONArray getKeys() {
         return keys;
     }
-    public void setKeys(List<String> keys) {
-        JSONArray arr = new JSONArray();
-        for(String key : keys) {
-            arr.put(key);
-        }
-        this.keys = arr.toString();
+    public void setKeys(JSONArray keys) {
+        this.keys = keys;
     }
 
     public boolean getIncludeDocs() {
@@ -59,5 +56,13 @@ public class CouchbaseQuery {
     }
     public void setReduce(boolean reduce) {
         this.reduce = reduce;
+    }
+
+    public Integer getLimit() {
+        return limit;
+    }
+
+    public void setLimit(Integer limit) {
+        this.limit = limit;
     }
 }

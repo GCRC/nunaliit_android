@@ -21,12 +21,12 @@ import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseView;
  */
 public class DocumentDb extends CouchbaseDb {
 
-    public static final CouchbaseView viewConnectionsById = new CouchbaseView(){
+    public static final CouchbaseView viewNunaliitSchema = new CouchbaseView(){
         @Override
-        public String getName() { return "connections-by-id"; }
+        public String getName() { return "nunaliit-schema"; }
 
         @Override
-        public String getVersion() { return "1"; }
+        public String getVersion() { return "2"; }
 
         @Override
         public Mapper getMapper() {
@@ -36,12 +36,67 @@ public class DocumentDb extends CouchbaseDb {
         private Mapper mapper = new Mapper(){
             @Override
             public void map(Map<String, Object> document, Emitter emitter) {
-                Object connInfoObj = document.get("mobile_connection");
-                if (null != connInfoObj && connInfoObj instanceof Map) {
-                    Object idObj = document.get("_id");
-                    if (null != idObj && idObj instanceof String) {
-                        String id = (String) idObj;
-                        emitter.emit(id, null);
+                Object schema = document.get("nunaliit_schema");
+                if (null != schema
+                 && schema instanceof String ) {
+                    emitter.emit(schema, null);
+                }
+            }
+        };
+    };
+
+    public static final CouchbaseView viewSchemas = new CouchbaseView(){
+        @Override
+        public String getName() { return "schemas"; }
+
+        @Override
+        public String getVersion() { return "2"; }
+
+        @Override
+        public Mapper getMapper() {
+            return mapper;
+        }
+
+        private Mapper mapper = new Mapper(){
+            @Override
+            public void map(Map<String, Object> document, Emitter emitter) {
+                Object type = document.get("nunaliit_type");
+                if( "schema".equals(type) ) {
+                    Object nameObj = document.get("name");
+                    if (null != nameObj && nameObj instanceof String) {
+                        String name = (String) nameObj;
+                        emitter.emit(name, null);
+                    }
+                }
+            }
+        };
+    };
+
+    public static final CouchbaseView viewSchemasRoot = new CouchbaseView(){
+        @Override
+        public String getName() { return "schemas-root"; }
+
+        @Override
+        public String getVersion() { return "2"; }
+
+        @Override
+        public Mapper getMapper() {
+            return mapper;
+        }
+
+        private Mapper mapper = new Mapper(){
+            @Override
+            public void map(Map<String, Object> document, Emitter emitter) {
+                Object type = document.get("nunaliit_type");
+                Object isRoot = document.get("isRootSchema");
+                if( "schema".equals(type)
+                    && null != isRoot
+                    && isRoot instanceof Boolean
+                    && ((Boolean)isRoot) ) {
+                    Object nameObj = document.get("name");
+                    if (null != nameObj && nameObj instanceof String) {
+                        String name = (String) nameObj;
+                        emitter.emit(name, null);
                     }
                 }
             }
@@ -51,6 +106,8 @@ public class DocumentDb extends CouchbaseDb {
     public DocumentDb(Database database) throws Exception {
         super(database);
 
-        installView(viewConnectionsById);
+        installView(viewNunaliitSchema);
+        installView(viewSchemas);
+        installView(viewSchemasRoot);
     }
 }

@@ -22,6 +22,8 @@ import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseLiteService;
 import ca.carleton.gcrc.n2android_mobile1.connection.ConnectionInfo;
 import ca.carleton.gcrc.n2android_mobile1.activities.EmbeddedCordovaActivity;
 import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseManager;
+import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseQuery;
+import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseQueryResults;
 
 /**
  * Created by jpfiset on 3/14/16.
@@ -117,6 +119,12 @@ public class CordovaNunaliitPlugin extends CordovaPlugin {
 
         } else if( "couchbaseGetAllDocumentIds".equals(action) ) {
             this.couchbaseGetAllDocumentIds(callbackContext);
+            return true;
+
+        } else if( "couchbasePerformQuery".equals(action) ) {
+            String designName = args.getString(0);
+            JSONObject jsonQuery = args.getJSONObject(1);
+            this.couchbasePerformQuery(designName, jsonQuery, callbackContext);
             return true;
         }
 
@@ -299,6 +307,82 @@ public class CordovaNunaliitPlugin extends CordovaPlugin {
 
         } catch(Exception e) {
             callbackContext.error("Error while performing couchbaseGetAllDocumentIds(): "+e.getMessage());
+        }
+    }
+
+    private void couchbasePerformQuery(String designName, JSONObject jsonQuery, CallbackContext callbackContext) {
+        try {
+            CouchbaseQuery query = new CouchbaseQuery();
+
+            // View name
+            {
+                String viewName = jsonQuery.getString("viewName");
+                query.setViewName(viewName);
+            }
+
+            // Start key
+            {
+                Object startObj = jsonQuery.opt("startkey");
+                if( null != startObj ){
+                    query.setStartKey(startObj);
+                }
+            }
+
+            // End key
+            {
+                Object endObj = jsonQuery.opt("endkey");
+                if( null != endObj ){
+                    query.setEndKey(endObj);
+                }
+            }
+
+            // Keys
+            {
+                JSONArray keys = jsonQuery.optJSONArray("keys");
+                if( null != keys ){
+                    query.setKeys(keys);
+                }
+            }
+
+            // Include Docs
+            {
+                boolean include_docs = jsonQuery.optBoolean("include_docs", false);
+                if( include_docs ){
+                    query.setIncludeDocs(true);
+                }
+            }
+
+            // Limit
+            {
+                if( jsonQuery.has("limit") ) {
+                    int limit = jsonQuery.getInt("limit");
+                    query.setLimit(limit);
+                }
+            }
+
+            // Reduce
+            {
+                boolean reduce = jsonQuery.optBoolean("reduce", false);
+                if( reduce ){
+                    query.setReduce(true);
+                }
+            }
+
+            DocumentDb docDb = getDocumentDb();
+
+            CouchbaseQueryResults results = docDb.performQuery(query);
+
+            JSONArray jsonRows = new JSONArray();
+            for(JSONObject row : results.getRows()){
+                jsonRows.put(row);
+            }
+
+            JSONObject result = new JSONObject();
+            result.put("rows", jsonRows);
+            callbackContext.success(result);
+
+        } catch(Exception e) {
+            callbackContext.error("Error while performing couchbasePerformQuery(): "+e.getMessage());
         }
     }
 

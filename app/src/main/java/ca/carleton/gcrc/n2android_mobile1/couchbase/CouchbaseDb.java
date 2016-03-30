@@ -51,40 +51,9 @@ public class CouchbaseDb {
         JSONObject obj = new JSONObject();
 
         for(String key : props.keySet()){
-            Object value = props.get(key);
-
-            if( value == null ) {
-                obj.put(key, JSONObject.NULL);
-
-            } else if( value instanceof String ){
-                String str = (String)value;
-                obj.put(key,str);
-
-            } else if( value instanceof Number ){
-                Number num = (Number)value;
-                obj.put(key,num);
-
-            } else if( value instanceof Boolean ){
-                Boolean num = (Boolean)value;
-                obj.put(key,num);
-
-            } else if( value instanceof Map ){
-                Map<String,Object> p = (Map<String,Object>)value;
-                JSONObject jsonValue = jsonObjectFromProperties(p);
-                obj.put(key,jsonValue);
-
-            } else if( value instanceof List ){
-                List<Object> p = (List<Object>)value;
-                JSONArray jsonArray = jsonArrayFromProperties(p);
-                obj.put(key,jsonArray);
-
-            } else {
-                String name = "" + value;
-                if( null != value ){
-                    name = value.getClass().getName();
-                }
-                throw new Exception("jsonObjectFromProperties() can not handle "+name);
-            }
+            Object couchbaseValue = props.get(key);
+            Object jsonValue = jsonValueFromCouchbase(couchbaseValue);
+            obj.put(key,jsonValue);
         }
 
         return obj;
@@ -93,43 +62,47 @@ public class CouchbaseDb {
     static public JSONArray jsonArrayFromProperties(List<Object> props) throws Exception {
         JSONArray array = new JSONArray();
 
-        for(Object value : props) {
-
-            if( value == null ) {
-                array.put(JSONObject.NULL);
-
-            } else if( value instanceof String ){
-                String str = (String)value;
-                array.put(str);
-
-            } else if( value instanceof Number ){
-                Number num = (Number)value;
-                array.put(num);
-
-            } else if( value instanceof Boolean ){
-                Boolean num = (Boolean)value;
-                array.put(num);
-
-            } else if( value instanceof Map ){
-                Map<String,Object> p = (Map<String,Object>)value;
-                JSONObject jsonValue = jsonObjectFromProperties(p);
-                array.put(jsonValue);
-
-            } else if( value instanceof List ){
-                List<Object> p = (List<Object>)value;
-                JSONArray jsonArray = jsonArrayFromProperties(p);
-                array.put(jsonArray);
-
-            } else {
-                String name = "" + value;
-                if( null != value ){
-                    name = value.getClass().getName();
-                }
-                throw new Exception("jsonArrayFromProperties() can not handle "+name);
-            }
+        for(Object couchbaseValue : props) {
+            Object jsonValue = jsonValueFromCouchbase(couchbaseValue);
+            array.put(jsonValue);
         }
 
         return array;
+    };
+
+    static public Object jsonValueFromCouchbase(Object couchbaseValue) throws Exception {
+        if( couchbaseValue == null ) {
+            return JSONObject.NULL;
+
+        } else if( couchbaseValue instanceof String ){
+            String str = (String)couchbaseValue;
+            return str;
+
+        } else if( couchbaseValue instanceof Number ){
+            Number num = (Number)couchbaseValue;
+            return num;
+
+        } else if( couchbaseValue instanceof Boolean ){
+            Boolean num = (Boolean)couchbaseValue;
+            return num;
+
+        } else if( couchbaseValue instanceof Map ){
+            Map<String,Object> p = (Map<String,Object>)couchbaseValue;
+            JSONObject jsonValue = jsonObjectFromProperties(p);
+            return jsonValue;
+
+        } else if( couchbaseValue instanceof List ){
+            List<Object> p = (List<Object>)couchbaseValue;
+            JSONArray jsonArray = jsonArrayFromProperties(p);
+            return jsonArray;
+
+        } else {
+            String name = "" + couchbaseValue;
+            if( null != couchbaseValue ){
+                name = couchbaseValue.getClass().getName();
+            }
+            throw new Exception("jsonValueFromCouchbase() can not handle "+name);
+        }
     };
 
     static public Map<String,Object> propertiesFromJsonObject(JSONObject jsonObject) throws Exception {
@@ -138,40 +111,9 @@ public class CouchbaseDb {
         Iterator<String> keysIt = jsonObject.keys();
         while( keysIt.hasNext() ) {
             String key = keysIt.next();
-            Object obj = jsonObject.get(key);
-
-            if( obj == JSONObject.NULL ) {
-                props.put(key, null);
-
-            } else if( obj instanceof String ){
-                String str = (String)obj;
-                props.put(key, str);
-
-            } else if( obj instanceof Number ){
-                Number num = (Number)obj;
-                props.put(key, num);
-
-            } else if( obj instanceof Boolean ){
-                Boolean flag = (Boolean)obj;
-                props.put(key, flag);
-
-            } else if( obj instanceof JSONObject ){
-                JSONObject json = (JSONObject)obj;
-                Map<String,Object> p = propertiesFromJsonObject(json);
-                props.put(key, p);
-
-            } else if( obj instanceof JSONArray ){
-                JSONArray json = (JSONArray)obj;
-                List<Object> p = propertiesFromJsonArray(json);
-                props.put(key, p);
-
-            } else {
-                String name = "" + obj;
-                if( null != obj ){
-                    name = obj.getClass().getName();
-                }
-                throw new Exception("propertiesFromJsonObject() can not handle "+name);
-            }
+            Object jsonValue = jsonObject.get(key);
+            Object couchbaseValue = couchbaseValueFromJson(jsonValue);
+            props.put(key, couchbaseValue);
         }
 
         return props;
@@ -181,43 +123,47 @@ public class CouchbaseDb {
         List<Object> props = new Vector<Object>();
 
         for(int i=0,e=jsonArray.length(); i<e; ++i) {
-            Object obj = jsonArray.get(i);
-
-            if( obj == JSONObject.NULL ) {
-                props.add(null);
-
-            } else if( obj instanceof String ){
-                String str = (String)obj;
-                props.add(str);
-
-            } else if( obj instanceof Number ){
-                Number num = (Number)obj;
-                props.add(num);
-
-            } else if( obj instanceof Boolean ){
-                Boolean flag = (Boolean)obj;
-                props.add(flag);
-
-            } else if( obj instanceof JSONObject ){
-                JSONObject json = (JSONObject)obj;
-                Map<String,Object> p = propertiesFromJsonObject(json);
-                props.add(p);
-
-            } else if( obj instanceof JSONArray ){
-                JSONArray json = (JSONArray)obj;
-                List<Object> p = propertiesFromJsonArray(json);
-                props.add(p);
-
-            } else {
-                String name = "" + obj;
-                if( null != obj ){
-                    name = obj.getClass().getName();
-                }
-                throw new Exception("propertiesFromJsonArray() can not handle "+name);
-            }
+            Object jsonValue = jsonArray.get(i);
+            Object couchbaseValue = couchbaseValueFromJson(jsonValue);
+            props.add(couchbaseValue);
         }
 
         return props;
+    };
+
+    static public Object couchbaseValueFromJson(Object jsonValue) throws Exception {
+        if( jsonValue == JSONObject.NULL ) {
+            return null;
+
+        } else if( jsonValue instanceof String ){
+            String str = (String)jsonValue;
+            return str;
+
+        } else if( jsonValue instanceof Number ){
+            Number num = (Number)jsonValue;
+            return num;
+
+        } else if( jsonValue instanceof Boolean ){
+            Boolean flag = (Boolean)jsonValue;
+            return flag;
+
+        } else if( jsonValue instanceof JSONObject ){
+            JSONObject json = (JSONObject)jsonValue;
+            Map<String,Object> p = propertiesFromJsonObject(json);
+            return p;
+
+        } else if( jsonValue instanceof JSONArray ){
+            JSONArray json = (JSONArray)jsonValue;
+            List<Object> p = propertiesFromJsonArray(json);
+            return p;
+
+        } else {
+            String name = "" + jsonValue;
+            if( null != jsonValue ){
+                name = jsonValue.getClass().getName();
+            }
+            throw new Exception("couchbaseValueFromJson() can not handle "+name);
+        }
     };
 
     protected final String TAG = this.getClass().getSimpleName();
@@ -442,11 +388,58 @@ public class CouchbaseDb {
         String viewName = null;
         try {
             viewName = query.getViewName();
-
-            CouchbaseQueryResults results = new CouchbaseQueryResults();
-
             Query dbQuery = database.getView(viewName).createQuery();
 
+            // Start key
+            {
+                Object startKey = query.getStartKey();
+                if( null != startKey ){
+                    Object couchbaseKey = couchbaseValueFromJson(startKey);
+                    dbQuery.setStartKey(couchbaseKey);
+                }
+            }
+
+            // End key
+            {
+                Object endKey = query.getEndKey();
+                if( null != endKey ){
+                    Object couchbaseKey = couchbaseValueFromJson(endKey);
+                    dbQuery.setEndKey(couchbaseKey);
+                }
+            }
+
+            // Keys
+            {
+                JSONArray keys = query.getKeys();
+                if( null != keys ){
+                    List<Object> couchbaseKeys = new Vector<Object>();
+                    for(int i=0,e=keys.length(); i<e; ++i){
+                        Object jsonKey = keys.get(i);
+                        Object couchbaseKey = couchbaseValueFromJson(jsonKey);
+                        couchbaseKeys.add(couchbaseKey);
+                    }
+                    dbQuery.setKeys(couchbaseKeys);
+                }
+            }
+
+            // Limit
+            {
+                Integer limit = query.getLimit();
+                if( null != limit ){
+                    dbQuery.setLimit(limit);
+                }
+            }
+
+            // Reduce
+            {
+                if( query.isReduce() ){
+                    dbQuery.setMapOnly(false);
+                } else {
+                    dbQuery.setMapOnly(true);
+                }
+            }
+
+            CouchbaseQueryResults results = new CouchbaseQueryResults();
             QueryEnumerator resultEnum = dbQuery.run();
             for (Iterator<QueryRow> it = resultEnum; it.hasNext(); ) {
                 QueryRow dbRow = it.next();
@@ -457,6 +450,22 @@ public class CouchbaseDb {
 
                 row.put("id",doc.getId());
                 row.put("rev", doc.getCurrentRevisionId());
+
+                // Key
+                {
+                    Object keyObj = dbRow.getKey();
+                    Object jsonKey = jsonValueFromCouchbase(keyObj);
+                    row.put("key",jsonKey);
+                }
+
+                // Value
+                {
+                    Object valueObj = dbRow.getValue();
+                    if( null != valueObj ){
+                        Object jsonValue = jsonValueFromCouchbase(valueObj);
+                        row.put("value",jsonValue);
+                    }
+                }
 
                 if( query.getIncludeDocs() ){
                     JSONObject jsonDoc = jsonObjectFromDocument(doc);
