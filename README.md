@@ -1,4 +1,4 @@
-# n2android_mobile1
+# nunaliit_android
 Android application for Nunaliit
 
 
