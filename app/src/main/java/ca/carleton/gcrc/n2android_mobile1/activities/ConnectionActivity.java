@@ -171,7 +171,7 @@ public class ConnectionActivity extends AppCompatActivity {
                 View view = findViewById(R.id.connection_local_revs_db_name);
                 if( null != view && view instanceof TextView ){
                     TextView textView = (TextView)view;
-                    textView.setText(currentConnection.getLocalRevisionDbName());
+                    textView.setText(currentConnection.getLocalTrackingDbName());
                 }
             }
 

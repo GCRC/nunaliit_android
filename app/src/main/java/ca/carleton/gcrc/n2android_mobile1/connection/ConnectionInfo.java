@@ -24,7 +24,7 @@ public class ConnectionInfo implements Parcelable {
     private String user;
     private String password;
     private String localDocumentDbName;
-    private String localRevisionDbName;
+    private String localTrackingDbName;
 
     public ConnectionInfo(){
 
@@ -37,7 +37,7 @@ public class ConnectionInfo implements Parcelable {
         user = in.readString();
         password = in.readString();
         localDocumentDbName = in.readString();
-        localRevisionDbName = in.readString();
+        localTrackingDbName = in.readString();
     }
 
     public String getId() {
@@ -84,12 +84,12 @@ public class ConnectionInfo implements Parcelable {
         this.localDocumentDbName = localDocumentDbName;
     }
 
-    public String getLocalRevisionDbName() {
-        return localRevisionDbName;
+    public String getLocalTrackingDbName() {
+        return localTrackingDbName;
     }
 
-    public void setLocalRevisionDbName(String localRevisionDbName) {
-        this.localRevisionDbName = localRevisionDbName;
+    public void setLocalTrackingDbName(String localTrackingDbName) {
+        this.localTrackingDbName = localTrackingDbName;
     }
 
     public String toString(){
@@ -113,6 +113,6 @@ public class ConnectionInfo implements Parcelable {
         dest.writeString(user);
         dest.writeString(password);
         dest.writeString(localDocumentDbName);
-        dest.writeString(localRevisionDbName);
+        dest.writeString(localTrackingDbName);
     }
 }

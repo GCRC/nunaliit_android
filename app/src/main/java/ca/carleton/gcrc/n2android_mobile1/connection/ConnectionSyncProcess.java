@@ -4,14 +4,17 @@ import android.util.Log;
 
 import org.json.JSONObject;
 
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Vector;
 
 import ca.carleton.gcrc.couch.client.CouchDb;
 import ca.carleton.gcrc.couch.client.CouchDesignDocument;
 import ca.carleton.gcrc.couch.client.CouchQuery;
 import ca.carleton.gcrc.couch.client.CouchQueryResults;
-import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseDb;
+import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseDocInfo;
 import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseLiteService;
 
 /**
@@ -26,7 +29,7 @@ public class ConnectionSyncProcess {
     private CouchDb couchDb;
     private CouchDesignDocument atlasDesign;
     private DocumentDb documentDb;
-    private RevisionDb revisionDb;
+    private TrackingDb trackingDb;
 
     public ConnectionSyncProcess(CouchbaseLiteService service, Connection connection) throws Exception {
         this.service = service;
@@ -36,17 +39,27 @@ public class ConnectionSyncProcess {
         atlasDesign = couchDb.getDesignDocument("atlas");
 
         documentDb = connection.getLocalDocumentDb();
-        revisionDb = connection.getLocalRevisionDb();
+        trackingDb = connection.getLocalTrackingDb();
     }
 
     public void synchronize() throws Exception {
         try {
-            List<JSONObject> docs = getRemoteSkeletonDocs();
-            for(JSONObject doc : docs){
-                updateLocalSkeletonDocument(doc);
-            }
+            Log.v(TAG, "Synchronization started");
 
-            Log.v(TAG, "Number of skeleton docs: "+ docs.size());
+            List<JSONObject> remoteDocs = getRemoteSkeletonDocs();
+
+            Log.v(TAG, "Synchronization received "+remoteDocs.size()+" skeleton document(s)");
+
+            int updatedCount = 0;
+            for(JSONObject doc : remoteDocs){
+                boolean updated = updateLocalSkeletonDocument(doc);
+                if( updated ){
+                    ++updatedCount;
+                }
+            }
+            Log.i(TAG, "Synchronization updated " + updatedCount + " documents");
+
+            Log.v(TAG, "Synchronization complete");
 
         } catch(Exception e) {
             throw new Exception("Error while synchronizing connection",e);
@@ -87,25 +100,54 @@ public class ConnectionSyncProcess {
         return docs;
     }
 
-    public void updateLocalSkeletonDocument(JSONObject doc) throws Exception {
+    public Collection<JSONObject> getRemoteDocuments(List<String> docIds) throws Exception {
         try {
+            Collection<JSONObject> docs = couchDb.getDocuments(docIds);
+            return docs;
+        } catch(Exception e) {
+            throw new Exception("Error while downloading remote documents",e);
+        }
+    }
+
+    public boolean updateLocalSkeletonDocument(JSONObject doc) throws Exception {
+        try {
+            boolean updated = false;
+
             String docId = doc.getString("_id");
             String remoteRev = doc.optString("_rev", null);
 
-            if( null != remoteRev ){
-                doc.remove("_rev");
+            Revision revisionRecord = trackingDb.getRevisionFromDocId(docId);
+            if( null == revisionRecord ){
+                revisionRecord = new Revision();
+            }
+            revisionRecord.setDocId(docId);
+
+            if( false == remoteRev.equals(revisionRecord.getRemoteRevision()) ){
+                CouchbaseDocInfo info = null;
+                if( documentDb.documentExists(docId) ) {
+                    JSONObject existingDoc = documentDb.getDocument(docId);
+                    String existingRev = existingDoc.optString("_rev",null);
+                    if( null != existingRev ){
+                        doc.put("_rev",existingRev);
+                    }
+                    info = documentDb.updateDocument(doc);
+                } else {
+                    // When creating a document, no revision should be set
+                    if( null != remoteRev ){
+                        doc.remove("_rev");
+                    }
+
+                    info = documentDb.createDocument(doc);
+                }
+
+                revisionRecord.setRemoteRevision(remoteRev);
+                revisionRecord.setLocalRevision(info.getRev());
+                trackingDb.updateRevision(revisionRecord);
+
+                updated = true;
             }
 
-            if( documentDb.documentExists(docId) ) {
-                JSONObject existingDoc = documentDb.getDocument(docId);
-                String existingRev = existingDoc.optString("_rev",null);
-                if( null != existingRev ){
-                    doc.put("_rev",existingRev);
-                }
-                documentDb.updateDocument(doc);
-            } else {
-                documentDb.createDocument(doc);
-            }
+            return updated;
 
         } catch(Exception e) {
             throw new Exception("Unable to update local skeleton documents",e);

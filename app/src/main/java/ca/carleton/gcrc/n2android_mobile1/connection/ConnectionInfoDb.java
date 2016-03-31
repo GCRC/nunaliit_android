@@ -22,7 +22,7 @@ import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseView;
  */
 public class ConnectionInfoDb extends CouchbaseDb {
 
-    public static final CouchbaseView viewConnectionsById = new CouchbaseView(){
+    static public final CouchbaseView viewConnectionsById = new CouchbaseView(){
         @Override
         public String getName() { return "connections-by-id"; }
 
@@ -49,7 +49,7 @@ public class ConnectionInfoDb extends CouchbaseDb {
         };
     };
 
-    public static ConnectionInfo connectionInfoFromJson(JSONObject jsonObj) {
+    static public ConnectionInfo connectionInfoFromJson(JSONObject jsonObj) {
         ConnectionInfo info = null;
 
         JSONObject jsonConnInfo = jsonObj.optJSONObject("mobile_connection");
@@ -106,9 +106,9 @@ public class ConnectionInfoDb extends CouchbaseDb {
 
             // local revs db
             {
-                String localRevsDb = jsonConnInfo.optString("localRevsDb", null);
-                if( localRevsDb != null ){
-                    info.setLocalRevisionDbName(localRevsDb);
+                String localTrackingDb = jsonConnInfo.optString("localTrackingDb", null);
+                if( localTrackingDb != null ){
+                    info.setLocalTrackingDbName(localTrackingDb);
                 }
             }
         }
@@ -116,8 +116,13 @@ public class ConnectionInfoDb extends CouchbaseDb {
         return info;
     }
 
-    public static JSONObject jsonFromConnectionInfo(ConnectionInfo info) throws Exception {
+    static public JSONObject jsonFromConnectionInfo(ConnectionInfo info) throws Exception {
         JSONObject jsonObj = new JSONObject();
+        updateJsonFromConnectionInfo(jsonObj,info);
+        return jsonObj;
+    }
+
+    static public JSONObject updateJsonFromConnectionInfo(JSONObject jsonObj, ConnectionInfo info) throws Exception {
 
         // id
         {
@@ -127,55 +132,46 @@ public class ConnectionInfoDb extends CouchbaseDb {
             }
         }
 
-        JSONObject jsonConnInfo = new JSONObject();
-        jsonObj.put("mobile_connection",jsonConnInfo);
+        JSONObject jsonConnInfo = jsonObj.optJSONObject("mobile_connection");
+        if( null == jsonConnInfo ){
+            jsonConnInfo = new JSONObject();
+            jsonObj.put("mobile_connection",jsonConnInfo);
+        }
 
         // name
         {
             String name = info.getName();
-            if( name != null ) {
-                jsonConnInfo.put("name", name);
-            }
+            jsonConnInfo.put("name", name);
         }
 
         // url
         {
             String url = info.getUrl();
-            if( url != null ) {
-                jsonConnInfo.put("url", url);
-            }
+            jsonConnInfo.put("url", url);
         }
 
         // user
         {
             String user = info.getUser();
-            if( user != null ) {
-                jsonConnInfo.put("user", user);
-            }
+            jsonConnInfo.put("user", user);
         }
 
         // password
         {
             String password = info.getPassword();
-            if( password != null ) {
-                jsonConnInfo.put("password", password);
-            }
+            jsonConnInfo.put("password", password);
         }
 
         // local docs db
         {
             String localDocsDb = info.getLocalDocumentDbName();
-            if( localDocsDb != null ){
-                jsonConnInfo.put("localDocsDb", localDocsDb);
-            }
+            jsonConnInfo.put("localDocsDb", localDocsDb);
         }
 
         // local revs db
         {
-            String localRevsDb = info.getLocalRevisionDbName();
-            if( localRevsDb != null ){
-                jsonConnInfo.put("localRevsDb", localRevsDb);
-            }
+            String localTrackingDb = info.getLocalTrackingDbName();
+            jsonConnInfo.put("localTrackingDb", localTrackingDb);
         }
 
         return jsonObj;
@@ -189,7 +185,8 @@ public class ConnectionInfoDb extends CouchbaseDb {
 
     public ConnectionInfo createConnectionInfo(ConnectionInfo info) throws Exception {
         try {
-            JSONObject jsonInfo = jsonFromConnectionInfo(info);
+            JSONObject jsonInfo = new JSONObject();
+            updateJsonFromConnectionInfo(jsonInfo, info);
             CouchbaseDocInfo docInfo = createDocument(jsonInfo);
             info.setId(docInfo.getId());
             return info;
@@ -235,8 +232,9 @@ public class ConnectionInfoDb extends CouchbaseDb {
 
     public void updateConnectionInfo(ConnectionInfo info) throws Exception {
         try {
-            JSONObject jsonInfo = jsonFromConnectionInfo(info);
-            updateDocument(jsonInfo);
+            JSONObject jsonDoc = getDocument(info.getId());
+            updateJsonFromConnectionInfo(jsonDoc, info);
+            updateDocument(jsonDoc);
 
         } catch(Exception e) {
             throw new Exception("Error while updating connection info document",e);
@@ -245,8 +243,8 @@ public class ConnectionInfoDb extends CouchbaseDb {
 
     public void deleteConnectionInfo(ConnectionInfo info) throws Exception {
         try {
-            JSONObject jsonInfo = jsonFromConnectionInfo(info);
-            deleteDocument(jsonInfo);
+            JSONObject jsonDoc = getDocument(info.getId());
+            deleteDocument(jsonDoc);
 
         } catch(Exception e) {
             throw new Exception("Error while deleting connection info document",e);

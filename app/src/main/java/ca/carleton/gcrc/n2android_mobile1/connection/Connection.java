@@ -14,7 +14,6 @@ import ca.carleton.gcrc.couch.client.CouchDb;
 import ca.carleton.gcrc.couch.client.CouchFactory;
 import ca.carleton.gcrc.couch.client.CouchServerVersion;
 import ca.carleton.gcrc.couch.client.impl.ConnectionUtils;
-import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseDb;
 import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseManager;
 
 /**
@@ -116,10 +115,10 @@ public class Connection {
         return docDb;
     }
 
-    public RevisionDb getLocalRevisionDb() throws Exception {
+    public TrackingDb getLocalTrackingDb() throws Exception {
         String dbName = info.getLocalDocumentDbName();
         Database db = manager.getDatabase(dbName);
-        RevisionDb revDb = new RevisionDb(db);
+        TrackingDb revDb = new TrackingDb(db);
         return revDb;
     }
 }

@@ -3,7 +3,6 @@ package ca.carleton.gcrc.n2android_mobile1.connection;
 import android.content.Context;
 import android.util.Log;
 
-import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseDb;
 import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseLiteService;
 import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseManager;
 
@@ -35,6 +34,7 @@ public class ConnectionProcess {
             info = infoDb.createConnectionInfo(info);
 
             ConnectionSyncProcess sync = new ConnectionSyncProcess(service, connection);
+            sync.synchronize();
 
         } catch(Exception e) {
             throw new Exception("Error while adding a connection",e);
@@ -48,13 +48,19 @@ public class ConnectionProcess {
 
             ConnectionInfo info = connDb.getConnectionInfo(connId);
 
-            String localDbName = null;
+            String localDocsDbName = null;
+            String localTrackingDbName = null;
             if( null != info ){
-                localDbName = info.getLocalDocumentDbName();
+                localDocsDbName = info.getLocalDocumentDbName();
+                localTrackingDbName = info.getLocalTrackingDbName();
             }
 
-            if( null != localDbName ){
-                mgr.deleteDatabase(localDbName);
+            if( null != localDocsDbName ){
+                mgr.deleteDatabase(localDocsDbName);
+            }
+
+            if( null != localTrackingDbName ){
+                mgr.deleteDatabase(localTrackingDbName);
             }
 
             connDb.deleteConnectionInfo(info);
@@ -72,9 +78,9 @@ public class ConnectionProcess {
         while( !created && count < 100 ){
             ++count;
             String docDbName = "docs_"+count;
-            String revDbName = "revs_"+count;
+            String trackingDbName = "tracking_"+count;
             if( false == mgr.databaseExists(docDbName)
-                && false == mgr.databaseExists(revDbName) ){
+                && false == mgr.databaseExists(trackingDbName) ){
 
                 // Create doc db
                 boolean docDbCreated = false;
@@ -86,22 +92,22 @@ public class ConnectionProcess {
                     Log.e(TAG, "Error creating database: "+docDbName, e);
                 }
 
-                // Create rev db
-                boolean revDbCreated = false;
+                // Create tracking db
+                boolean trackingDbCreated = false;
                 if( docDbCreated ){
                     try {
-                        mgr.createDatabase(revDbName);
-                        revDbCreated = true;
+                        mgr.createDatabase(trackingDbName);
+                        trackingDbCreated = true;
 
                     } catch(Exception e) {
-                        Log.e(TAG, "Error creating database: "+revDbName, e);
+                        Log.e(TAG, "Error creating database: "+trackingDbName, e);
                     }
                 }
 
-                if( revDbCreated ){
+                if( trackingDbCreated ){
                     created = true;
                     connectionInfo.setLocalDocumentDbName(docDbName);
-                    connectionInfo.setLocalRevisionDbName(revDbName);
+                    connectionInfo.setLocalTrackingDbName(trackingDbName);
 
                 } else if( docDbCreated ) {
                     try {
