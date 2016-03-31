@@ -38,6 +38,7 @@ var jsfiles = [
 ,'n2.cordovaAuth.js'
 ,'n2.cordovaCouchbase.js'
 ,'n2.cordovaConfiguration.js'
+,'n2.cordovaLayout.js'
 ];
 var allScriptTags = new Array();
 for( var i=0; i<jsfiles.length; ++i ) {

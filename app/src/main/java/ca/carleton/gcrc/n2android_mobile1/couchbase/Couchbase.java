@@ -29,6 +29,17 @@ public class Couchbase {
         return value;
     }
 
+    static public Number optNumber(Map<String,Object> map, String key){
+        Number value = null;
+
+        Object obj = opt(map, key);
+        if( null != obj && obj instanceof Number ){
+            value = (Number) obj;
+        }
+
+        return value;
+    }
+
     static public Map<String,Object> optMap(Map<String,Object> map, String key){
         Map<String,Object> value = null;
 

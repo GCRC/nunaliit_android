@@ -439,9 +439,11 @@ var AuthService = $n2.Class({
 		} else if( m && m.type === 'authIsLoggedIn' ){
 			// Synchronous call
 			if( this.isLoggedIn() ){
+				var context = this._getAuthContext();
+
 				m.isLoggedIn = true;
-				m.context = this.lastSessionContext;
-				m.userDoc = this.currentUserDoc;
+				m.context = context;
+				//m.userDoc = this.currentUserDoc;
 			};
 		};
 	}
