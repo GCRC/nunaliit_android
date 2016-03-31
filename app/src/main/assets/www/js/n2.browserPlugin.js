@@ -1,10 +1,25 @@
 ;(function($n2){
     "use strict";
 
-    var SERVICE = 'Nunaliit';
+    var atlasDb = null;
+    var atlasDesign = null;
+    var couchServer = new $n2.couch.getServer({
+        pathToServer: '/atlas/server/'
+        ,onSuccess: function(server){
+            atlasDb = server.getDb({
+                dbUrl: '/atlas/db/'
+            });
+            atlasDesign = atlasDb.getDesignDoc({
+                ddName: 'atlas'
+            });
 
-    if( typeof window.cordova === 'undefined' ) return;
-    var cordova = window.cordova;
+            // Do not load nunaliit until we are connected to server
+            $n2.cordovaPlugin = $n2.browserPlugin;
+        }
+        ,onError: function(err){
+            $n2.log('Unable to connect to CouchDb server: '+err );
+        }
+    });
 
     // ==================================================================
     function echo(opts_){
@@ -14,22 +29,9 @@
             ,onError: function(err){}
         },opts_);
 
-        cordova.exec(
-            // success
-            function(msg){
-                opts.onSuccess(msg);
-            },
-            // error
-            function(err){
-                opts.onError(err);
-            },
-            // service
-            SERVICE,
-            // action
-            'echo',
-            // Arguments
-            [opts.msg]
-        );
+        window.setTimeout(function(){
+            opts.onSuccess(opts.msg);
+        },0);
     };
 
     // ==================================================================
@@ -38,22 +40,15 @@
             onSuccess: function(info){}
             ,onError: function(err){}
         },opts_);
-        cordova.exec(
-            // success
-            function(result){
-                opts.onSuccess(result);
-            },
-            // error
-            function(err){
-                opts.onError(err);
-            },
-            // service
-            SERVICE,
-            // action
-            'getConnectionInfo',
-            // Arguments
-            []
-        );
+
+        window.setTimeout(function(){
+            opts.onSuccess({
+                name: 'demo'
+                ,id: 'abcdef'
+                ,url: 'http://localhost:8080'
+                ,user: 'admin'
+            });
+        },0);
     };
 
     // ==================================================================
@@ -63,23 +58,13 @@
             ,onError: function(err){}
         },opts_);
 
-        cordova.exec(
-            // success
-            function(result){
-                opts.onSuccess(result);
-            },
-            // error
-            function(err){
-                opts.onError(err);
-            },
-            // service
-            SERVICE,
-            // action
-            'couchbaseGetDatabaseInfo',
-            // Arguments
-            [
-            ]
-        );
+        window.setTimeout(function(){
+            opts.onSuccess({
+                'db_name': 'demo'
+                ,'doc_count': 32
+                ,'committed_update_seq': 233
+            });
+        },0);
     };
 
     // ==================================================================
@@ -94,24 +79,7 @@
             throw 'cordovaPlugin.getCouchbaseDocumentRevision(): docId must be a string';
         };
 
-        cordova.exec(
-            // success
-            function(result){
-                opts.onSuccess(result);
-            },
-            // error
-            function(err){
-                opts.onError(err);
-            },
-            // service
-            SERVICE,
-            // action
-            'couchbaseGetDocumentRevision',
-            // Arguments
-            [
-                opts.docId
-            ]
-        );
+        atlasDb.getDocumentRevision(opts);
     };
 
     // ==================================================================
@@ -126,24 +94,11 @@
             throw 'cordovaPlugin.couchbaseCreateDocument(): doc must be an object';
         };
 
-        cordova.exec(
-            // success
-            function(result){
-                opts.onSuccess(result);
-            },
-            // error
-            function(err){
-                opts.onError(err);
-            },
-            // service
-            SERVICE,
-            // action
-            'couchbaseCreateDocument',
-            // Arguments
-            [
-                opts.doc
-            ]
-        );
+        atlasDb.createDocument({
+            data: opts.doc
+            ,onSuccess: opts.onSuccess
+            ,onError: opts.onError
+        });
     };
 
     // ==================================================================
@@ -158,24 +113,11 @@
             throw 'cordovaPlugin.couchbaseUpdateDocument(): doc must be an object';
         };
 
-        cordova.exec(
-            // success
-            function(result){
-                opts.onSuccess(result);
-            },
-            // error
-            function(err){
-                opts.onError(err);
-            },
-            // service
-            SERVICE,
-            // action
-            'couchbaseUpdateDocument',
-            // Arguments
-            [
-                opts.doc
-            ]
-        );
+        atlasDb.updateDocument({
+            data: opts.doc
+            ,onSuccess: opts.onSuccess
+            ,onError: opts.onError
+        });
     };
 
     // ==================================================================
@@ -190,24 +132,11 @@
             throw 'cordovaPlugin.couchbaseDeleteDocument(): doc must be an object';
         };
 
-        cordova.exec(
-            // success
-            function(result){
-                opts.onSuccess(result);
-            },
-            // error
-            function(err){
-                opts.onError(err);
-            },
-            // service
-            SERVICE,
-            // action
-            'couchbaseDeleteDocument',
-            // Arguments
-            [
-                opts.doc
-            ]
-        );
+        atlasDb.deleteDocument({
+            data: opts.doc
+            ,onSuccess: opts.onSuccess
+            ,onError: opts.onError
+        });
     };
 
     // ==================================================================
@@ -222,24 +151,11 @@
             throw 'cordovaPlugin.couchbaseGetDocument(): docId must be a string';
         };
 
-        cordova.exec(
-            // success
-            function(result){
-                opts.onSuccess(result.doc);
-            },
-            // error
-            function(err){
-                opts.onError(err);
-            },
-            // service
-            SERVICE,
-            // action
-            'couchbaseGetDocument',
-            // Arguments
-            [
-                opts.docId
-            ]
-        );
+        atlasDb.getDocument({
+            docId: opts.docId
+            ,onSuccess: opts.onSuccess
+            ,onError: opts.onError
+        });
     };
 
     // ==================================================================
@@ -254,24 +170,7 @@
             throw 'cordovaPlugin.couchbaseGetDocuments(): docIds must be an array';
         };
 
-        cordova.exec(
-            // success
-            function(result){
-                opts.onSuccess(result.docs);
-            },
-            // error
-            function(err){
-                opts.onError(err);
-            },
-            // service
-            SERVICE,
-            // action
-            'couchbaseGetDocuments',
-            // Arguments
-            [
-                opts.docIds
-            ]
-        );
+        atlasDb.getDocuments(opts);
     };
 
     // ==================================================================
@@ -281,23 +180,7 @@
             ,onError: function(err){}
         },opts_);
 
-        cordova.exec(
-            // success
-            function(result){
-                opts.onSuccess(result.ids);
-            },
-            // error
-            function(err){
-                opts.onError(err);
-            },
-            // service
-            SERVICE,
-            // action
-            'couchbaseGetAllDocumentIds',
-            // Arguments
-            [
-            ]
-        );
+        atlasDb.listAllDocuments(opts);
     };
 
     // ==================================================================
@@ -307,23 +190,7 @@
             ,onError: function(err){}
         },opts_);
 
-        cordova.exec(
-            // success
-            function(result){
-                opts.onSuccess(result.docs);
-            },
-            // error
-            function(err){
-                opts.onError(err);
-            },
-            // service
-            SERVICE,
-            // action
-            'couchbaseGetAllDocuments',
-            // Arguments
-            [
-            ]
-        );
+        atlasDb.getAllDocuments(opts);
     };
 
     // ==================================================================
@@ -343,29 +210,24 @@
             throw 'cordovaPlugin.couchbasePerformQuery(): query must be an object';
         };
 
-        cordova.exec(
-            // success
-            function(result){
-                opts.onSuccess(result.rows);
-            },
-            // error
-            function(err){
-                opts.onError(err);
-            },
-            // service
-            SERVICE,
-            // action
-            'couchbasePerformQuery',
-            // Arguments
-            [
-                opts.designName
-                ,opts.query
-            ]
-        );
+        atlasDesign.queryView({
+            viewName: opts.query.viewName
+            ,startkey: opts.query.startkey
+            ,endkey: opts.query.endkey
+            ,keys: opts.query.keys
+            ,group: opts.query.group
+            ,include_docs: opts.query.include_docs
+            ,limit: opts.query.limit
+            ,onlyRows: true
+            ,rawResponse: false
+            ,reduce: opts.query.reduce
+            ,onSuccess: opts.onSuccess
+            ,onError: opts.onError
+        });
     };
 
     // ==================================================================
-    $n2.cordovaPlugin = {
+    $n2.browserPlugin = {
         echo: echo
         ,getConnectionInfo: getConnectionInfo
         ,couchbaseGetDatabaseInfo: couchbaseGetDatabaseInfo

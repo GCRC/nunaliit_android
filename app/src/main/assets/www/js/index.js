@@ -226,7 +226,8 @@
         });
     };
 
-    document.addEventListener('deviceready',start, false);
+    // document.addEventListener('deviceready',start, false);
+    start(); // edge your bet for desktop support
 
 
 })(jQuery, nunaliit2);

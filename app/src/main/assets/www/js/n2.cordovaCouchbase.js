@@ -396,8 +396,8 @@ var designDoc = $n2.Class({
 		$n2.cordovaPlugin.couchbasePerformQuery({
 		    designName: this.ddName
 		    ,query: req
-		    ,onSuccess: function(result) {
-		        opts.onSuccess(result.rows);
+		    ,onSuccess: function(rows) {
+		        opts.onSuccess(rows);
 		    }
 		    ,onError: opts.onError
 		});
@@ -950,8 +950,8 @@ var Database = $n2.Class({
 
 		$n2.cordovaPlugin.couchbaseGetDocument({
 		    docId: opts.docId
-		    ,onSuccess: function(result){
-	    		opts.onSuccess(result.doc);
+		    ,onSuccess: function(doc){
+	    		opts.onSuccess(doc);
 		    }
 		    ,onError: opts.onError
 		});
@@ -974,8 +974,8 @@ var Database = $n2.Class({
 
 		$n2.cordovaPlugin.couchbaseGetDocuments({
 		    docIds: opts.docIds
-		    ,onSuccess: function(result){
-	    		opts.onSuccess(result.docs);
+		    ,onSuccess: function(docs){
+	    		opts.onSuccess(docs);
 		    }
 		    ,onError: opts.onError
 		});
@@ -990,8 +990,8 @@ var Database = $n2.Class({
 		);
 
 		$n2.cordovaPlugin.couchbaseGetAllDocumentIds({
-		    onSuccess: function(result){
-	    		opts.onSuccess(result.ids);
+		    onSuccess: function(ids){
+	    		opts.onSuccess(ids);
 		    }
 		    ,onError: opts.onError
 		});
@@ -1006,8 +1006,8 @@ var Database = $n2.Class({
 		);
 
 		$n2.cordovaPlugin.couchbaseGetAllDocuments({
-		    onSuccess: function(result){
-	    		opts.onSuccess(result.docs);
+		    onSuccess: function(docs){
+	    		opts.onSuccess(docs);
 		    }
 		    ,onError: opts.onError
 		});

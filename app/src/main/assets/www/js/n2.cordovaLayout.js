@@ -87,8 +87,10 @@ var Layout = $n2.Class({
 
         var $main = $('body');
 
+		var headerId = $n2.getUniqueId();
         $('<div>')
             .addClass('nunaliit_header')
+            .attr('id',headerId)
             .appendTo($main);
         var $contentDiv = $('<div>')
             .addClass('nunaliit_content')
@@ -105,6 +107,22 @@ var Layout = $n2.Class({
 
         // Side panel
         this._displayWelcomeMessage();
+
+        // Install widgets
+        {
+            new $n2.widgetBasic.CreateDocumentWidget({
+                containerId: headerId
+                ,dispatchService: config.directory.dispatchService
+                ,authService: config.directory.authService
+                ,showAsLink: true
+            });
+        };
+
+        // Editor
+        if( config.couchEditor ){
+		    config.couchEditor.setPanelName(this.sidePanelName);
+		    config.couchEditor.setSchemas( $n2.couchEdit.Constants.ALL_SCHEMAS );
+        };
 
         // Display
         var displayFormat = 'classic';
