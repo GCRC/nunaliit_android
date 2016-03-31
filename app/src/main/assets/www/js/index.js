@@ -222,6 +222,19 @@
         }
     };
 
-    app.initialize();
+//    jQuery().ready(function() {
+//        nunaliitConfigure({
+//            configuredFunction: function(config){
+//                app.initialize();
+//            }
+//        });
+//    });
+
+    nunaliitConfigure({
+        configuredFunction: function(config){
+            app.initialize();
+        }
+    });
 
 })(nunaliit2);
+

@@ -100,41 +100,32 @@ function Configure(options_){
  		,publish: function(){}
  	};
 
-    couchInitialized();
+	configuration.couchServer = $n2.cordovaCouchbase.getServer({
+		onSuccess: couchInitialized
+	});
 
-	function couchInitialized() {
+	function couchInitialized(server) {
 
-		configuration.couchServer = $n2.couch.DefaultServer;
+		configuration.couchServer = server;
 		configuration.directory.couchServer = configuration.couchServer;
 
-		configuration.atlasDb = configuration.couchServer.getDb({dbUrl:options.atlasDbUrl});
-		configuration.atlasDesign = configuration.atlasDb.getDesignDoc({ddName:options.atlasDesignName});
-		configuration.siteDesign = configuration.atlasDb.getDesignDoc({ddName:options.siteDesignName});
+		configuration.atlasDb = configuration.couchServer.getDb({dbName:'docs'});
+		configuration.atlasDesign = configuration.atlasDb.getDesignDoc({ddName:'atlas'});
+		configuration.siteDesign = configuration.atlasDb.getDesignDoc({ddName:'site'}); // not implemented
 
-		if( options.submissionDbUrl ){
-			configuration.submissionDb = configuration.couchServer.getDb({dbUrl:options.submissionDbUrl});
-		};
+//		if( options.submissionDbUrl ){
+//			configuration.submissionDb = configuration.couchServer.getDb({dbUrl:options.submissionDbUrl});
+//		};
 
 		configuration.dataSources = [];
 
 		var couchDbDs = null;
-		if( configuration.submissionDb ){
-			couchDbDs = new $n2.couchDocument.CouchDocumentSourceWithSubmissionDb({
-				id: 'main'
-				,db: configuration.atlasDb
-				,submissionDb: configuration.submissionDb
-				,submissionServerUrl: options.submissionServerUrl
-				,dispatchService: configuration.directory.dispatchService
-				,isDefaultDocumentSource: true
-			});
-		} else {
-			couchDbDs = new $n2.couchDocument.CouchDocumentSource({
-				id: 'main'
-				,db: configuration.atlasDb
-				,dispatchService: configuration.directory.dispatchService
-				,isDefaultDocumentSource: true
-			});
-		};
+		couchDbDs = new $n2.couchDocument.CouchDocumentSource({
+			id: 'main'
+			,db: configuration.atlasDb
+			,dispatchService: configuration.directory.dispatchService
+			,isDefaultDocumentSource: true
+		});
 		configuration.dataSources.push(couchDbDs);
 		configuration.documentSource = couchDbDs;
 
@@ -155,12 +146,11 @@ function Configure(options_){
 	};
 
 	function schemasPreloaded() {
-		configuration.directory.authService = new $n2.couchAuth.AuthService({
+		configuration.directory.authService = new $n2.cordovaAuth.AuthService({
 			onSuccess: authInitialized
 			,atlasDb: configuration.atlasDb
 			,schemaRepository: configuration.directory.schemaRepository
 			,directory: configuration.directory
-			,userServerUrl: options.userServerUrl
 		});
 	};
 
@@ -172,28 +162,28 @@ function Configure(options_){
 	 		,dispatchService: configuration.directory.dispatchService
 	 	});
 
-	 	configuration.directory.progressService = new $n2.progress.ProgressServer({
-			url: options.progressServerUrl
-		});
-
-	 	configuration.directory.uploadService = new $n2.upload.Upload({
-			url: options.uploadServerUrl
-			,progressServer: configuration.directory.progressService
-		});
-
-	 	configuration.directory.mailService = new $n2.mail.MailService({
-			url: options.mailServerUrl
-			,dispatchService: configuration.directory.dispatchService
-			,customService: configuration.directory.customService
-		});
-
-		configuration.directory.exportService = new $n2.couchExport.Export({
-			url: options.exportServerUrl
-		});
-
-		configuration.directory.dateService = new $n2.dateService.DateService({
-			url: options.dateServerUrl
-		});
+//	 	configuration.directory.progressService = new $n2.progress.ProgressServer({
+//			url: options.progressServerUrl
+//		});
+//
+//	 	configuration.directory.uploadService = new $n2.upload.Upload({
+//			url: options.uploadServerUrl
+//			,progressServer: configuration.directory.progressService
+//		});
+//
+//	 	configuration.directory.mailService = new $n2.mail.MailService({
+//			url: options.mailServerUrl
+//			,dispatchService: configuration.directory.dispatchService
+//			,customService: configuration.directory.customService
+//		});
+//
+//		configuration.directory.exportService = new $n2.couchExport.Export({
+//			url: options.exportServerUrl
+//		});
+//
+//		configuration.directory.dateService = new $n2.dateService.DateService({
+//			url: options.dateServerUrl
+//		});
 
 	 	configuration.directory.searchService = new $n2.couchSearch.SearchServer({
 			designDoc: configuration.atlasDesign
@@ -203,11 +193,11 @@ function Configure(options_){
 			,dateService: configuration.directory.dateService
 		});
 
-	 	configuration.mediaRelativePath = options.mediaUrl;
+//	 	configuration.mediaRelativePath = options.mediaUrl;
 
 	 	configuration.directory.requestService = new $n2.couchRequests({
 			documentSource: configuration.documentSource
-			,userDb: $n2.couch.getUserDb()
+			,userDb: null // configuration.couchServer.getUserDb()
 			,dispatchService: configuration.directory.dispatchService
 			,userServerUrl: options.userServerUrl
 		});
@@ -220,9 +210,9 @@ function Configure(options_){
 			directory: configuration.directory
 		});
 
-		configuration.directory.attachmentService = new $n2.couchAttachment.AttachmentService({
-			mediaRelativePath: options.mediaUrl
-		});
+//		configuration.directory.attachmentService = new $n2.couchAttachment.AttachmentService({
+//			mediaRelativePath: options.mediaUrl
+//		});
 
 		configuration.directory.displayImageSourceFactory = new $n2.couchDisplayBox.DisplayImageSourceFactory({
 			documentSource: configuration.documentSource
@@ -288,14 +278,14 @@ function Configure(options_){
 		});
 	 	configuration.couchEditor = configuration.directory.editService; // legacy
 
-	 	configuration.directory.userService = new $n2.couchUser.UserService({
-			userDb: $n2.couch.getUserDb()
-			,configService: configuration.directory.configService
-			,schemaRepository: configuration.directory.schemaRepository
-			,schemaEditorService: configuration.directory.schemaEditorService
-			,userServerUrl: options.userServerUrl
-			,customService: configuration.directory.customService
-		});
+//	 	configuration.directory.userService = new $n2.couchUser.UserService({
+//			userDb: $n2.couch.getUserDb()
+//			,configService: configuration.directory.configService
+//			,schemaRepository: configuration.directory.schemaRepository
+//			,schemaEditorService: configuration.directory.schemaEditorService
+//			,userServerUrl: options.userServerUrl
+//			,customService: configuration.directory.customService
+//		});
 
 	 	configuration.directory.modelService = new $n2.model.Service({
 			dispatchService: configuration.directory.dispatchService
@@ -313,83 +303,83 @@ function Configure(options_){
 	 		config: configuration
 		});
 
-	 	$n2.mapAndControls.DefaultPopupHtmlFunction = function(opt_){
-	 		var feature = opt_.feature;
-
-	 		if( feature.cluster && feature.cluster.length === 1 ){
-	 			feature = feature.cluster[0];
-	 		};
-
-	 		if( feature.cluster ){
-	 			var clusterSize = feature.cluster.length;
-	 			if( feature.attributes && feature.attributes.count ){
-		 			clusterSize = feature.attributes.count;
-	 			};
-
-				var $tmp = $('<span class="n2_popup"></span>');
-				$tmp.text( _loc('This cluster contains {count} features',{
-					count: clusterSize
-				}) );
-
-		 		var $wrapper = $('<div></div>');
-		 		$wrapper.append($tmp);
-		 		var html = $wrapper.html();
-
-		 		opt_.onSuccess(html);
-
-	 		} else {
-		 		var doc = opt_.feature.data;
-
-		 		var $tmp = $('<span class="n2_popup"></span>');
-		 		configuration.directory.showService.displayBriefDescription($tmp,{},doc);
-
-		 		var $wrapper = $('<div></div>');
-		 		$wrapper.append($tmp);
-		 		var html = $wrapper.html();
-
-		 		opt_.onSuccess(html);
-	 		};
-	 	};
+//	 	$n2.mapAndControls.DefaultPopupHtmlFunction = function(opt_){
+//	 		var feature = opt_.feature;
+//
+//	 		if( feature.cluster && feature.cluster.length === 1 ){
+//	 			feature = feature.cluster[0];
+//	 		};
+//
+//	 		if( feature.cluster ){
+//	 			var clusterSize = feature.cluster.length;
+//	 			if( feature.attributes && feature.attributes.count ){
+//		 			clusterSize = feature.attributes.count;
+//	 			};
+//
+//				var $tmp = $('<span class="n2_popup"></span>');
+//				$tmp.text( _loc('This cluster contains {count} features',{
+//					count: clusterSize
+//				}) );
+//
+//		 		var $wrapper = $('<div></div>');
+//		 		$wrapper.append($tmp);
+//		 		var html = $wrapper.html();
+//
+//		 		opt_.onSuccess(html);
+//
+//	 		} else {
+//		 		var doc = opt_.feature.data;
+//
+//		 		var $tmp = $('<span class="n2_popup"></span>');
+//		 		configuration.directory.showService.displayBriefDescription($tmp,{},doc);
+//
+//		 		var $wrapper = $('<div></div>');
+//		 		$wrapper.append($tmp);
+//		 		var html = $wrapper.html();
+//
+//		 		opt_.onSuccess(html);
+//	 		};
+//	 	};
 
 	 	// Set up hover sound
-	 	configuration.directory.hoverSoundService = new $n2.couchSound.HoverSoundService({
-			db: configuration.atlasDb
-			,serviceDirectory: configuration.directory
-	 	});
+//	 	configuration.directory.hoverSoundService = new $n2.couchSound.HoverSoundService({
+//			db: configuration.atlasDb
+//			,serviceDirectory: configuration.directory
+//	 	});
 
 		// Set up GeoNames service
-		var geoNamesOptions = {};
-		if( window.nunaliit_custom
-		 && window.nunaliit_custom.geoNames ){
-			if( window.nunaliit_custom.geoNames.username ){
-				geoNamesOptions.username = window.nunaliit_custom.geoNames.username;
-			};
-		};
-		configuration.directory.geoNamesService = new $n2.GeoNames.Service(geoNamesOptions);
+//		var geoNamesOptions = {};
+//		if( window.nunaliit_custom
+//		 && window.nunaliit_custom.geoNames ){
+//			if( window.nunaliit_custom.geoNames.username ){
+//				geoNamesOptions.username = window.nunaliit_custom.geoNames.username;
+//			};
+//		};
+//		configuration.directory.geoNamesService = new $n2.GeoNames.Service(geoNamesOptions);
 
-		configuration.directory.importProfileService = new $n2.couchImportProfile.ImportProfileService({
-			atlasDb: configuration.atlasDb
-			,atlasDesign: configuration.atlasDesign
-			,schemaRepository: configuration.directory.schemaRepository
-		});
+//		configuration.directory.importProfileService = new $n2.couchImportProfile.ImportProfileService({
+//			atlasDb: configuration.atlasDb
+//			,atlasDesign: configuration.atlasDesign
+//			,schemaRepository: configuration.directory.schemaRepository
+//		});
 
 		configuration.directory.documentListService = new $n2.couchDocumentList.DocumentListService({
 			atlasDesign: configuration.atlasDesign
 			,dispatchService: configuration.directory.dispatchService
 		});
 
-		configuration.directory.simplifiedGeometryService = new $n2.couchSimplifiedGeometries.Service({
-			url: options.simplifiedGeometryServerUrl
-			,atlasDb: configuration.atlasDb
-			,dispatchService: configuration.directory.dispatchService
-			,customService: configuration.directory.customService
-		});
+//		configuration.directory.simplifiedGeometryService = new $n2.couchSimplifiedGeometries.Service({
+//			url: options.simplifiedGeometryServerUrl
+//			,atlasDb: configuration.atlasDb
+//			,dispatchService: configuration.directory.dispatchService
+//			,customService: configuration.directory.customService
+//		});
 
-		if( $n2.tuioClient ){
-			configuration.directory.tuioService = new $n2.tuioClient.TuioService({
-				dispatchService: configuration.directory.dispatchService
-			});
-		};
+//		if( $n2.tuioClient ){
+//			configuration.directory.tuioService = new $n2.tuioClient.TuioService({
+//				dispatchService: configuration.directory.dispatchService
+//			});
+//		};
 
 		// Load help file
 		if( configuration.atlasDb ){

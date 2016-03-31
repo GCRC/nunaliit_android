@@ -426,8 +426,7 @@ var ChangeNotifier = $n2.Class({
 
 	,initialize: function(db, opts_) {
 		this.options = $n2.extend({
-			changeUrl: null
-			,doNotReset: false
+			doNotReset: false
 			,include_docs: false
 			,pollInterval: 5000
 			,longPoll: false
@@ -489,18 +488,8 @@ var ChangeNotifier = $n2.Class({
 			,onError: function(err){}
 		},opt_);
 
-		var _this = this;
-
-		this.db.getInfo({
-	    	onSuccess: function(dbInfo) {
-				_this.lastSequence = dbInfo.update_seq;
-				opt.onSuccess();
-	    	}
-	    	,onError: function(XMLHttpRequest, textStatus, errorThrown) {
-				var errStr = httpJsonError(XMLHttpRequest, textStatus);
-				opt.onError('Error during a query of current update sequence: '+errStr);
-	    	}
-		});
+        this.lastSequence = 0;
+        opt.onSuccess();
 	}
 
 	,getLastSequence: function(){
@@ -539,86 +528,14 @@ var ChangeNotifier = $n2.Class({
 			return;
 		};
 
-		var req = {
-			feed: 'normal'
-			,style: this.options.style
-		};
-
-		if( typeof(this.lastSequence) === 'number' ) {
-			req.since = this.lastSequence;
-		};
-
-		if( this.options.include_docs ) {
-			req.include_docs = this.options.include_docs;
-		};
-
-		if( this.options.longPoll ) {
-			req.feed = 'longpoll';
-			req.timeout = this.options.timeout;
-		};
-
-		this.currentRequest = req;
-
-		var _this = this;
-
-		$.ajax({
-	    	url: this.options.changeUrl
-	    	,type: 'GET'
-	    	,async: true
-	    	,data: req
-	    	,dataType: 'json'
-	    	,success: function(changes) {
-				_this.currentRequest = null;
-
-	    		_this._reportChanges(changes);
-
-	    		_this.reschedule();
-	    	}
-	    	,error: function(XMLHttpRequest, textStatus, errorThrown) {
-				var errStr = httpJsonError(XMLHttpRequest, textStatus);
-				_this.onError('Error during a server notifications: '+errStr);
-	    		_this.reschedule();
-	    	}
-		});
+		// In cordova, do not do anything
+		return;
 	}
 
 	/**
 		Reschedule the next request for changes
 	 */
 	,reschedule: function() {
-
-		var now = $n2.utils.getCurrentTime();
-		var expected = now + this.options.pollInterval;
-
-		if( this.currentWait ) {
-			// Already waiting
-			if( this.currentWait.expected > expected ) {
-				// We need to reschedule, earlier
-				if( typeof(clearTimeout) === 'function' ) {
-					clearTimeout(this.currentWait.timerId);
-				}
-				this.currentWait = null;
-			} else {
-				// There is already a timer sufficiently early to
-				// handle the request
-				return;
-			};
-		};
-
-		// Start a new timeout
-		this.currentWait = {
-			delayInMs: this.options.pollInterval
-			,expected: expected
-		};
-
-		var _this = this;
-
-		this.currentWait.timerId = setTimeout(function(){
-				_this.currentWait = null;
-				_this.requestChanges();
-			}
-			,this.currentWait.delayInMs
-		);
 	}
 });
 
@@ -730,13 +647,10 @@ var Database = $n2.Class({
 			onSuccess: function(notifier){}
 		},opt_);
 
-		throw 'Couchbase.Database.getChangeNotifier() not implemented';
-
 		var changeNotifier = new ChangeNotifier(
 			this
 			,{
-				changeUrl: this.dbUrl + '_changes'
-				,onSuccess: opt.onSuccess
+				onSuccess: opt.onSuccess
 			}
 		);
 
