@@ -14,6 +14,7 @@ import org.json.JSONTokener;
 
 import java.util.List;
 import java.util.Vector;
+import java.util.concurrent.ExecutorService;
 
 import ca.carleton.gcrc.n2android_mobile1.connection.Connection;
 import ca.carleton.gcrc.n2android_mobile1.connection.DocumentDb;
@@ -33,17 +34,20 @@ public class CordovaNunaliitPlugin extends CordovaPlugin {
     final protected String TAG = this.getClass().getSimpleName();
 
     private CordovaInterface cordovaInterface = null;
+    private PluginActions actions = null;
 
     @Override
     public void initialize(CordovaInterface cordova, CordovaWebView webView) {
         super.initialize(cordova, webView);
 
         this.cordovaInterface = cordova;
-        Log.i(TAG,"Cordova Interface: "+cordova.getClass().getSimpleName());
+        Log.v(TAG,"Cordova Interface: "+cordova.getClass().getSimpleName());
+
+        this.actions = new PluginActions(cordovaInterface);
 
         Activity activity = cordova.getActivity();
         if( null != activity ){
-            Log.i(TAG,"Activity: "+activity.getClass().getSimpleName());
+            Log.v(TAG, "Activity: " + activity.getClass().getSimpleName());
         }
     }
 
@@ -56,388 +60,141 @@ public class CordovaNunaliitPlugin extends CordovaPlugin {
     public boolean execute(String action, JSONArray args, CallbackContext callbackContext) throws JSONException {
         Log.v(TAG, "Action: " + action);
 
+
+        ExecutorService threadPool = this.cordovaInterface.getThreadPool();
+
         if( "echo".equals(action) ) {
-            String message = args.getString(0);
-            this.echo(message, callbackContext);
+            threadPool.execute(new PluginRunnable(actions, args, callbackContext) {
+                @Override
+                public void pluginRun() throws Exception {
+                    String message = getArguments().getString(0);
+                    getActions().echo(message, getCallbackContext());
+                }
+            });
             return true;
 
         } else if( "getConnectionInfo".equals(action) ) {
-            this.getConnectionInfo(callbackContext);
+            threadPool.execute(new PluginRunnable(actions, args, callbackContext) {
+                @Override
+                public void pluginRun() throws Exception {
+                    getActions().getConnectionInfo(getCallbackContext());
+                }
+            });
             return true;
 
         } else if( "couchbaseGetDatabaseInfo".equals(action) ) {
-            this.couchbaseGetDatabaseInfo(callbackContext);
+            threadPool.execute(new PluginRunnable(actions, args, callbackContext) {
+                @Override
+                public void pluginRun() throws Exception {
+                    getActions().couchbaseGetDatabaseInfo(getCallbackContext());
+                }
+            });
             return true;
 
         } else if( "couchbaseGetDocumentRevision".equals(action) ) {
-            String docId = args.getString(0);
-            this.couchbaseGetDocumentRevision(docId, callbackContext);
+            threadPool.execute(new PluginRunnable(actions, args, callbackContext) {
+                @Override
+                public void pluginRun() throws Exception {
+                    String docId = getArguments().getString(0);
+                    getActions().couchbaseGetDocumentRevision(docId, getCallbackContext());
+                }
+            });
             return true;
 
         } else if( "couchbaseCreateDocument".equals(action) ) {
-            JSONObject doc = args.getJSONObject(0);
-            this.couchbaseCreateDocument(doc, callbackContext);
+            threadPool.execute(new PluginRunnable(actions, args, callbackContext) {
+                @Override
+                public void pluginRun() throws Exception {
+                    JSONObject doc = getArguments().getJSONObject(0);
+                    getActions().couchbaseCreateDocument(doc, getCallbackContext());
+                }
+            });
             return true;
 
         } else if( "couchbaseUpdateDocument".equals(action) ) {
-            JSONObject doc = args.getJSONObject(0);
-            this.couchbaseUpdateDocument(doc, callbackContext);
+            threadPool.execute(new PluginRunnable(actions, args, callbackContext) {
+                @Override
+                public void pluginRun() throws Exception {
+                    JSONObject doc = getArguments().getJSONObject(0);
+                    getActions().couchbaseUpdateDocument(doc, getCallbackContext());
+                }
+            });
             return true;
 
         } else if( "couchbaseDeleteDocument".equals(action) ) {
-            JSONObject doc = args.getJSONObject(0);
-            this.couchbaseDeleteDocument(doc, callbackContext);
+            threadPool.execute(new PluginRunnable(actions, args, callbackContext) {
+                @Override
+                public void pluginRun() throws Exception {
+                    JSONObject doc = getArguments().getJSONObject(0);
+                    getActions().couchbaseDeleteDocument(doc, getCallbackContext());
+                }
+            });
             return true;
 
         } else if( "couchbaseGetDocument".equals(action) ) {
-            String docId = args.getString(0);
-            this.couchbaseGetDocument(docId, callbackContext);
+            threadPool.execute(new PluginRunnable(actions, args, callbackContext) {
+                @Override
+                public void pluginRun() throws Exception {
+                    String docId = getArguments().getString(0);
+                    getActions().couchbaseGetDocument(docId, getCallbackContext());
+                }
+            });
             return true;
 
         } else if( "couchbaseGetDocuments".equals(action) ) {
-            List<String> docIds = new Vector<String>();
-            JSONArray jsonDocIds = args.getJSONArray(0);
-            for(int i=0,e=jsonDocIds.length(); i<e; ++i){
-                Object objId = jsonDocIds.get(i);
-                if( objId instanceof String ){
-                    String docId = (String)objId;
-                    docIds.add(docId);
-                } else {
-                    String className = ""+objId;
-                    if( null != objId ){
-                        className = objId.getClass().getName();
+            threadPool.execute(new PluginRunnable(actions, args, callbackContext) {
+                @Override
+                public void pluginRun() throws Exception {
+                    List<String> docIds = new Vector<String>();
+                    JSONArray jsonDocIds = getArguments().getJSONArray(0);
+                    for (int i = 0, e = jsonDocIds.length(); i < e; ++i) {
+                        Object objId = jsonDocIds.get(i);
+                        if (objId instanceof String) {
+                            String docId = (String) objId;
+                            docIds.add(docId);
+                        } else {
+                            String className = "" + objId;
+                            if (null != objId) {
+                                className = objId.getClass().getName();
+                            }
+                            Log.w(TAG, "couchbaseGetDocuments: invalid docId: " + className);
+                        }
                     }
-                    Log.w(TAG, "couchbaseGetDocuments: invalid docId: "+className);
+                    getActions().couchbaseGetDocuments(docIds, getCallbackContext());
                 }
-            }
-            this.couchbaseGetDocuments(docIds, callbackContext);
+            });
             return true;
 
         } else if( "couchbaseGetAllDocuments".equals(action) ) {
-            this.couchbaseGetAllDocuments(callbackContext);
+            threadPool.execute(new PluginRunnable(actions, args, callbackContext) {
+                @Override
+                public void pluginRun() throws Exception {
+                    getActions().couchbaseGetAllDocuments(getCallbackContext());
+                }
+            });
             return true;
 
-        } else if( "couchbaseGetAllDocumentIds".equals(action) ) {
-            this.couchbaseGetAllDocumentIds(callbackContext);
+        } else if ("couchbaseGetAllDocumentIds".equals(action)) {
+            threadPool.execute(new PluginRunnable(actions, args, callbackContext) {
+                @Override
+                public void pluginRun() throws Exception {
+                    getActions().couchbaseGetAllDocumentIds(getCallbackContext());
+                }
+            });
             return true;
 
-        } else if( "couchbasePerformQuery".equals(action) ) {
-            String designName = args.getString(0);
-            JSONObject jsonQuery = args.getJSONObject(1);
-            this.couchbasePerformQuery(designName, jsonQuery, callbackContext);
+        } else if ("couchbasePerformQuery".equals(action)) {
+            threadPool.execute(new PluginRunnable(actions, args, callbackContext) {
+                @Override
+                public void pluginRun() throws Exception {
+                    String designName = getArguments().getString(0);
+                    JSONObject jsonQuery = getArguments().getJSONObject(1);
+                    getActions().couchbasePerformQuery(designName, jsonQuery, getCallbackContext());
+                }
+            });
             return true;
         }
 
         return false;  // Returning false results in a "MethodNotFound" error.
-    }
-
-    private void echo(String message, CallbackContext callbackContext) {
-        if (message != null && message.length() > 0) {
-            callbackContext.success(message);
-        } else {
-            callbackContext.error("Expected one non-empty string argument.");
-        }
-    }
-
-    private void getConnectionInfo(CallbackContext callbackContext) {
-        ConnectionInfo connInfo = retrieveConnection();
-
-        if( null != connInfo ) {
-            try {
-                JSONObject result = new JSONObject();
-                result.put("name", connInfo.getName());
-                result.put("id", connInfo.getId());
-                result.put("url", connInfo.getUrl());
-                result.put("user", connInfo.getUser());
-                callbackContext.success(result);
-            } catch(Exception e) {
-                callbackContext.error("Error while retrieving connection information: "+e.getMessage());
-            }
-        } else {
-            callbackContext.error("Unable to retrieve connection information");
-        }
-    }
-
-    private void couchbaseGetDatabaseInfo(CallbackContext callbackContext) {
-        try {
-            DocumentDb docDb = getDocumentDb();
-
-            JSONObject dbInfo = docDb.getInfo();
-
-            callbackContext.success(dbInfo);
-
-        } catch(Exception e) {
-            callbackContext.error("Error while performing couchbaseGetDatabaseInfo(): "+e.getMessage());
-        }
-    }
-
-    private void couchbaseGetDocumentRevision(String docId, CallbackContext callbackContext) {
-        try {
-            DocumentDb docDb = getDocumentDb();
-
-            String rev = docDb.getDocumentRevision(docId);
-
-            JSONObject result = new JSONObject();
-            result.put("rev", rev);
-            callbackContext.success(result);
-        } catch(Exception e) {
-            callbackContext.error("Error while performing couchbaseGetDocumentRevision(): "+e.getMessage());
-        }
-    }
-
-    private void couchbaseCreateDocument(JSONObject doc, CallbackContext callbackContext) {
-        try {
-            DocumentDb docDb = getDocumentDb();
-
-            CouchbaseDocInfo info = docDb.createDocument(doc);
-
-            JSONObject result = new JSONObject();
-            result.put("id", info.getId());
-            result.put("rev", info.getRev());
-            callbackContext.success(result);
-
-        } catch(Exception e) {
-            callbackContext.error("Error while performing couchbaseCreateDocument(): "+e.getMessage());
-        }
-    }
-
-    private void couchbaseUpdateDocument(JSONObject doc, CallbackContext callbackContext) {
-        try {
-            DocumentDb docDb = getDocumentDb();
-
-            CouchbaseDocInfo info = docDb.updateDocument(doc);
-
-            JSONObject result = new JSONObject();
-            result.put("id", info.getId());
-            result.put("rev", info.getRev());
-            callbackContext.success(result);
-
-        } catch(Exception e) {
-            callbackContext.error("Error while performing couchbaseCreateDocument(): "+e.getMessage());
-        }
-    }
-
-    private void couchbaseDeleteDocument(JSONObject doc, CallbackContext callbackContext) {
-        try {
-            DocumentDb docDb = getDocumentDb();
-
-            CouchbaseDocInfo info = docDb.deleteDocument(doc);
-
-            JSONObject result = new JSONObject();
-            result.put("id", info.getId());
-            result.put("rev", info.getRev());
-            callbackContext.success(result);
-
-        } catch(Exception e) {
-            callbackContext.error("Error while performing couchbaseDeleteDocument(): "+e.getMessage());
-        }
-    }
-
-    private void couchbaseGetDocument(String docId, CallbackContext callbackContext) {
-        try {
-            DocumentDb docDb = getDocumentDb();
-
-            JSONObject doc = docDb.getDocument(docId);
-
-            JSONObject result = new JSONObject();
-            result.put("doc", doc);
-            callbackContext.success(result);
-
-        } catch(Exception e) {
-            callbackContext.error("Error while performing couchbaseGetDocument(): "+e.getMessage());
-        }
-    }
-
-    private void couchbaseGetDocuments(List<String> docIds, CallbackContext callbackContext) {
-        try {
-            DocumentDb docDb = getDocumentDb();
-
-            List<JSONObject> docs = docDb.getDocuments(docIds);
-
-            JSONArray jsonDocs = new JSONArray();
-            for(JSONObject doc : docs){
-                jsonDocs.put(doc);
-            }
-
-
-            JSONObject result = new JSONObject();
-            result.put("docs", jsonDocs);
-            callbackContext.success(result);
-
-        } catch(Exception e) {
-            callbackContext.error("Error while performing couchbaseGetDocuments(): "+e.getMessage());
-        }
-    }
-
-    private void couchbaseGetAllDocuments(CallbackContext callbackContext) {
-        try {
-            DocumentDb docDb = getDocumentDb();
-
-            List<JSONObject> docs = docDb.getAllDocuments();
-
-            JSONArray jsonDocs = new JSONArray();
-            for(JSONObject doc : docs){
-                jsonDocs.put(doc);
-            }
-
-
-            JSONObject result = new JSONObject();
-            result.put("docs", jsonDocs);
-            callbackContext.success(result);
-
-        } catch(Exception e) {
-            callbackContext.error("Error while performing couchbaseGetAllDocuments(): "+e.getMessage());
-        }
-    }
-
-    private void couchbaseGetAllDocumentIds(CallbackContext callbackContext) {
-        try {
-            DocumentDb docDb = getDocumentDb();
-
-            List<String> docIds = docDb.getAllDocumentIds();
-
-            JSONArray jsonIds = new JSONArray();
-            for(String docId : docIds){
-                jsonIds.put(docId);
-            }
-
-            JSONObject result = new JSONObject();
-            result.put("ids", jsonIds);
-            callbackContext.success(result);
-
-        } catch(Exception e) {
-            callbackContext.error("Error while performing couchbaseGetAllDocumentIds(): "+e.getMessage());
-        }
-    }
-
-    private void couchbasePerformQuery(String designName, JSONObject jsonQuery, CallbackContext callbackContext) {
-        try {
-            CouchbaseQuery query = new CouchbaseQuery();
-
-            // View name
-            {
-                String viewName = jsonQuery.getString("viewName");
-                query.setViewName(viewName);
-            }
-
-            // Start key
-            {
-                Object startObj = jsonQuery.opt("startkey");
-                if( null != startObj ){
-                    query.setStartKey(startObj);
-                }
-            }
-
-            // End key
-            {
-                Object endObj = jsonQuery.opt("endkey");
-                if( null != endObj ){
-                    query.setEndKey(endObj);
-                }
-            }
-
-            // Keys
-            {
-                JSONArray keys = jsonQuery.optJSONArray("keys");
-                if( null != keys ){
-                    query.setKeys(keys);
-                }
-            }
-
-            // Include Docs
-            {
-                boolean include_docs = jsonQuery.optBoolean("include_docs", false);
-                if( include_docs ){
-                    query.setIncludeDocs(true);
-                }
-            }
-
-            // Limit
-            {
-                if( jsonQuery.has("limit") ) {
-                    int limit = jsonQuery.getInt("limit");
-                    query.setLimit(limit);
-                }
-            }
-
-            // Reduce
-            {
-                boolean reduce = jsonQuery.optBoolean("reduce", false);
-                if( reduce ){
-                    query.setReduce(true);
-                }
-            }
-
-            DocumentDb docDb = getDocumentDb();
-
-            CouchbaseQueryResults results = docDb.performQuery(query);
-
-            JSONArray jsonRows = new JSONArray();
-            for(JSONObject row : results.getRows()){
-                jsonRows.put(row);
-            }
-
-            JSONObject result = new JSONObject();
-            result.put("rows", jsonRows);
-            callbackContext.success(result);
-
-        } catch(Exception e) {
-            callbackContext.error("Error while performing couchbasePerformQuery(): "+e.getMessage());
-        }
-    }
-
-    private DocumentDb getDocumentDb() throws Exception {
-        ConnectionInfo connInfo = retrieveConnection();
-        if( null == connInfo ){
-            throw new Exception("Unable to retrieve connection information");
-        }
-        CouchbaseLiteService couchbaseService = getCouchDbService();
-        if( null == couchbaseService ){
-            throw new Exception("Unable to retrieve Couchbase service");
-        }
-        CouchbaseManager couchbaseManager = couchbaseService.getCouchbaseManager();
-        Connection connection = new Connection(couchbaseManager, connInfo);
-        DocumentDb docDb = connection.getLocalDocumentDb();
-        return docDb;
-    }
-
-    public ConnectionInfo retrieveConnection(){
-        ConnectionInfo connInfo = null;
-
-        Activity activity = null;
-        if( null != cordovaInterface ){
-            activity = cordovaInterface.getActivity();
-        }
-
-        EmbeddedCordovaActivity cordovaActivity = null;
-        if( null != activity && activity instanceof EmbeddedCordovaActivity ){
-            cordovaActivity = (EmbeddedCordovaActivity)activity;
-        }
-
-        if( null != cordovaActivity ){
-            connInfo = cordovaActivity.retrieveConnection();
-        }
-
-        return connInfo;
-    }
-
-    private CouchbaseLiteService getCouchDbService(){
-        CouchbaseLiteService service = null;
-
-        Activity activity = null;
-        if( null != cordovaInterface ){
-            activity = cordovaInterface.getActivity();
-        }
-
-        EmbeddedCordovaActivity cordovaActivity = null;
-        if( null != activity && activity instanceof EmbeddedCordovaActivity ){
-            cordovaActivity = (EmbeddedCordovaActivity)activity;
-        }
-
-        if( null != cordovaActivity ){
-            service = cordovaActivity.getCouchDbService();
-        }
-
-        return service;
     }
 }
