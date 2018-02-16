@@ -4,8 +4,10 @@ import android.app.Activity;
 
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaInterface;
-import org.json.JSONArray;
-import org.json.JSONObject;
+
+import ca.carleton.gcrc.n2android_mobile1.JSONGlue;
+import nunaliit.org.json.JSONArray;
+import nunaliit.org.json.JSONObject;
 
 import java.util.List;
 
@@ -50,7 +52,7 @@ public class PluginActions {
                 result.put("id", connInfo.getId());
                 result.put("url", connInfo.getUrl());
                 result.put("user", connInfo.getUser());
-                callbackContext.success(result);
+                callbackContext.success(JSONGlue.convertJSONObjectFromUpstreamToAndroid(result));
             } catch(Exception e) {
                 callbackContext.error("Error while retrieving connection information: "+e.getMessage());
             }
@@ -65,7 +67,7 @@ public class PluginActions {
 
             JSONObject dbInfo = docDb.getInfo();
 
-            callbackContext.success(dbInfo);
+            callbackContext.success(JSONGlue.convertJSONObjectFromUpstreamToAndroid(dbInfo));
 
         } catch(Exception e) {
             callbackContext.error("Error while performing couchbaseGetDatabaseInfo(): "+e.getMessage());
@@ -80,7 +82,7 @@ public class PluginActions {
 
             JSONObject result = new JSONObject();
             result.put("rev", rev);
-            callbackContext.success(result);
+            callbackContext.success(JSONGlue.convertJSONObjectFromUpstreamToAndroid(result));
         } catch(Exception e) {
             callbackContext.error("Error while performing couchbaseGetDocumentRevision(): "+e.getMessage());
         }
@@ -95,7 +97,7 @@ public class PluginActions {
             JSONObject result = new JSONObject();
             result.put("id", info.getId());
             result.put("rev", info.getRev());
-            callbackContext.success(result);
+            callbackContext.success(JSONGlue.convertJSONObjectFromUpstreamToAndroid(result));
 
         } catch(Exception e) {
             callbackContext.error("Error while performing couchbaseCreateDocument(): "+e.getMessage());
@@ -111,7 +113,7 @@ public class PluginActions {
             JSONObject result = new JSONObject();
             result.put("id", info.getId());
             result.put("rev", info.getRev());
-            callbackContext.success(result);
+            callbackContext.success(JSONGlue.convertJSONObjectFromUpstreamToAndroid(result));
 
         } catch(Exception e) {
             callbackContext.error("Error while performing couchbaseCreateDocument(): "+e.getMessage());
@@ -127,7 +129,7 @@ public class PluginActions {
             JSONObject result = new JSONObject();
             result.put("id", info.getId());
             result.put("rev", info.getRev());
-            callbackContext.success(result);
+            callbackContext.success(JSONGlue.convertJSONObjectFromUpstreamToAndroid(result));
 
         } catch(Exception e) {
             callbackContext.error("Error while performing couchbaseDeleteDocument(): "+e.getMessage());
@@ -142,7 +144,7 @@ public class PluginActions {
 
             JSONObject result = new JSONObject();
             result.put("doc", doc);
-            callbackContext.success(result);
+            callbackContext.success(JSONGlue.convertJSONObjectFromUpstreamToAndroid(result));
 
         } catch(Exception e) {
             callbackContext.error("Error while performing couchbaseGetDocument(): "+e.getMessage());
@@ -163,7 +165,7 @@ public class PluginActions {
 
             JSONObject result = new JSONObject();
             result.put("docs", jsonDocs);
-            callbackContext.success(result);
+            callbackContext.success(JSONGlue.convertJSONObjectFromUpstreamToAndroid(result));
 
         } catch(Exception e) {
             callbackContext.error("Error while performing couchbaseGetDocuments(): "+e.getMessage());
@@ -184,7 +186,7 @@ public class PluginActions {
 
             JSONObject result = new JSONObject();
             result.put("docs", jsonDocs);
-            callbackContext.success(result);
+            callbackContext.success(JSONGlue.convertJSONObjectFromUpstreamToAndroid(result));
 
         } catch(Exception e) {
             callbackContext.error("Error while performing couchbaseGetAllDocuments(): "+e.getMessage());
@@ -204,7 +206,7 @@ public class PluginActions {
 
             JSONObject result = new JSONObject();
             result.put("ids", jsonIds);
-            callbackContext.success(result);
+            callbackContext.success(JSONGlue.convertJSONObjectFromUpstreamToAndroid(result));
 
         } catch(Exception e) {
             callbackContext.error("Error while performing couchbaseGetAllDocumentIds(): "+e.getMessage());
@@ -280,7 +282,7 @@ public class PluginActions {
 
             JSONObject result = new JSONObject();
             result.put("rows", jsonRows);
-            callbackContext.success(result);
+            callbackContext.success(JSONGlue.convertJSONObjectFromUpstreamToAndroid(result));
 
         } catch(Exception e) {
             callbackContext.error("Error while performing couchbasePerformQuery(): "+e.getMessage());

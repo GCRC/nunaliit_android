@@ -2,7 +2,7 @@ package ca.carleton.gcrc.n2android_mobile1.connection;
 
 import android.util.Log;
 
-import org.json.JSONObject;
+import nunaliit.org.json.JSONObject;
 
 import java.util.Collection;
 import java.util.HashMap;

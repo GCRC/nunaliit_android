@@ -8,7 +8,7 @@ import com.couchbase.lite.Query;
 import com.couchbase.lite.QueryEnumerator;
 import com.couchbase.lite.QueryRow;
 
-import org.json.JSONObject;
+import nunaliit.org.json.JSONObject;
 
 import java.util.HashMap;
 import java.util.Iterator;

@@ -4,7 +4,7 @@ import com.couchbase.lite.Database;
 import com.couchbase.lite.Emitter;
 import com.couchbase.lite.Mapper;
 
-import org.json.JSONObject;
+import nunaliit.org.json.JSONObject;
 
 import java.util.List;
 import java.util.Map;

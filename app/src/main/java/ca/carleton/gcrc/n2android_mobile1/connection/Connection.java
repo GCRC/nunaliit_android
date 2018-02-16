@@ -4,7 +4,7 @@ import android.util.Log;
 
 import com.couchbase.lite.Database;
 
-import org.json.JSONObject;
+import nunaliit.org.json.JSONObject;
 
 import java.net.URL;
 

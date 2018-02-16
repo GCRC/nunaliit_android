@@ -46,9 +46,11 @@ dependencies {
     testCompile 'junit:junit:4.12'
     implementation 'com.android.support:appcompat-v7:26.1.0'
     implementation 'com.android.support:support-v4:26.1.0'
-    implementation 'ca.carleton.gcrc:nunaliit2-couch-client:2.2.6'
 
     implementation 'com.couchbase.lite:couchbase-lite-android:1.4.2-80'
     implementation 'org.apache.cordova:framework:7.0.0'
+
+    implementation 'org.slf4j:slf4j-api:1.7.25'
+    implementation 'commons-codec:commons-codec:1.11'
 
 }
