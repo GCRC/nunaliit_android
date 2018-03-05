@@ -125,7 +125,7 @@ public class Connection {
     }
 
     public TrackingDb getLocalTrackingDb() throws Exception {
-        String dbName = info.getLocalDocumentDbName();
+        String dbName = info.getLocalTrackingDbName();
         Database db = manager.getDatabase(dbName);
         TrackingDb revDb = new TrackingDb(db);
         return revDb;
