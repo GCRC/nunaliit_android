@@ -16,6 +16,11 @@ import ca.carleton.gcrc.n2android_mobile1.connection.ConnectionInfoDb;
 
 /**
  * Created by jpfiset on 3/25/16.
+ *
+ * Manages local databases.
+ *
+ * An instance of CouchbaseManager is created by {@link CouchbaseLiteService} and used as a
+ * singleton for access to all local databases.
  */
 public class CouchbaseManager {
     protected final String TAG = this.getClass().getSimpleName();

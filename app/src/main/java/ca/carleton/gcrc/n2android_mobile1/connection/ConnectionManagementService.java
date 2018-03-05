@@ -23,6 +23,13 @@ import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseManager;
 
 /**
  * Created by jpfiset on 3/22/16.
+ *
+ * Android service that manages connections to remote databases.
+ *
+ * Responds to requests (via Intent) to perform operations on connections (add/delete/sync/get
+ * info). Results are returned via local broadcast.
+ *
+ * The local database is managed by {@link CouchbaseLiteService}.
  */
 public class ConnectionManagementService extends IntentService {
 

@@ -18,6 +18,15 @@ import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseManager;
 
 /**
  * Created by jpfiset on 3/21/16.
+ *
+ * Models a Connection to a remote CouchDB database.
+ *
+ * A remote database has two local associated databases:
+ *    * a {@link DocumentDb}
+ *    * a {@link TrackingDb}
+ *
+ * The DocumentDb represents the data that is also stored on the server.
+ * The TrackingDb tracks changes for syncing to the remote server.
  */
 public class Connection {
 

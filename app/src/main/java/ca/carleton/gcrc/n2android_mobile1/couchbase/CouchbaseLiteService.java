@@ -3,6 +3,7 @@ package ca.carleton.gcrc.n2android_mobile1.couchbase;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.os.Binder;
 import android.os.IBinder;
 import android.util.Log;
@@ -13,6 +14,15 @@ import ca.carleton.gcrc.n2android_mobile1.ServiceSupport;
 
 /**
  * Created by jpfiset on 3/10/16.
+ *
+ * An Android service that manages connections to local databases.
+ *
+ * Generally, most operations are handled by the {@link CouchbaseManager} object managed by
+ * an instance of this service.
+ *
+ * A reference to the manager can be acquired using
+ * {@link Context#bindService(Intent, ServiceConnection, int)}; this will provide a
+ * {@link CouchDbBinder} through which you can get a reference to this service.
  */
 public class CouchbaseLiteService extends Service {
     /**
