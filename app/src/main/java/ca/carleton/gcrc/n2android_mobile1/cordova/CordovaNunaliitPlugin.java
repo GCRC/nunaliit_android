@@ -57,7 +57,7 @@ public class CordovaNunaliitPlugin extends CordovaPlugin {
     }
 
     @Override
-    public boolean execute(String action, org.json.JSONArray args, CallbackContext callbackContext) throws JSONException {
+    public boolean execute(String action, JSONArray args, CallbackContext callbackContext) throws JSONException {
         Log.v(TAG, "Action: " + action);
 
 
