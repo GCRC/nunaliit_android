@@ -1,6 +1,6 @@
 package ca.carleton.gcrc.n2android_mobile1.couchbase;
 
-import nunaliit.org.json.JSONObject;
+import org.json.JSONObject;
 
 import java.util.List;
 import java.util.Vector;

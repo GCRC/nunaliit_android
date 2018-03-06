@@ -3,7 +3,7 @@ package ca.carleton.gcrc.n2android_mobile1.cordova;
 import android.util.Log;
 
 import org.apache.cordova.CallbackContext;
-import nunaliit.org.json.JSONArray;
+import org.json.JSONArray;
 
 /**
  * Created by jpfiset on 4/5/16.

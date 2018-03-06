@@ -7,10 +7,10 @@ import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaInterface;
 import org.apache.cordova.CordovaPlugin;
 import org.apache.cordova.CordovaWebView;
-import nunaliit.org.json.JSONArray;
-import nunaliit.org.json.JSONException;
-import nunaliit.org.json.JSONObject;
-import nunaliit.org.json.JSONTokener;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.json.JSONTokener;
 
 import java.util.List;
 import java.util.Vector;
@@ -56,9 +56,8 @@ public class CordovaNunaliitPlugin extends CordovaPlugin {
         Log.i(TAG, "Plugin initialized. Service name: " + getServiceName());
     }
 
-//    @Override
-    // TODO: I had to remove @Override and AS can't find who's calling this method
-    public boolean execute(String action, JSONArray args, CallbackContext callbackContext) throws JSONException {
+    @Override
+    public boolean execute(String action, org.json.JSONArray args, CallbackContext callbackContext) throws JSONException {
         Log.v(TAG, "Action: " + action);
 
 

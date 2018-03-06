@@ -2,18 +2,17 @@ package ca.carleton.gcrc.n2android_mobile1.connection;
 
 import android.util.Log;
 
-import nunaliit.org.json.JSONObject;
+import org.json.JSONObject;
 
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Vector;
 
 import ca.carleton.gcrc.couch.client.CouchDb;
 import ca.carleton.gcrc.couch.client.CouchDesignDocument;
 import ca.carleton.gcrc.couch.client.CouchQuery;
 import ca.carleton.gcrc.couch.client.CouchQueryResults;
+import ca.carleton.gcrc.n2android_mobile1.JSONGlue;
 import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseDocInfo;
 import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseLiteService;
 
@@ -75,7 +74,7 @@ public class ConnectionSyncProcess {
         CouchQueryResults results = atlasDesign.performQuery(query);
 
         List<String> docIds = new Vector<String>();
-        List<JSONObject> rows = results.getRows();
+        List<JSONObject> rows = JSONGlue.convertJSONObjectCollectionFromUpstreamToAndroid(results.getRows());
         for(JSONObject row : rows){
             String docId = row.getString("id");
             docIds.add(docId);
@@ -92,7 +91,7 @@ public class ConnectionSyncProcess {
         CouchQueryResults results = atlasDesign.performQuery(query);
 
         List<JSONObject> docs = new Vector<JSONObject>();
-        List<JSONObject> rows = results.getRows();
+        List<JSONObject> rows = JSONGlue.convertJSONObjectCollectionFromUpstreamToAndroid(results.getRows());
         for(JSONObject row : rows){
             JSONObject doc = row.getJSONObject("doc");
             docs.add(doc);
@@ -102,7 +101,7 @@ public class ConnectionSyncProcess {
 
     public Collection<JSONObject> getRemoteDocuments(List<String> docIds) throws Exception {
         try {
-            Collection<JSONObject> docs = couchDb.getDocuments(docIds);
+            Collection<JSONObject> docs = JSONGlue.convertJSONObjectCollectionFromUpstreamToAndroid(couchDb.getDocuments(docIds));
             return docs;
         } catch(Exception e) {
             throw new Exception("Error while downloading remote documents",e);

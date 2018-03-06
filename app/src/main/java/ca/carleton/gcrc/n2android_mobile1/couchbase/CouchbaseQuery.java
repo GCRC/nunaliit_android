@@ -1,6 +1,6 @@
 package ca.carleton.gcrc.n2android_mobile1.couchbase;
 
-import nunaliit.org.json.JSONArray;
+import org.json.JSONArray;
 
 import java.util.List;
 
