@@ -11,3 +11,5 @@
 /app/libs/cordova*.jar
 /app/src/main/assets/www/nunaliit2
 /app/src/main/assets/www/js-external
+/.settings/
+/.project
