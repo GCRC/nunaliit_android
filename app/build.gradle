@@ -26,6 +26,19 @@ android {
         exclude 'META-INF/NOTICE.txt'
         exclude 'META-INF/DEPENDENCIES'
     }
+    signingConfigs {
+        release {
+            storeFile file("../dummy.keystore")
+            storePassword "worst-galley-grimy"
+            keyAlias "release"
+            keyPassword "worst-galley-grimy"
+        }
+    }
+    buildTypes {
+        release {
+            signingConfig signingConfigs.release
+        }
+    }
 }
 
 task copyNunaliit2Js(type: Copy) {
