@@ -1,8 +1,6 @@
 *.iml
 .gradle
 /gradle
-/gradlew
-/gradlew.bat
 /local.properties
 /.idea
 .DS_Store
@@ -13,3 +11,4 @@
 /app/src/main/assets/www/js-external
 /.settings/
 /.project
+/release.keystore
