@@ -53,23 +53,23 @@ function Configure(options_){
 	};
 
 	// Adjust configuration based on local storage
-	var debugConfiguration = new $n2.debug.DebugConfiguration();
-	if( debugConfiguration.isBadProxyEnabled() ){
-		$n2.couch.setBadProxy(true);
-	};
+//	var debugConfiguration = new $n2.debug.DebugConfiguration();
+//	if( debugConfiguration.isBadProxyEnabled() ){
+//		$n2.couch.setBadProxy(true);
+//	};
 
 	// Dispatcher
-	var dispatchLogging = false;
-	if( debugConfiguration.isEventLoggingEnabled() ){
-		dispatchLogging = true;
-	};
+//	var dispatchLogging = false;
+//	if( debugConfiguration.isEventLoggingEnabled() ){
+		var dispatchLogging = true;
+//	};
 	configuration.directory.dispatchService = new $n2.dispatch.Dispatcher({
 		logging: dispatchLogging
 	});
 
-	$n2.couchMap.Configure({
-		dispatchService: configuration.directory.dispatchService
-	});
+//	$n2.couchMap.Configure({
+       //		dispatchService: configuration.directory.dispatchService
+       //	});
 
 	// History monitoring
 	configuration.directory.historyMonitor = new $n2.history.Monitor({
