@@ -53,23 +53,20 @@ function Configure(options_){
 	};
 
 	// Adjust configuration based on local storage
-//	var debugConfiguration = new $n2.debug.DebugConfiguration();
-//	if( debugConfiguration.isBadProxyEnabled() ){
-//		$n2.couch.setBadProxy(true);
-//	};
+	var debugConfiguration = new $n2.debug.DebugConfiguration();
 
 	// Dispatcher
-//	var dispatchLogging = false;
-//	if( debugConfiguration.isEventLoggingEnabled() ){
+	var dispatchLogging = false;
+	if( debugConfiguration.isEventLoggingEnabled() ){
 		var dispatchLogging = true;
-//	};
+	};
 	configuration.directory.dispatchService = new $n2.dispatch.Dispatcher({
 		logging: dispatchLogging
 	});
 
-//	$n2.couchMap.Configure({
-       //		dispatchService: configuration.directory.dispatchService
-       //	});
+	$n2.couchMap.Configure({
+        dispatchService: configuration.directory.dispatchService
+    });
 
 	// History monitoring
 	configuration.directory.historyMonitor = new $n2.history.Monitor({
@@ -160,11 +157,11 @@ function Configure(options_){
 
 	function authInitialized() {
 
-		configuration.directory.localizationService = new $n2.couchL10n.LocalizationService({
-			db: configuration.atlasDb
-	 		,designDoc: configuration.atlasDesign
-	 		,dispatchService: configuration.directory.dispatchService
-	 	});
+//		configuration.directory.localizationService = new $n2.couchL10n.LocalizationService({
+//			db: configuration.atlasDb
+//	 		,designDoc: configuration.atlasDesign
+//	 		,dispatchService: configuration.directory.dispatchService
+//	 	});
 
 //	 	configuration.directory.progressService = new $n2.progress.ProgressServer({
 //			url: options.progressServerUrl
