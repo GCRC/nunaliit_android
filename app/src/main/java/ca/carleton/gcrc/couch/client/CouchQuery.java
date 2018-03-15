@@ -42,7 +42,7 @@ public class CouchQuery {
 	public void setStartKey(Object startKey) throws Exception {
 		this.startKey = JSONSupport.valueToString(startKey);
 	}
-	
+
 	public String getEndKey() {
 		return endKey;
 	}

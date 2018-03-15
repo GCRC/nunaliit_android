@@ -4,6 +4,7 @@ import android.util.Log;
 
 import org.json.JSONObject;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Vector;
@@ -45,13 +46,13 @@ public class ConnectionSyncProcess {
         try {
             Log.v(TAG, "Synchronization started");
 
-            List<JSONObject> remoteDocs = getRemoteSkeletonDocs();
+            List<JSONObject> remoteDocs = getDocsFromView("skeleton-docs");
 
             Log.v(TAG, "Synchronization received "+remoteDocs.size()+" skeleton document(s)");
 
             int updatedCount = 0;
             for(JSONObject doc : remoteDocs){
-                boolean updated = updateLocalSkeletonDocument(doc);
+                boolean updated = updateDocument(doc);
                 if( updated ){
                     ++updatedCount;
                 }
@@ -59,6 +60,44 @@ public class ConnectionSyncProcess {
             Log.i(TAG, "Synchronization updated " + updatedCount + " documents");
 
             Log.v(TAG, "Synchronization complete");
+
+            // TODO: Let the user select which documents to sync.
+            // Update Documents from the Schema
+            Log.v(TAG, "Synchronization fetching subdocuments");
+
+            for (JSONObject doc : remoteDocs) {
+                if (doc.has("nunaliit_schema")) {
+                    String schemaId = doc.getString("_id");
+                    fetchDocumentsForSchema(schemaId);
+                }
+            }
+
+        } catch(Exception e) {
+            throw new Exception("Error while synchronizing connection",e);
+        }
+    }
+
+    public void fetchDocumentsForSchema(String schemaId) throws Exception {
+        try {
+            Log.v(TAG, "Fetching Subdocuments for schema " + schemaId + " started");
+
+            List<String> keyList = new ArrayList<String>();
+            keyList.add(schemaId);
+            List<JSONObject> subdocuments = getDocsFromView("nunaliit-schema", keyList);
+
+            Log.v(TAG, "Subdocument Synchronization received "+subdocuments.size()+" subdocument(s)");
+
+            int updatedCount = 0;
+            for(JSONObject subdoc : subdocuments){
+                boolean updated = updateDocument(subdoc);
+                if( updated ){
+                    ++updatedCount;
+                }
+            }
+
+            Log.i(TAG, "Subdocument Synchronization updated " + updatedCount + " documents");
+
+            Log.v(TAG, "Subdocument Synchronization complete");
 
         } catch(Exception e) {
             throw new Exception("Error while synchronizing connection",e);
@@ -82,9 +121,16 @@ public class ConnectionSyncProcess {
         return docIds;
     }
 
-    public List<JSONObject> getRemoteSkeletonDocs() throws Exception {
+    public List<JSONObject> getDocsFromView(String view) throws Exception {
+        return getDocsFromView(view, null);
+    }
+
+    public List<JSONObject> getDocsFromView(String view, List<String> keys) throws Exception {
         CouchQuery query = new CouchQuery();
-        query.setViewName("skeleton-docs");
+        if (keys != null && !keys.isEmpty()) {
+            query.setKeys(keys);
+        }
+        query.setViewName(view);
         query.setReduce(false);
         query.setIncludeDocs(true);
 
@@ -108,7 +154,7 @@ public class ConnectionSyncProcess {
         }
     }
 
-    public boolean updateLocalSkeletonDocument(JSONObject doc) throws Exception {
+    public boolean updateDocument(JSONObject doc) throws Exception {
         try {
             boolean updated = false;
 
