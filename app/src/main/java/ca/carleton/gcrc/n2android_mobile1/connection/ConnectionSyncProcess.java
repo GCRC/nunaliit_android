@@ -332,5 +332,9 @@ public class ConnectionSyncProcess {
         Response response = client.newCall(request).execute();
 
         Log.v(TAG, response.body().string());
+
+        if (!response.isSuccessful()) {
+            throw new Exception("Creating new database document failed: " + response.body());
+        }
     }
 }
