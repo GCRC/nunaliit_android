@@ -23,6 +23,10 @@ public class JSONGlue {
         }
     }
 
+    public static nunaliit.org.json.JSONObject convertJSONObjectFromAndroidToUpstream(org.json.JSONObject from) {
+        return new nunaliit.org.json.JSONObject(from.toString());
+    }
+
     public static org.json.JSONArray convertJSONArrayFromUpstreamToAndroid(nunaliit.org.json.JSONArray from) {
         try {
             return new org.json.JSONArray(from.toString());
