@@ -12,6 +12,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -259,32 +260,22 @@ public class ConnectionSyncProcess {
     public List<JSONObject> getNewLocalDocuments(List<JSONObject> remoteDocuments) throws Exception {
         try {
             List<JSONObject> localDocuments = documentDb.getAllDocuments();
-            List<JSONObject> documentsMissingFromRemote = new ArrayList<JSONObject>();
 
-            Set<String> localDocumentsSet = new HashSet<String>();
+            HashMap<String, JSONObject> localDocumentsMap = new HashMap<String, JSONObject>();
 
             for (JSONObject doc : localDocuments) {
-                localDocumentsSet.add (doc.getString("_id"));
+                localDocumentsMap.put (doc.getString("_id"), doc);
             }
 
             for (JSONObject doc : remoteDocuments) {
-                if (localDocumentsSet.contains(doc.getString("_id"))) {
-                    localDocumentsSet.remove(doc.getString("_id"));
+                if (localDocumentsMap.containsKey(doc.getString("_id"))) {
+                    localDocumentsMap.remove(doc.getString("_id"));
                 }
             }
 
-            if (localDocumentsSet.size() > 0) {
-                for (JSONObject localDocument : localDocuments) {
-                    if (localDocumentsSet.contains(localDocument.getString("_id"))) {
-                        documentsMissingFromRemote.add(localDocument);
-                    }
-                }
-            }
-
-            return documentsMissingFromRemote;
+            return new ArrayList<>(localDocumentsMap.values());
 
         } catch (Exception e) {
-
             throw new Exception ("Unable to update server documents", e);
         }
     }
