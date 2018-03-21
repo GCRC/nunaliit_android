@@ -1,15 +1,9 @@
 package ca.carleton.gcrc.n2android_mobile1.connection;
 
-import android.content.Context;
-import android.location.Location;
-import android.location.LocationManager;
 import android.util.Log;
 
 import org.json.JSONObject;
 
-import java.io.OutputStreamWriter;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -18,8 +12,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.Vector;
-
-import javax.net.ssl.HttpsURLConnection;
 
 import ca.carleton.gcrc.couch.client.CouchDb;
 import ca.carleton.gcrc.couch.client.CouchDesignDocument;
@@ -67,7 +59,7 @@ public class ConnectionSyncProcess {
             Log.v(TAG, "Synchronization started");
 
             List<JSONObject> remoteDocs = fetchAllDocuments();
-            updateLocalDocuments(remoteDocs);
+            updateLocalDocumentsFromRemote(remoteDocs);
 
             updateRemoteDocuments(remoteDocs);
 
@@ -129,11 +121,11 @@ public class ConnectionSyncProcess {
         }
     }
 
-    public void updateLocalDocuments(List<JSONObject> documents) throws Exception {
+    public void updateLocalDocumentsFromRemote(List<JSONObject> documents) throws Exception {
         try {
             int updatedCount = 0;
             for (JSONObject doc : documents) {
-                boolean updated = updateLocalDocument(doc);
+                boolean updated = updateDocumentDatabaseIfNeed(doc);
                 if (updated) {
                     ++updatedCount;
                 }
@@ -145,23 +137,6 @@ public class ConnectionSyncProcess {
         } catch (Exception e) {
             throw new Exception("Error while updating documents",e);
         }
-    }
-
-    public List<String> getRemoteSkeletonDocIds() throws Exception {
-        CouchQuery query = new CouchQuery();
-        query.setViewName("skeleton-docs");
-        query.setReduce(false);
-        query.setIncludeDocs(false);
-
-        CouchQueryResults results = atlasDesign.performQuery(query);
-
-        List<String> docIds = new Vector<String>();
-        List<JSONObject> rows = JSONGlue.convertJSONObjectCollectionFromUpstreamToAndroid(results.getRows());
-        for(JSONObject row : rows){
-            String docId = row.getString("id");
-            docIds.add(docId);
-        }
-        return docIds;
     }
 
     public List<JSONObject> getDocsFromView(String view) throws Exception {
@@ -188,56 +163,91 @@ public class ConnectionSyncProcess {
         return docs;
     }
 
-    public Collection<JSONObject> getRemoteDocuments(List<String> docIds) throws Exception {
-        try {
-            Collection<JSONObject> docs = JSONGlue.convertJSONObjectCollectionFromUpstreamToAndroid(couchDb.getDocuments(docIds));
-            return docs;
-        } catch(Exception e) {
-            throw new Exception("Error while downloading remote documents",e);
+    public boolean updateDocumentDatabaseIfNeed(JSONObject remoteDoc) throws Exception {
+        String docId = remoteDoc.getString("_id");
+
+        JSONObject localDocument = documentDb.getDocument(docId);
+        Revision revisionRecord = getRevisionRecord(docId);
+
+        boolean changedLocally = localDocument.has("_rev") && !(localDocument.getString("_rev").equals(revisionRecord.getLocalRevision()));
+
+        // If the local document has changes.
+        if (!changedLocally) {
+            Log.v(TAG, docId + " is unchanged locally");
+        } else {
+            Log.v(TAG, docId + " is changed locally");
         }
+
+        boolean changedRemote = !(remoteDoc.getString("_rev").equals(revisionRecord.getRemoteRevision()));
+        String lastCommitVersion = revisionRecord.getLastCommit();
+        boolean isNewCommit = lastCommitVersion == null || !lastCommitVersion.equals(localDocument.getString("_rev"));
+
+        // Check to see if the remote document has changes.
+        if (!changedRemote) {
+            Log.v(TAG, docId + " is unchanged on remote");
+        } else {
+            Log.v(TAG, docId + " is changed on remote");
+        }
+
+        /*
+            We only want to update the local copy with the remote copy IF:
+
+            You have no local changes
+
+            - OR -
+
+            You have committed your local changes and you have no made changes since your previous
+            commit.
+         */
+        boolean isUnchangedLocalVersion = !changedLocally || (changedLocally && !isNewCommit);
+
+        if (changedRemote && isUnchangedLocalVersion) {
+            Revision revision = getRevisionRecord(docId);
+            updateDocumentDatabase(remoteDoc, revision);
+            return true;
+        }
+
+        if (changedLocally && isNewCommit) {
+            updateServerDocument(localDocument);
+            return true;
+        }
+
+        return false;
     }
 
-    public boolean updateLocalDocument(JSONObject doc) throws Exception {
-        try {
-            boolean updated = false;
-
-            String docId = doc.getString("_id");
-            String remoteRev = doc.optString("_rev", null);
-
-            Revision revisionRecord = trackingDb.getRevisionFromDocId(docId);
-            if( null == revisionRecord ){
-                revisionRecord = new Revision();
-            }
-            revisionRecord.setDocId(docId);
-
-            if(!remoteRev.equals(revisionRecord.getRemoteRevision())){
-                CouchbaseDocInfo info;
-                if( documentDb.documentExists(docId) ) {
-                    JSONObject existingDoc = documentDb.getDocument(docId);
-                    String existingRev = existingDoc.optString("_rev",null);
-                    if( null != existingRev ){
-                        doc.put("_rev",existingRev);
-                    }
-                    info = documentDb.updateDocument(doc);
-                } else {
-                    // When creating a document, no revision should be set
-                    doc.remove("_rev");
-
-                    info = documentDb.createDocument(doc);
-                }
-
-                revisionRecord.setRemoteRevision(remoteRev);
-                revisionRecord.setLocalRevision(info.getRev());
-                trackingDb.updateRevision(revisionRecord);
-
-                updated = true;
-            }
-
-            return updated;
-
-        } catch(Exception e) {
-            throw new Exception("Unable to update local skeleton documents",e);
+    public Revision getRevisionRecord(String docId) throws Exception {
+        Revision revisionRecord = trackingDb.getRevisionFromDocId(docId);
+        if( null == revisionRecord ){
+            revisionRecord = new Revision();
         }
+        revisionRecord.setDocId(docId);
+
+        return revisionRecord;
+    }
+
+    public void updateDocumentDatabase(JSONObject doc, Revision revisionRecord) throws Exception {
+        String docId = doc.getString("_id");
+        String remoteRev = doc.optString("_rev", null);
+
+        CouchbaseDocInfo info;
+        if( documentDb.documentExists(docId) ) {
+            JSONObject existingDoc = documentDb.getDocument(docId);
+            String existingRev = existingDoc.optString("_rev",null);
+            if( null != existingRev ){
+                doc.put("_rev",existingRev);
+            }
+            info = documentDb.updateDocument(doc);
+        } else {
+            // When creating a document, no revision should be set
+            doc.remove("_rev");
+            doc.remove("_attachments");
+
+            info = documentDb.createDocument(doc);
+        }
+
+        revisionRecord.setRemoteRevision(remoteRev);
+        revisionRecord.setLocalRevision(info.getRev());
+        trackingDb.updateRevision(revisionRecord);
     }
 
     public void updateRemoteDocuments(List<JSONObject> remoteDocuments) throws Exception {
@@ -277,16 +287,25 @@ public class ConnectionSyncProcess {
     }
 
     public void updateServerDocument(JSONObject document) throws Exception {
+        String docId = document.getString("_id");
+        Revision revisionRecord = getRevisionRecord(docId);
         nunaliit.org.json.JSONObject couchDoc = JSONGlue.convertJSONObjectFromAndroidToUpstream(document);
-        if (couchDb.documentExists(couchDoc)) {
-            couchDb.updateDocument(couchDoc);
+
+        if (!couchDb.documentExists(couchDoc)) {
+            document.remove("_rev");
         } else {
-            writeDocumentToSubmissionDatabase(document);
+            document.putOpt("_rev", revisionRecord.getRemoteRevision());
         }
+        writeDocumentToSubmissionDatabase(document);
+
+        // The document has been committed. Save a reference to its last commit.
+
+        JSONObject localDocument = documentDb.getDocument(docId);
+        revisionRecord.setLastCommit(localDocument.getString("_rev"));
+        trackingDb.updateRevision(revisionRecord);
     }
 
     public void writeDocumentToSubmissionDatabase(JSONObject document) throws Exception {
-        document.remove("_rev");
 
         ConnectionInfo info = connection.getConnectionInfo();
 
