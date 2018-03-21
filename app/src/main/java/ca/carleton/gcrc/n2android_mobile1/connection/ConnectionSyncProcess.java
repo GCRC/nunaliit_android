@@ -86,14 +86,14 @@ public class ConnectionSyncProcess {
             // Update Documents from the Schema
             Log.v(TAG, "Synchronization fetching subdocuments");
 
-            List<JSONObject> subdocuments = new ArrayList<>();
-            Set<String> subdocumentIdSet = new HashSet<String>();
-            Set<String> schemaIdSet = new HashSet<String>();
+            HashMap<String, JSONObject> subdocumentMap = new HashMap<>();
+            Set<String> schemaIdSet = new HashSet<>();
 
             for(JSONObject skeletonDoc : remoteDocs) {
-                subdocumentIdSet.add(skeletonDoc.getString("_id"));
+                subdocumentMap.put(skeletonDoc.getString("_id"), skeletonDoc);
             }
 
+            // Get all of the schemas.
             for (JSONObject doc : remoteDocs) {
                 if (doc.has("nunaliit_schema") && Objects.equals(doc.getString("nunaliit_schema"), "schema")) {
                     schemaIdSet.add(doc.getString("name"));
@@ -104,14 +104,10 @@ public class ConnectionSyncProcess {
 
             for(JSONObject subdoc : subdocsForSchema) {
                 String id = subdoc.getString("_id");
-                if (!subdocumentIdSet.contains(id)) {
-                    subdocuments.add(subdoc);
-                    subdocumentIdSet.add(id);
-                }
+                subdocumentMap.put(id, subdoc);
             }
 
-            remoteDocs.addAll(subdocuments);
-            return remoteDocs;
+            return new ArrayList<>(subdocumentMap.values());
 
         } catch (Exception e) {
             throw new Exception("Error while fetching all documents",e);
