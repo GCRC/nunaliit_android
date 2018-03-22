@@ -240,6 +240,8 @@ public class ConnectionSyncProcess {
         } else {
             // When creating a document, no revision should be set
             doc.remove("_rev");
+
+            // TODO: Find a way to keep the attachments on the document.
             doc.remove("_attachments");
 
             info = documentDb.createDocument(doc);
