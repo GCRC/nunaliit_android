@@ -1,12 +1,25 @@
 package ca.carleton.gcrc.n2android_mobile1.connection;
 
+import android.content.Context;
+import android.location.Location;
+import android.location.LocationManager;
 import android.util.Log;
 
 import org.json.JSONObject;
 
+import java.io.OutputStreamWriter;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 import java.util.Vector;
+
+import javax.net.ssl.HttpsURLConnection;
 
 import ca.carleton.gcrc.couch.client.CouchDb;
 import ca.carleton.gcrc.couch.client.CouchDesignDocument;
@@ -15,6 +28,14 @@ import ca.carleton.gcrc.couch.client.CouchQueryResults;
 import ca.carleton.gcrc.n2android_mobile1.JSONGlue;
 import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseDocInfo;
 import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseLiteService;
+import okhttp3.FormBody;
+import okhttp3.HttpUrl;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
+
+import static com.couchbase.lite.replicator.RemoteRequest.JSON;
 
 /**
  * Created by jpfiset on 3/21/16.
@@ -45,23 +66,84 @@ public class ConnectionSyncProcess {
         try {
             Log.v(TAG, "Synchronization started");
 
-            List<JSONObject> remoteDocs = getRemoteSkeletonDocs();
+            List<JSONObject> remoteDocs = fetchAllDocuments();
+            updateLocalDocuments(remoteDocs);
 
-            Log.v(TAG, "Synchronization received "+remoteDocs.size()+" skeleton document(s)");
-
-            int updatedCount = 0;
-            for(JSONObject doc : remoteDocs){
-                boolean updated = updateLocalSkeletonDocument(doc);
-                if( updated ){
-                    ++updatedCount;
-                }
-            }
-            Log.i(TAG, "Synchronization updated " + updatedCount + " documents");
-
-            Log.v(TAG, "Synchronization complete");
+            updateRemoteDocuments(remoteDocs);
 
         } catch(Exception e) {
             throw new Exception("Error while synchronizing connection",e);
+        }
+    }
+
+    public List<JSONObject> fetchAllDocuments() throws Exception {
+        try {
+            List<JSONObject> remoteDocs = getDocsFromView("skeleton-docs");
+
+            Log.v(TAG, "Synchronization received " + remoteDocs.size() + " skeleton document(s)");
+
+            // TODO: Let the user select which documents to sync.
+            // Update Documents from the Schema
+            Log.v(TAG, "Synchronization fetching subdocuments");
+
+            HashMap<String, JSONObject> subdocumentMap = new HashMap<>();
+            Set<String> schemaIdSet = new HashSet<>();
+
+            for(JSONObject skeletonDoc : remoteDocs) {
+                subdocumentMap.put(skeletonDoc.getString("_id"), skeletonDoc);
+            }
+
+            // Get all of the schemas.
+            for (JSONObject doc : remoteDocs) {
+                if (doc.has("nunaliit_schema") && Objects.equals(doc.getString("nunaliit_schema"), "schema")) {
+                    schemaIdSet.add(doc.getString("name"));
+                }
+            }
+
+            List<JSONObject> subdocsForSchema = fetchDocumentsForSchemas(schemaIdSet);
+
+            for(JSONObject subdoc : subdocsForSchema) {
+                String id = subdoc.getString("_id");
+                subdocumentMap.put(id, subdoc);
+            }
+
+            return new ArrayList<>(subdocumentMap.values());
+
+        } catch (Exception e) {
+            throw new Exception("Error while fetching all documents",e);
+        }
+    }
+
+    public List<JSONObject> fetchDocumentsForSchemas(Collection<String> schemaList) throws Exception {
+        try {
+            Log.v(TAG, "Fetching Subdocuments for schemas started");
+
+            List<JSONObject> subdocuments = getDocsFromView("nunaliit-schema", schemaList);
+
+            Log.v(TAG, "Subdocument Synchronization received "+subdocuments.size()+" subdocument(s)");
+
+            return subdocuments;
+
+        } catch(Exception e) {
+            throw new Exception("Error while fetching documents from schema",e);
+        }
+    }
+
+    public void updateLocalDocuments(List<JSONObject> documents) throws Exception {
+        try {
+            int updatedCount = 0;
+            for (JSONObject doc : documents) {
+                boolean updated = updateLocalDocument(doc);
+                if (updated) {
+                    ++updatedCount;
+                }
+            }
+
+            Log.i(TAG, "Synchronization updated " + updatedCount + " documents");
+
+            Log.v(TAG, "Synchronization complete");
+        } catch (Exception e) {
+            throw new Exception("Error while updating documents",e);
         }
     }
 
@@ -82,9 +164,16 @@ public class ConnectionSyncProcess {
         return docIds;
     }
 
-    public List<JSONObject> getRemoteSkeletonDocs() throws Exception {
+    public List<JSONObject> getDocsFromView(String view) throws Exception {
+        return getDocsFromView(view, null);
+    }
+
+    public List<JSONObject> getDocsFromView(String view, Collection<String> keys) throws Exception {
         CouchQuery query = new CouchQuery();
-        query.setViewName("skeleton-docs");
+        if (keys != null && !keys.isEmpty()) {
+            query.setKeys(keys);
+        }
+        query.setViewName(view);
         query.setReduce(false);
         query.setIncludeDocs(true);
 
@@ -108,7 +197,7 @@ public class ConnectionSyncProcess {
         }
     }
 
-    public boolean updateLocalSkeletonDocument(JSONObject doc) throws Exception {
+    public boolean updateLocalDocument(JSONObject doc) throws Exception {
         try {
             boolean updated = false;
 
@@ -121,8 +210,8 @@ public class ConnectionSyncProcess {
             }
             revisionRecord.setDocId(docId);
 
-            if( false == remoteRev.equals(revisionRecord.getRemoteRevision()) ){
-                CouchbaseDocInfo info = null;
+            if(!remoteRev.equals(revisionRecord.getRemoteRevision())){
+                CouchbaseDocInfo info;
                 if( documentDb.documentExists(docId) ) {
                     JSONObject existingDoc = documentDb.getDocument(docId);
                     String existingRev = existingDoc.optString("_rev",null);
@@ -132,9 +221,7 @@ public class ConnectionSyncProcess {
                     info = documentDb.updateDocument(doc);
                 } else {
                     // When creating a document, no revision should be set
-                    if( null != remoteRev ){
-                        doc.remove("_rev");
-                    }
+                    doc.remove("_rev");
 
                     info = documentDb.createDocument(doc);
                 }
@@ -150,6 +237,91 @@ public class ConnectionSyncProcess {
 
         } catch(Exception e) {
             throw new Exception("Unable to update local skeleton documents",e);
+        }
+    }
+
+    public void updateRemoteDocuments(List<JSONObject> remoteDocuments) throws Exception {
+        try {
+            List<JSONObject> newLocalDocuments = getNewLocalDocuments(remoteDocuments);
+
+            for(JSONObject doc : newLocalDocuments) {
+                updateServerDocument(doc);
+            }
+
+        } catch (Exception e) {
+            throw new Exception("Unable to update remote documents",e);
+        }
+    }
+
+    public List<JSONObject> getNewLocalDocuments(List<JSONObject> remoteDocuments) throws Exception {
+        try {
+            List<JSONObject> localDocuments = documentDb.getAllDocuments();
+
+            HashMap<String, JSONObject> localDocumentsMap = new HashMap<String, JSONObject>();
+
+            for (JSONObject doc : localDocuments) {
+                localDocumentsMap.put (doc.getString("_id"), doc);
+            }
+
+            for (JSONObject doc : remoteDocuments) {
+                if (localDocumentsMap.containsKey(doc.getString("_id"))) {
+                    localDocumentsMap.remove(doc.getString("_id"));
+                }
+            }
+
+            return new ArrayList<>(localDocumentsMap.values());
+
+        } catch (Exception e) {
+            throw new Exception ("Unable to update server documents", e);
+        }
+    }
+
+    public void updateServerDocument(JSONObject document) throws Exception {
+        nunaliit.org.json.JSONObject couchDoc = JSONGlue.convertJSONObjectFromAndroidToUpstream(document);
+        if (couchDb.documentExists(couchDoc)) {
+            couchDb.updateDocument(couchDoc);
+        } else {
+            writeDocumentToSubmissionDatabase(document);
+        }
+    }
+
+    public void writeDocumentToSubmissionDatabase(JSONObject document) throws Exception {
+        document.remove("_rev");
+
+        ConnectionInfo info = connection.getConnectionInfo();
+
+        String docString = document.toString();
+
+        // Auth
+        // TODO: Move this to a service.
+        OkHttpClient client = new OkHttpClient();
+        HttpUrl loginUrl = HttpUrl.parse(info.getUrl()).newBuilder().encodedPath("/server/_session").build();
+        FormBody formBody = new FormBody.Builder().add("name", info.getUser()).add("password", info.getPassword()).build();
+        Request loginRequest = new Request.Builder()
+                .url(loginUrl)
+                .post(formBody)
+                .header("Accept", "application/json")
+                .build();
+
+        Response loginResponse = client.newCall(loginRequest).execute();
+        String cookie = loginResponse.header("Set-Cookie");
+        cookie += "; NunaliitAuth=" + info.getUser();
+
+        // Put the item in the submission database.
+        HttpUrl url = HttpUrl.parse(info.getUrl()).newBuilder().encodedPath("/servlet/submission/submissionDb").addPathSegment(document.getString("_id")).build();
+        RequestBody body = RequestBody.create(JSON, docString);
+        Request request = new Request.Builder()
+                .url(url)
+                .put(body)
+                .header("Cookie", cookie)
+                .build();
+
+        Response response = client.newCall(request).execute();
+
+        Log.v(TAG, response.body().string());
+
+        if (!response.isSuccessful()) {
+            throw new Exception("Creating new database document failed: " + response.body());
         }
     }
 }
