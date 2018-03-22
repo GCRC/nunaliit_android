@@ -9,6 +9,7 @@ public class Revision {
     private String docId;
     private String remoteRevision;
     private String localRevision;
+    private String lastCommit;
 
     public String getId() {
         return id;
@@ -41,4 +42,8 @@ public class Revision {
     public void setLocalRevision(String localRevision) {
         this.localRevision = localRevision;
     }
+
+    public String getLastCommit() { return lastCommit; }
+
+    public void setLastCommit(String lastCommit) { this.lastCommit = lastCommit; }
 }

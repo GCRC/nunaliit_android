@@ -91,6 +91,14 @@ public class TrackingDb extends CouchbaseDb {
                         revision.setLocalRevision(localRevision);
                     }
                 }
+
+                // last commit
+                {
+                    String lastCommit = Couchbase.optString(rev, "lastCommit");
+                    if (null != lastCommit) {
+                        revision.setLastCommit(lastCommit);
+                    }
+                }
             }
         }
 
@@ -125,6 +133,12 @@ public class TrackingDb extends CouchbaseDb {
         {
             String localRevision = revision.getLocalRevision();
             rev.put("localRevision",localRevision);
+        }
+
+        // lastCommit
+        {
+            String lastCommit = revision.getLastCommit();
+            rev.put("lastCommit", lastCommit);
         }
 
         // Update happens here
