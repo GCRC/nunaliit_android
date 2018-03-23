@@ -43,7 +43,7 @@ public class CordovaNunaliitPlugin extends CordovaPlugin {
         this.cordovaInterface = cordova;
         Log.v(TAG,"Cordova Interface: "+cordova.getClass().getSimpleName());
 
-        this.actions = new PluginActions(cordovaInterface);
+        this.actions = new PluginActions(cordovaInterface, webView.getContext());
 
         Activity activity = cordova.getActivity();
         if( null != activity ){

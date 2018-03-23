@@ -4,18 +4,11 @@ import com.couchbase.lite.Database;
 import com.couchbase.lite.Emitter;
 import com.couchbase.lite.Mapper;
 
-import nunaliit.org.json.JSONObject;
-
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.Vector;
 
 import ca.carleton.gcrc.n2android_mobile1.couchbase.Couchbase;
 import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseDb;
-import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseManager;
-import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseQuery;
-import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseQueryResults;
 import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseView;
 
 /**
