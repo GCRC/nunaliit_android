@@ -41,6 +41,10 @@ android {
     }
 }
 
+repositories {
+    google()
+}
+
 task copyNunaliit2Js(type: Copy) {
     from('../nunaliit2/nunaliit2-js/src/main/js/nunaliit2')
     into('src/main/assets/www/nunaliit2')
@@ -68,4 +72,5 @@ dependencies {
 
     implementation 'com.squareup.okhttp3:okhttp:3.10.0'
 
+    implementation 'com.google.android.gms:play-services-location:12.0.0'
 }

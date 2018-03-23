@@ -6,7 +6,6 @@ import com.couchbase.lite.Database;
 import com.couchbase.lite.Document;
 import com.couchbase.lite.Query;
 import com.couchbase.lite.QueryEnumerator;
-import com.couchbase.lite.QueryOptions;
 import com.couchbase.lite.QueryRow;
 
 import org.json.JSONArray;
@@ -17,8 +16,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Vector;
-
-import ca.carleton.gcrc.n2android_mobile1.connection.ConnectionInfo;
 
 /**
  * Created by jpfiset on 3/24/16.
