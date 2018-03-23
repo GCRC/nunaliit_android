@@ -3,7 +3,9 @@ package ca.carleton.gcrc.n2android_mobile1.connection;
 import com.couchbase.lite.Database;
 import com.couchbase.lite.Emitter;
 import com.couchbase.lite.Mapper;
+import com.google.android.gms.location.FusedLocationProviderClient;
 
+import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseDocInfo;
 import nunaliit.org.json.JSONObject;
 
 import java.util.HashMap;

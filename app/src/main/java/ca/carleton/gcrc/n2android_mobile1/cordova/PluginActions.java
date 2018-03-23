@@ -1,12 +1,24 @@
 package ca.carleton.gcrc.n2android_mobile1.cordova;
 
 import android.app.Activity;
+import android.app.Application;
+import android.content.Context;
+import android.content.ContextWrapper;
+import android.location.Location;
+import android.support.annotation.NonNull;
+import android.util.Log;
+
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaInterface;
 
 import ca.carleton.gcrc.n2android_mobile1.JSONGlue;
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.List;
@@ -29,9 +41,11 @@ public class PluginActions {
     final protected String TAG = this.getClass().getSimpleName();
 
     private CordovaInterface cordovaInterface = null;
+    private FusedLocationProviderClient fusedLocationProviderClient;
 
-    public PluginActions(CordovaInterface cordovaInterface){
+    public PluginActions(CordovaInterface cordovaInterface, Context context){
         this.cordovaInterface = cordovaInterface;
+        fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(context);
     }
 
     public void echo(String message, CallbackContext callbackContext) {
@@ -88,19 +102,63 @@ public class PluginActions {
         }
     }
 
-    public void couchbaseCreateDocument(JSONObject doc, CallbackContext callbackContext) {
+    public void couchbaseCreateDocument(final JSONObject doc, final CallbackContext callbackContext) {
         try {
-            DocumentDb docDb = getDocumentDb();
+            final DocumentDb docDb = getDocumentDb();
 
+            try {
+
+                fusedLocationProviderClient.getLastLocation()
+                        .addOnSuccessListener(new OnSuccessListener<Location>() {
+                            @Override
+                            public void onSuccess(Location location) {
+                                if (location != null) {
+                                    Log.v(TAG, location.toString());
+
+                                    try {
+                                        double latitude = location.getLatitude();
+                                        double longitude = location.getLongitude();
+
+                                        JSONObject locationObject = new JSONObject();
+                                        locationObject.put("wkt", "MULTIPOINT((" + longitude + " " + latitude + "))");
+                                        locationObject.put("nunaliit_type", "geometry");
+                                        doc.put("nunaliit_geom", locationObject);
+                                    } catch (JSONException je) {
+                                        // If you can't get a location, carry on.
+                                    }
+                                }
+
+                                createDocument(doc, docDb, callbackContext);
+                            }
+                        })
+                        .addOnFailureListener(new OnFailureListener() {
+                            @Override
+                            public void onFailure(@NonNull Exception e) {
+                                createDocument(doc, docDb, callbackContext);
+                            }
+                        });
+
+            } catch (SecurityException se) {
+                // Will be thrown if the user declines the location prompt.
+                createDocument(doc, docDb, callbackContext);
+            }
+
+        } catch (Exception e) {
+            callbackContext.error("Error while performing couchbaseCreateDocument(): " + e.getMessage());
+        }
+    }
+
+    private void createDocument(JSONObject doc, DocumentDb docDb, CallbackContext callbackContext) {
+        try {
             CouchbaseDocInfo info = docDb.createDocument(doc);
 
-            JSONObject result = new JSONObject();
+            final JSONObject result = new JSONObject();
             result.put("id", info.getId());
             result.put("rev", info.getRev());
-            callbackContext.success(result);
 
-        } catch(Exception e) {
-            callbackContext.error("Error while performing couchbaseCreateDocument(): "+e.getMessage());
+            callbackContext.success(result);
+        } catch (Exception re) {
+            callbackContext.error("Error while performing couchbaseCreateDocument(): "+re.getMessage());
         }
     }
 
