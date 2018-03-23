@@ -1,9 +1,7 @@
 package ca.carleton.gcrc.n2android_mobile1.cordova;
 
 import android.app.Activity;
-import android.app.Application;
 import android.content.Context;
-import android.content.ContextWrapper;
 import android.location.Location;
 import android.support.annotation.NonNull;
 import android.util.Log;
@@ -15,8 +13,6 @@ import com.google.android.gms.tasks.OnSuccessListener;
 
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaInterface;
-
-import ca.carleton.gcrc.n2android_mobile1.JSONGlue;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
