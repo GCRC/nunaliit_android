@@ -1,16 +1,20 @@
 package ca.carleton.gcrc.n2android_mobile1.connection;
 
 import android.util.Log;
+import android.webkit.MimeTypeMap;
 
 import org.json.JSONObject;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.UUID;
 import java.util.Vector;
 
 import ca.carleton.gcrc.couch.client.CouchDb;
@@ -21,7 +25,10 @@ import ca.carleton.gcrc.n2android_mobile1.JSONGlue;
 import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseDocInfo;
 import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseLiteService;
 import okhttp3.FormBody;
+import okhttp3.Headers;
 import okhttp3.HttpUrl;
+import okhttp3.MediaType;
+import okhttp3.MultipartBody;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
@@ -236,12 +243,15 @@ public class ConnectionSyncProcess {
             if( null != existingRev ){
                 doc.put("_rev",existingRev);
             }
+
+            // If there is an _attachments, the document will not be updated.
+            doc.remove("_attachments");
             info = documentDb.updateDocument(doc);
         } else {
             // When creating a document, no revision should be set
             doc.remove("_rev");
 
-            // TODO: Find a way to keep the attachments on the document.
+            // If there is an _attachments, the document will not be created.
             doc.remove("_attachments");
 
             info = documentDb.createDocument(doc);
@@ -301,21 +311,44 @@ public class ConnectionSyncProcess {
         writeDocumentToSubmissionDatabase(document);
 
         // The document has been committed. Save a reference to its last commit.
-
         JSONObject localDocument = documentDb.getDocument(docId);
         revisionRecord.setLastCommit(localDocument.getString("_rev"));
         trackingDb.updateRevision(revisionRecord);
     }
 
     public void writeDocumentToSubmissionDatabase(JSONObject document) throws Exception {
-
         ConnectionInfo info = connection.getConnectionInfo();
 
-        String docString = document.toString();
+        OkHttpClient client = new OkHttpClient();
+
+        Response loginResponse = client.newCall(createAuthRequest()).execute();
+        String cookie = loginResponse.header("Set-Cookie");
+        cookie += "; NunaliitAuth=" + info.getUser();
+
+        String uploadPath = getNunaliitAttachmentPath(document);
+        String uploadId = addNunaliitAttachments(document);
+
+        Response response = client.newCall(createDocumentUploadRequest(document, cookie)).execute();
+        Log.v(TAG, response.body().string());
+
+        if (!response.isSuccessful()) {
+            throw new Exception("Creating new database document failed: " + response.body());
+        }
+
+        if (response.isSuccessful() && uploadPath != null && uploadId != null) {
+            Response imageResponse = client.newCall(createAttachmentRequest(uploadId, uploadPath, cookie)).execute();
+            Log.v(TAG, imageResponse.body().string());
+
+            if (!imageResponse.isSuccessful()) {
+                throw new Exception("Creating new database image failed: " + response.body());
+            }
+        }
+    }
+
+    private Request createAuthRequest() throws Exception {
+        ConnectionInfo info = connection.getConnectionInfo();
 
         // Auth
-        // TODO: Move this to a service.
-        OkHttpClient client = new OkHttpClient();
         HttpUrl loginUrl = HttpUrl.parse(info.getUrl()).newBuilder().encodedPath("/server/_session").build();
         FormBody formBody = new FormBody.Builder().add("name", info.getUser()).add("password", info.getPassword()).build();
         Request loginRequest = new Request.Builder()
@@ -324,9 +357,13 @@ public class ConnectionSyncProcess {
                 .header("Accept", "application/json")
                 .build();
 
-        Response loginResponse = client.newCall(loginRequest).execute();
-        String cookie = loginResponse.header("Set-Cookie");
-        cookie += "; NunaliitAuth=" + info.getUser();
+        return loginRequest;
+    }
+
+    public Request createDocumentUploadRequest(JSONObject document, String authCookie) throws Exception {
+        ConnectionInfo info = connection.getConnectionInfo();
+
+        String docString = document.toString();
 
         // Put the item in the submission database.
         HttpUrl url = HttpUrl.parse(info.getUrl()).newBuilder().encodedPath("/servlet/submission/submissionDb").addPathSegment(document.getString("_id")).build();
@@ -334,15 +371,85 @@ public class ConnectionSyncProcess {
         Request request = new Request.Builder()
                 .url(url)
                 .put(body)
-                .header("Cookie", cookie)
+                .header("Cookie", authCookie)
                 .build();
 
-        Response response = client.newCall(request).execute();
+        return request;
+    }
 
-        Log.v(TAG, response.body().string());
+    public Request createAttachmentRequest(String uploadId, String filepath, String authCookie) throws Exception {
+        ConnectionInfo info = connection.getConnectionInfo();
 
-        if (!response.isSuccessful()) {
-            throw new Exception("Creating new database document failed: " + response.body());
+        MediaType mediaType = getMediaType(filepath);
+        String progressId = UUID.randomUUID().toString();
+        File file = new File(filepath);
+
+        String uploadIdHeader = "form-data; name=\"uploadId\"";
+        String progressHeader = "form-data; name=\"progressId\"";
+        String fileHeader = "form-data; name=\"media\"; filename=" + file.getName();
+
+        RequestBody requestBody = new MultipartBody.Builder()
+                .setType(MultipartBody.FORM)
+                .addPart(
+                        Headers.of("Content-Disposition", uploadIdHeader),
+                        RequestBody.create(null, uploadId)
+                )
+                .addPart(
+                        Headers.of("Content-Disposition", progressHeader),
+                        RequestBody.create(null, progressId)
+                )
+                .addPart(
+                        Headers.of("Content-Disposition", fileHeader),
+                        RequestBody.create(mediaType, file)
+                ).build();
+
+        HttpUrl url = HttpUrl.parse(info.getUrl()).newBuilder().encodedPath("/servlet/upload/put").build();
+        Request request = new Request.Builder()
+                .url(url)
+                .post(requestBody)
+                .header("Cookie", authCookie)
+                .build();
+
+        return request;
+    }
+
+    public MediaType getMediaType(String filepath) {
+        String extension = MimeTypeMap.getFileExtensionFromUrl(filepath);
+        return MediaType.parse(MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension));
+    }
+
+    public String getNunaliitAttachmentPath(JSONObject document) {
+        return document.optString("nunaliit_mobile_attachments");
+    }
+
+    public String addNunaliitAttachments(JSONObject document) throws Exception {
+
+        String path = document.optString("nunaliit_mobile_attachments");
+        if (path != null) {
+            String uploadId = UUID.randomUUID().toString();
+
+            // Attachment Documents
+            JSONObject nunaliitAttachments = new JSONObject();
+            nunaliitAttachments.put("nunaliit_type", "attachment_descriptions");
+
+            JSONObject files = new JSONObject();
+            JSONObject media = new JSONObject();
+            JSONObject data = new JSONObject();
+
+            media.put("attachmentName", "media");
+            media.put("status", "waiting for upload");
+            media.put("uploadId", uploadId);
+            media.put("data", data);
+
+            files.put("media", media);
+
+            nunaliitAttachments.put("files", files);
+
+            document.put("nunaliit_attachments", nunaliitAttachments);
+
+            return uploadId;
         }
+
+        return null;
     }
 }
