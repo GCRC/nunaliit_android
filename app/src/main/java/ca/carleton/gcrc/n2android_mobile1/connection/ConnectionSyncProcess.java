@@ -419,12 +419,12 @@ public class ConnectionSyncProcess {
     }
 
     public String getNunaliitAttachmentPath(JSONObject document) {
-        return document.optString("nunaliit_mobile_attachments");
+        return document.optString("nunaliit_mobile_attachments", null);
     }
 
     public String addNunaliitAttachments(JSONObject document) throws Exception {
 
-        String path = document.optString("nunaliit_mobile_attachments");
+        String path = document.optString("nunaliit_mobile_attachments", null);
         if (path != null) {
             String uploadId = UUID.randomUUID().toString();
 
