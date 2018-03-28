@@ -30,7 +30,15 @@
         <param name="android-package" value="ca.carleton.gcrc.n2android_mobile1.cordova.CordovaNunaliitPlugin" />
         <param name="onload" value="true" />
     </feature>
+
     <feature name="Camera">
         <param name="android-package" value="org.apache.cordova.camera.CameraLauncher"/>
     </feature>
+
+    <preference name="AndroidPersistentFileLocation" value="Internal" />
+    <feature name="File" >
+        <param name="android-package" value="org.apache.cordova.file.FileUtils"/>
+        <param name="onload" value="true" />
+    </feature>
+    <allow-navigation href="cdvfile:*" />
 </widget>
