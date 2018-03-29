@@ -25,4 +25,6 @@
     <string name="label_password">Mot de passe:</string>
     <string name="label_url">URL:</string>
     <string name="label_user">Usager:</string>
+    <string name="nunaliit_logo">ᓄᓇᓖᑦ</string>
+    <string name="nunaliit_title_welcome">Welcome to Nunaliit.</string>
 </resources>
