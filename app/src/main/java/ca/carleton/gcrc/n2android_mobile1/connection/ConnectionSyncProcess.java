@@ -125,7 +125,8 @@ public class ConnectionSyncProcess {
                     ++updatedCount;
                 }
             } catch (Exception e) {
-                throw new RuntimeException("Failure updating local document: " + doc.optString("_id", ""), e);
+                Log.d(TAG, "Failure Updating Local Document: " + doc.optString("_id", ""));
+                Log.e(TAG, e.getLocalizedMessage());
             }
         }
 
@@ -265,7 +266,8 @@ public class ConnectionSyncProcess {
                     updateRemoteDocument(doc);
                 }
             } catch (Exception e) {
-                throw new RuntimeException("Failure Updating Remote Document: " + doc.optString("_id", ""), e);
+                Log.d(TAG, "Failure Updating Remote Document: " + doc.optString("_id", ""));
+                Log.e(TAG, e.getLocalizedMessage());
             }
         }
     }
@@ -305,6 +307,8 @@ public class ConnectionSyncProcess {
             document.putOpt("_rev", revisionRecord.getRemoteRevision());
         }
         writeDocumentToSubmissionDatabase(document);
+
+
 
         // The document has been committed. Save a reference to its last commit.
         JSONObject localDocument = documentDb.getDocument(docId);
