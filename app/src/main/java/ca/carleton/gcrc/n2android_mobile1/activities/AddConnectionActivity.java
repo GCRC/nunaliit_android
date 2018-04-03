@@ -8,6 +8,8 @@ import android.os.Bundle;
 import android.os.Parcelable;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -47,6 +49,32 @@ public class AddConnectionActivity extends AppCompatActivity {
         return TAG;
     }
 
+    public TextWatcher textWatcher = new TextWatcher() {
+        @Override
+        public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {}
+
+        @Override
+        public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {}
+
+        @Override
+        public void afterTextChanged(Editable editable) {
+            EditText urlTextView = findViewById(R.id.url);
+            EditText userNameTextView = findViewById(R.id.userName);
+            EditText passwordTextView = findViewById(R.id.userPassword);
+
+            int count = urlTextView.getText().length() + userNameTextView.getText().length() +
+                    passwordTextView.getText().length();
+
+            if (count > 0) {
+                Button button = findViewById(R.id.button_create);
+                button.setEnabled(true);
+            } else {
+                Button button = findViewById(R.id.button_create);
+                button.setEnabled(false);
+            }
+        }
+    };
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -72,8 +100,17 @@ public class AddConnectionActivity extends AppCompatActivity {
                 Button button = (Button)view;
                 button.setOnClickListener(btnCreateListener);
                 button.setVisibility(View.VISIBLE);
+                button.setEnabled(false);
             }
         }
+
+        EditText urlTextView = findViewById(R.id.url);
+        EditText userNameTextView = findViewById(R.id.userName);
+        EditText passwordTextView = findViewById(R.id.userPassword);
+
+        urlTextView.addTextChangedListener(textWatcher);
+        userNameTextView.addTextChangedListener(textWatcher);
+        passwordTextView.addTextChangedListener(textWatcher);
     }
 
     @Override
@@ -85,14 +122,14 @@ public class AddConnectionActivity extends AppCompatActivity {
 
     public void createConnection(){
         // Connection name
-        String connectionName = null;
-        {
-            View editTextView = findViewById(R.id.connectionName);
-            if( editTextView instanceof EditText){
-                EditText editText = (EditText)editTextView;
-                connectionName = editText.getText().toString();
-            }
-        }
+//        String connectionName = null;
+//        {
+////            View editTextView = findViewById(R.id.connectionName);
+////            if( editTextView instanceof EditText){
+////                EditText editText = (EditText)editTextView;
+////                connectionName = editText.getText().toString();
+////            }
+//        }
 
         // URL
         String url = null;
@@ -124,11 +161,11 @@ public class AddConnectionActivity extends AppCompatActivity {
             }
         }
 
-        Log.v(TAG, "Connection " + connectionName + "/" + url + "/" + userName + "/" + userPassword);
+        Log.v(TAG, "Connection " + "/" + url + "/" + userName + "/" + userPassword);
 
         try {
             ConnectionInfo info = new ConnectionInfo();
-            info.setName(connectionName);
+            info.setName("Atlas Name");
             info.setUrl(url);
             info.setUser(userName);
             info.setPassword(userPassword);
