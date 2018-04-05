@@ -212,19 +212,15 @@ public class MainActivity extends AppCompatActivity {
         boolean enabled = urlTextView.getText().length() != 0 && userNameTextView.getText().length() != 0 &&
                 passwordTextView.getText().length() != 0;
 
-        if (enabled) {
-            Button button = findViewById(R.id.button_create);
-            button.setEnabled(true);
-        } else {
-            Button button = findViewById(R.id.button_create);
-            button.setEnabled(false);
-        }
+        Button button = findViewById(R.id.button_create);
+        button.setEnabled(enabled);
     }
 
     public void startConnectionActivity(ConnectionInfo connInfo){
         Intent intent = new Intent(this, EmbeddedCordovaActivity.class);
 
         intent.putExtra(Nunaliit.EXTRA_CONNECTION_ID, connInfo.getId());
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
 
         startActivity(intent);
     }

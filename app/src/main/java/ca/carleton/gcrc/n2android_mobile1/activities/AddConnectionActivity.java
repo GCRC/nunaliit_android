@@ -58,20 +58,16 @@ public class AddConnectionActivity extends AppCompatActivity {
 
         @Override
         public void afterTextChanged(Editable editable) {
+            EditText connectionTextView = findViewById(R.id.connectionName);
             EditText urlTextView = findViewById(R.id.url);
             EditText userNameTextView = findViewById(R.id.userName);
             EditText passwordTextView = findViewById(R.id.userPassword);
 
-            int count = urlTextView.getText().length() + userNameTextView.getText().length() +
-                    passwordTextView.getText().length();
+            boolean enabled = connectionTextView.getText().length() != 0 && urlTextView.getText().length() != 0 && userNameTextView.getText().length() != 0 &&
+                    passwordTextView.getText().length() != 0;
 
-            if (count > 0) {
-                Button button = findViewById(R.id.button_create);
-                button.setEnabled(true);
-            } else {
-                Button button = findViewById(R.id.button_create);
-                button.setEnabled(false);
-            }
+            Button button = findViewById(R.id.button_create);
+            button.setEnabled(enabled);
         }
     };
 
@@ -104,10 +100,12 @@ public class AddConnectionActivity extends AppCompatActivity {
             }
         }
 
+        EditText connectionTextView = findViewById(R.id.connectionName);
         EditText urlTextView = findViewById(R.id.url);
         EditText userNameTextView = findViewById(R.id.userName);
         EditText passwordTextView = findViewById(R.id.userPassword);
 
+        connectionTextView.addTextChangedListener(textWatcher);
         urlTextView.addTextChangedListener(textWatcher);
         userNameTextView.addTextChangedListener(textWatcher);
         passwordTextView.addTextChangedListener(textWatcher);
@@ -122,14 +120,14 @@ public class AddConnectionActivity extends AppCompatActivity {
 
     public void createConnection(){
         // Connection name
-//        String connectionName = null;
-//        {
-////            View editTextView = findViewById(R.id.connectionName);
-////            if( editTextView instanceof EditText){
-////                EditText editText = (EditText)editTextView;
-////                connectionName = editText.getText().toString();
-////            }
-//        }
+        String connectionName = null;
+        {
+            View editTextView = findViewById(R.id.connectionName);
+            if( editTextView instanceof EditText){
+                EditText editText = (EditText)editTextView;
+                connectionName = editText.getText().toString();
+            }
+        }
 
         // URL
         String url = null;
@@ -161,11 +159,11 @@ public class AddConnectionActivity extends AppCompatActivity {
             }
         }
 
-        Log.v(TAG, "Connection " + "/" + url + "/" + userName + "/" + userPassword);
+        Log.v(TAG, "Connection " + connectionName + "/" + url + "/" + userName + "/" + userPassword);
 
         try {
             ConnectionInfo info = new ConnectionInfo();
-            info.setName("Atlas Name");
+            info.setName(connectionName);
             info.setUrl(url);
             info.setUser(userName);
             info.setPassword(userPassword);

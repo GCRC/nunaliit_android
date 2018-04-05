@@ -40,7 +40,6 @@ import static com.couchbase.lite.replicator.RemoteRequest.JSON;
  * Created by jpfiset on 3/21/16.
  */
 public class ConnectionSyncProcess {
-
     protected final String TAG = this.getClass().getSimpleName();
 
     private Connection connection;
