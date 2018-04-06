@@ -53,13 +53,13 @@ function Configure(options_){
 	};
 
 	// Adjust configuration based on local storage
-//	var debugConfiguration = new $n2.debug.DebugConfiguration();
-//
-//	// Dispatcher
-//	var dispatchLogging = false;
-//	if( debugConfiguration.isEventLoggingEnabled() ){
+	var debugConfiguration = new $n2.debug.DebugConfiguration();
+
+	// Dispatcher
+	var dispatchLogging = false;
+	if( debugConfiguration.isEventLoggingEnabled() ){
 		var dispatchLogging = true;
-//	};
+	};
 	configuration.directory.dispatchService = new $n2.dispatch.Dispatcher({
 		logging: dispatchLogging
 	});
