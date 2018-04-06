@@ -17,8 +17,9 @@
 
     <string name="error_creating_connection">Error while creating connection</string>
     <string name="error_synchronization">Error during connection synchronization</string>
+    <string name="error_synchronization_in_progress">Synchronization in progress</string>
 
-    <string name="label_connection_name">Connection Name:</string>
+    <string name="label_connection_name">CONNECTION NAME</string>
     <string name="label_local_docs_db_name">Documents database:</string>
     <string name="label_local_revs_db_name">Revisions database:</string>
     <string name="label_password">PASSWORD</string>

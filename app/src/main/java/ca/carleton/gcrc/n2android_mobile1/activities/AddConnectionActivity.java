@@ -58,20 +58,16 @@ public class AddConnectionActivity extends AppCompatActivity {
 
         @Override
         public void afterTextChanged(Editable editable) {
+            EditText connectionTextView = findViewById(R.id.connectionName);
             EditText urlTextView = findViewById(R.id.url);
             EditText userNameTextView = findViewById(R.id.userName);
             EditText passwordTextView = findViewById(R.id.userPassword);
 
-            int count = urlTextView.getText().length() + userNameTextView.getText().length() +
-                    passwordTextView.getText().length();
+            boolean enabled = connectionTextView.getText().length() != 0 && urlTextView.getText().length() != 0 && userNameTextView.getText().length() != 0 &&
+                    passwordTextView.getText().length() != 0;
 
-            if (count > 0) {
-                Button button = findViewById(R.id.button_create);
-                button.setEnabled(true);
-            } else {
-                Button button = findViewById(R.id.button_create);
-                button.setEnabled(false);
-            }
+            Button button = findViewById(R.id.button_create);
+            button.setEnabled(enabled);
         }
     };
 
@@ -104,10 +100,12 @@ public class AddConnectionActivity extends AppCompatActivity {
             }
         }
 
+        EditText connectionTextView = findViewById(R.id.connectionName);
         EditText urlTextView = findViewById(R.id.url);
         EditText userNameTextView = findViewById(R.id.userName);
         EditText passwordTextView = findViewById(R.id.userPassword);
 
+        connectionTextView.addTextChangedListener(textWatcher);
         urlTextView.addTextChangedListener(textWatcher);
         userNameTextView.addTextChangedListener(textWatcher);
         passwordTextView.addTextChangedListener(textWatcher);
@@ -117,19 +115,22 @@ public class AddConnectionActivity extends AppCompatActivity {
     protected void onDestroy() {
         super.onDestroy();
 
+        LocalBroadcastManager lbm = LocalBroadcastManager.getInstance(this);
+        lbm.unregisterReceiver(broadcastReceiver);
+
         Log.v(TAG, "onDestroy" + Nunaliit.threadId());
     }
 
     public void createConnection(){
         // Connection name
-//        String connectionName = null;
-//        {
-////            View editTextView = findViewById(R.id.connectionName);
-////            if( editTextView instanceof EditText){
-////                EditText editText = (EditText)editTextView;
-////                connectionName = editText.getText().toString();
-////            }
-//        }
+        String connectionName = null;
+        {
+            View editTextView = findViewById(R.id.connectionName);
+            if( editTextView instanceof EditText){
+                EditText editText = (EditText)editTextView;
+                connectionName = editText.getText().toString();
+            }
+        }
 
         // URL
         String url = null;
@@ -161,11 +162,11 @@ public class AddConnectionActivity extends AppCompatActivity {
             }
         }
 
-        Log.v(TAG, "Connection " + "/" + url + "/" + userName + "/" + userPassword);
+        Log.v(TAG, "Connection " + connectionName + "/" + url + "/" + userName + "/" + userPassword);
 
         try {
             ConnectionInfo info = new ConnectionInfo();
-            info.setName("Atlas Name");
+            info.setName(connectionName);
             info.setUrl(url);
             info.setUser(userName);
             info.setPassword(userPassword);
@@ -190,7 +191,7 @@ public class AddConnectionActivity extends AppCompatActivity {
                 )
                 .show();
 
-            finish();
+            startConnectionActivity(info);
 
         } catch(Exception e) {
             errorOnConnection(e);
@@ -231,5 +232,15 @@ public class AddConnectionActivity extends AppCompatActivity {
         } else {
             Log.w(TAG, "Ignoring received intent :" + intent.getAction() + Nunaliit.threadId());
         }
+    }
+
+
+    public void startConnectionActivity(ConnectionInfo connInfo){
+        Intent intent = new Intent(this, EmbeddedCordovaActivity.class);
+
+        intent.putExtra(Nunaliit.EXTRA_CONNECTION_ID, connInfo.getId());
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+
+        startActivity(intent);
     }
 }

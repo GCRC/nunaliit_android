@@ -97,20 +97,24 @@ public class MainActivity extends AppCompatActivity {
             startService(intent);
         }
 
-        setContentView(R.layout.activity_first_user);
-
         // Request for list of connection infos
         {
             Intent intent = new Intent(this, ConnectionManagementService.class);
             intent.setAction(ConnectionManagementService.ACTION_GET_CONNECTION_INFOS);
             startService(intent);
         }
+
+        setContentView(R.layout.activity_loading);
     }
 
     protected void onDestroy() {
         super.onDestroy();
 
         Log.v(TAG, "onDestroy" + Nunaliit.threadId());
+
+        LocalBroadcastManager lbm = LocalBroadcastManager.getInstance(this);
+
+        lbm.unregisterReceiver(broadcastReceiver);
     }
 
     @Override
@@ -212,19 +216,15 @@ public class MainActivity extends AppCompatActivity {
         boolean enabled = urlTextView.getText().length() != 0 && userNameTextView.getText().length() != 0 &&
                 passwordTextView.getText().length() != 0;
 
-        if (enabled) {
-            Button button = findViewById(R.id.button_create);
-            button.setEnabled(true);
-        } else {
-            Button button = findViewById(R.id.button_create);
-            button.setEnabled(false);
-        }
+        Button button = findViewById(R.id.button_create);
+        button.setEnabled(enabled);
     }
 
     public void startConnectionActivity(ConnectionInfo connInfo){
         Intent intent = new Intent(this, EmbeddedCordovaActivity.class);
 
         intent.putExtra(Nunaliit.EXTRA_CONNECTION_ID, connInfo.getId());
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
 
         startActivity(intent);
     }
@@ -349,9 +349,9 @@ public class MainActivity extends AppCompatActivity {
                 setContentView(R.layout.activity_first_user);
                 setUpFirstUserView();
             } else {
-                setContentView(R.layout.activity_main);
-                setUpListView();
-                drawList();
+                startConnectionActivity(displayedConnections.get(0));
+                LocalBroadcastManager lbm = LocalBroadcastManager.getInstance(this);
+                lbm.unregisterReceiver(broadcastReceiver);
             }
         } else if( ConnectionManagementService.RESULT_ADD_CONNECTION.equals(intent.getAction()) ) {
             ConnectionInfo connInfo = null;
