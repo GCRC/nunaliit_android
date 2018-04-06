@@ -125,6 +125,7 @@ public class ConnectionSyncProcess {
                 }
             } catch (Exception e) {
                 Log.d(TAG, "Failure Updating Local Document: " + doc.optString("_id", ""));
+                e.printStackTrace();
                 Log.e(TAG, e.getLocalizedMessage());
             }
         }
@@ -333,6 +334,7 @@ public class ConnectionSyncProcess {
         }
 
         if (response.isSuccessful() && uploadPath != null && uploadId != null) {
+            if (uploadPath.equals("null")) return;
             Response imageResponse = submissionClient.newCall(createAttachmentRequest(uploadId, uploadPath, cookie)).execute();
             Log.v(TAG, imageResponse.body().string());
 
@@ -411,8 +413,17 @@ public class ConnectionSyncProcess {
     }
 
     public MediaType getMediaType(String filepath) {
-        String extension = MimeTypeMap.getFileExtensionFromUrl(filepath);
-        return MediaType.parse(MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension));
+        try {
+            // Some of the documents are tagged with "null", once those documents are fixed, this
+            // can be removed.
+            if (filepath == null && filepath.equals("null")) return null;
+
+            String extension = MimeTypeMap.getFileExtensionFromUrl(filepath);
+            return MediaType.parse(MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension));
+        } catch (Exception e) {
+            Log.e(TAG, "Could not get media type for filepath: " + filepath);
+            return null;
+        }
     }
 
     public String getNunaliitAttachmentPath(JSONObject document) {

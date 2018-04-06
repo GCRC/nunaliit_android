@@ -27,20 +27,22 @@
             android:id="@+id/connectionName"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="50dp"
-            android:hint="@string/label_url" />
+            android:maxLines="1"
+            android:hint="@string/label_connection_name" />
 
         <EditText
             android:id="@+id/url"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="50dp"
+            android:maxLines="1"
+            android:inputType="textUri"
             android:hint="@string/label_url" />
 
         <EditText
             android:id="@+id/userName"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:maxLines="1"
             android:hint="@string/label_user" />
 
         <EditText
@@ -49,6 +51,7 @@
             android:layout_height="wrap_content"
             android:ems="10"
             android:hint="@string/label_password"
+            android:maxLines="1"
             android:inputType="textPassword" />
 
         <Button

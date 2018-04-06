@@ -115,6 +115,9 @@ public class AddConnectionActivity extends AppCompatActivity {
     protected void onDestroy() {
         super.onDestroy();
 
+        LocalBroadcastManager lbm = LocalBroadcastManager.getInstance(this);
+        lbm.unregisterReceiver(broadcastReceiver);
+
         Log.v(TAG, "onDestroy" + Nunaliit.threadId());
     }
 
@@ -188,7 +191,7 @@ public class AddConnectionActivity extends AppCompatActivity {
                 )
                 .show();
 
-            finish();
+            startConnectionActivity(info);
 
         } catch(Exception e) {
             errorOnConnection(e);
@@ -229,5 +232,15 @@ public class AddConnectionActivity extends AppCompatActivity {
         } else {
             Log.w(TAG, "Ignoring received intent :" + intent.getAction() + Nunaliit.threadId());
         }
+    }
+
+
+    public void startConnectionActivity(ConnectionInfo connInfo){
+        Intent intent = new Intent(this, EmbeddedCordovaActivity.class);
+
+        intent.putExtra(Nunaliit.EXTRA_CONNECTION_ID, connInfo.getId());
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+
+        startActivity(intent);
     }
 }

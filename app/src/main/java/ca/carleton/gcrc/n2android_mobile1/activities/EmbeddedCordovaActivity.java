@@ -138,7 +138,9 @@ public class EmbeddedCordovaActivity extends CordovaActivity {
                                     setAtlasInitialsIcon(item, connInfo);
                                 }
                             }
-                        } else {
+                        } else if (menuItem.getItemId() == 10002) {
+                            startAddConnectionActivity();
+                        } else if (menuItem.getItemId() < 10000) {
                             ConnectionInfo newConnection = displayedConnections.get(menuItem.getItemId());
                             if (!connectionInfo.getId().equals(newConnection.getId())) {
                                 startConnectionActivity(newConnection);
@@ -180,6 +182,9 @@ public class EmbeddedCordovaActivity extends CordovaActivity {
             unbindService(mConnection);
             mBound = false;
         }
+
+        LocalBroadcastManager lbm = LocalBroadcastManager.getInstance(this);
+        lbm.unregisterReceiver(broadcastReceiver);
 
         super.onDestroy();
     }
@@ -313,10 +318,11 @@ public class EmbeddedCordovaActivity extends CordovaActivity {
                 setAtlasInitialsIcon(menuItem, connInfo);
             }
 
-            MenuItem synchronizeAtlasMenuItem = navigationView.getMenu().add(Menu.NONE, 10000, displayedConnections.size(), "Synchronize Atlas");
+            MenuItem synchronizeAtlasMenuItem = navigationView.getMenu().add(Menu.NONE, 10000, 10000, "Synchronize Atlas");
             synchronizeAtlasMenuItem.setIcon(R.drawable.ic_synchronize);
-            MenuItem manageAtlasMenuItem = navigationView.getMenu().add(Menu.NONE, 10001, displayedConnections.size() + 1, "Manage Atlas");
+            MenuItem manageAtlasMenuItem = navigationView.getMenu().add(Menu.NONE, 10001, 10001, "Manage Atlas");
             manageAtlasMenuItem.setIcon(R.drawable.ic_manage);
+            MenuItem addAtlasMenuItem = navigationView.getMenu().add(Menu.NONE, 10002, 10002, "Add Atlas");
         }
     }
 
@@ -342,5 +348,10 @@ public class EmbeddedCordovaActivity extends CordovaActivity {
         Drawable drawable = new BitmapDrawable(getResources(), atlasInitial);
 
         menuItem.setIcon(drawable);
+    }
+
+    public void startAddConnectionActivity(){
+        Intent intent = new Intent(this, AddConnectionActivity.class);
+        startActivity(intent);
     }
 }

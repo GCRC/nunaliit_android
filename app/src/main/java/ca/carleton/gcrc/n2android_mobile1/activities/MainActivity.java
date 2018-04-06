@@ -97,20 +97,24 @@ public class MainActivity extends AppCompatActivity {
             startService(intent);
         }
 
-        setContentView(R.layout.activity_first_user);
-
         // Request for list of connection infos
         {
             Intent intent = new Intent(this, ConnectionManagementService.class);
             intent.setAction(ConnectionManagementService.ACTION_GET_CONNECTION_INFOS);
             startService(intent);
         }
+
+        setContentView(R.layout.activity_loading);
     }
 
     protected void onDestroy() {
         super.onDestroy();
 
         Log.v(TAG, "onDestroy" + Nunaliit.threadId());
+
+        LocalBroadcastManager lbm = LocalBroadcastManager.getInstance(this);
+
+        lbm.unregisterReceiver(broadcastReceiver);
     }
 
     @Override
@@ -345,9 +349,9 @@ public class MainActivity extends AppCompatActivity {
                 setContentView(R.layout.activity_first_user);
                 setUpFirstUserView();
             } else {
-                setContentView(R.layout.activity_main);
-                setUpListView();
-                drawList();
+                startConnectionActivity(displayedConnections.get(0));
+                LocalBroadcastManager lbm = LocalBroadcastManager.getInstance(this);
+                lbm.unregisterReceiver(broadcastReceiver);
             }
         } else if( ConnectionManagementService.RESULT_ADD_CONNECTION.equals(intent.getAction()) ) {
             ConnectionInfo connInfo = null;
