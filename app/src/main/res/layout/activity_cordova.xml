@@ -21,7 +21,23 @@
             android:background="?attr/colorPrimary"
             android:elevation="4dp"
             android:theme="@style/ThemeOverlay.AppCompat.ActionBar"
-            app:popupTheme="@style/ThemeOverlay.AppCompat.Light"/>
+            app:popupTheme="@style/ThemeOverlay.AppCompat.Light">
+
+            <Button
+                android:layout_width="70dp"
+                android:layout_height="wrap_content"
+                android:layout_gravity="right"
+                android:id="@+id/create_document"
+                android:textSize="28sp"
+                android:fontFamily="sans-serif-light"
+                android:background="@null"
+                android:layout_alignParentEnd="true"
+                android:layout_alignParentRight="true"
+                android:textColor="#FFF"
+                android:text="+"
+                android:onClick="onCreateDocument"/>
+
+        </android.support.v7.widget.Toolbar>
 
         <LinearLayout
             android:id="@+id/content_container"

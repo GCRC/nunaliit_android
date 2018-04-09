@@ -41,6 +41,8 @@ import ca.carleton.gcrc.n2android_mobile1.Nunaliit;
 import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseManager;
 import ca.carleton.gcrc.utils.AtlasPictureSingleton;
 
+import ca.carleton.gcrc.n2android_mobile1.cordova.CordovaNunaliitPlugin;
+
 /**
  * Created by jpfiset on 3/9/16.
  */
@@ -277,6 +279,11 @@ public class EmbeddedCordovaActivity extends CordovaActivity {
                 }
             }
         });
+    }
+
+    public void onCreateDocument(View view) {
+        // Call create document through the Cordova bridge
+        CordovaNunaliitPlugin.javascriptEventCallback("onCreateDocument");
     }
 
     public CouchbaseLiteService getCouchDbService(){
