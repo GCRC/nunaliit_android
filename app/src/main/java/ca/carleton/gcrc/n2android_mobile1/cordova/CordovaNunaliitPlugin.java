@@ -7,6 +7,7 @@ import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaInterface;
 import org.apache.cordova.CordovaPlugin;
 import org.apache.cordova.CordovaWebView;
+import org.apache.cordova.CallbackContext;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -35,6 +36,8 @@ public class CordovaNunaliitPlugin extends CordovaPlugin {
 
     private CordovaInterface cordovaInterface = null;
     private PluginActions actions = null;
+    private static String sEventCallback = null;
+    private static CordovaWebView sWebView;
 
     @Override
     public void initialize(CordovaInterface cordova, CordovaWebView webView) {
@@ -45,10 +48,19 @@ public class CordovaNunaliitPlugin extends CordovaPlugin {
 
         this.actions = new PluginActions(cordovaInterface, webView.getContext());
 
+        sWebView = this.webView;
+
         Activity activity = cordova.getActivity();
         if( null != activity ){
             Log.v(TAG, "Activity: " + activity.getClass().getSimpleName());
         }
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        sEventCallback = null;
+        sWebView = null;
     }
 
     @Override
@@ -193,8 +205,28 @@ public class CordovaNunaliitPlugin extends CordovaPlugin {
                 }
             });
             return true;
+        } else if ("registerCallback".equals(action)) {
+            threadPool.execute(new PluginRunnable(actions, args, callbackContext) {
+                @Override
+                public void pluginRun() throws Exception {
+                    sEventCallback = getArguments().getString(0);
+                    Log.d(TAG, "Register callback was called for: " + sEventCallback);
+                    getCallbackContext().success(sEventCallback);
+                }
+            });
+            return true;
         }
 
         return false;  // Returning false results in a "MethodNotFound" error.
+    }
+
+    /**
+    * Use the Cordova bridge to invoke the callback.
+    */
+    public static void javascriptEventCallback(String name) {
+        if (sEventCallback != null && !sEventCallback.isEmpty() && sWebView != null) {
+            String snippet = "javascript:" + sEventCallback + "(" + name + ")";
+            sWebView.sendJavascript(snippet);
+        }
     }
 }
