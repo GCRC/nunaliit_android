@@ -364,6 +364,15 @@
         );
     };
 
+    function registerCallback(ecb, successCallback, errorCallback) {
+        cordova.exec(
+            successCallback,
+            errorCallback,
+            SERVICE,
+            'registerCallback',
+            [ecb]);
+    }
+
     // ==================================================================
     $n2.cordovaPlugin = {
         echo: echo
@@ -378,6 +387,9 @@
         ,couchbaseGetAllDocumentIds: couchbaseGetAllDocumentIds
         ,couchbaseGetAllDocuments: couchbaseGetAllDocuments
         ,couchbasePerformQuery: couchbasePerformQuery
+        ,registerCallback: registerCallback
     };
+
+    window.CordovaNunaliitPlugin = $n2.cordovaPlugin;
 
 })(nunaliit2);
