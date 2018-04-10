@@ -155,32 +155,7 @@ public class EmbeddedCordovaActivity extends CordovaActivity {
                             } else {
                                 Log.d(TAG, "Delete Atlas");
 
-                                AlertDialog.Builder builder = new AlertDialog.Builder(EmbeddedCordovaActivity.this);
-
-                                builder.setTitle("Remove Account");
-                                builder.setMessage("Are you sure you want to remove the account from your device?");
-                                builder.setPositiveButton("REMOVE", new DialogInterface.OnClickListener() {
-                                    @Override
-                                    public void onClick(DialogInterface dialogInterface, int i) {
-                                        deleteConnection(newConnection);
-                                        showProgressBar();
-                                    }
-                                });
-                                builder.setNegativeButton("CANCEL", new DialogInterface.OnClickListener() {
-                                    @Override
-                                    public void onClick(DialogInterface dialogInterface, int i) {}
-                                });
-
-                                final AlertDialog dialog = builder.create();
-                                dialog.setOnShowListener(new DialogInterface.OnShowListener() {
-                                    @Override
-                                    public void onShow(DialogInterface dialogInterface) {
-                                        dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(Color.BLACK);
-                                    }
-                                });
-
-                                dialog.show();
-
+                                showDeleteAtlasDialog(newConnection);
                             }
                         }
 
@@ -216,13 +191,6 @@ public class EmbeddedCordovaActivity extends CordovaActivity {
             connectionIntent.setAction(ConnectionManagementService.ACTION_GET_CONNECTION_INFOS);
             startService(connectionIntent);
         }
-    }
-
-    private void showProgressBar() {
-        appView.getView().setVisibility(View.GONE);
-        findViewById(R.id.sync_progress).setVisibility(View.VISIBLE);
-        drawerLayout.closeDrawers();
-        drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED);
     }
 
     @Override
@@ -329,6 +297,19 @@ public class EmbeddedCordovaActivity extends CordovaActivity {
         });
     }
 
+    private void showProgressBar() {
+        appView.getView().setVisibility(View.GONE);
+        findViewById(R.id.sync_progress).setVisibility(View.VISIBLE);
+        drawerLayout.closeDrawers();
+        drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED);
+    }
+
+    private void hideProgressBar() {
+        appView.getView().setVisibility(View.VISIBLE);
+        findViewById(R.id.sync_progress).setVisibility(View.GONE);
+        drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED);
+    }
+
     public void onCreateDocument(View view) {
         // Call create document through the Cordova bridge
         CordovaNunaliitPlugin.javascriptEventCallback("onCreateDocument");
@@ -374,6 +355,8 @@ public class EmbeddedCordovaActivity extends CordovaActivity {
             } else {
                 startConnectionActivity(connectionInfo);
             }
+        } else if (ConnectionManagementService.ERROR_DELETE_CONNECTION.equals(intent.getAction())) {
+            hideProgressBar();
         } else {
             Log.w(TAG, "Ignoring received intent :" + intent.getAction() + Nunaliit.threadId());
         }
@@ -438,5 +421,33 @@ public class EmbeddedCordovaActivity extends CordovaActivity {
     public void startAddConnectionActivity(){
         Intent intent = new Intent(this, AddConnectionActivity.class);
         startActivity(intent);
+    }
+
+    private void showDeleteAtlasDialog(final ConnectionInfo newConnection) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(EmbeddedCordovaActivity.this);
+
+        builder.setTitle(R.string.delete_atlas_title);
+        builder.setMessage(R.string.delete_atlas_message);
+        builder.setPositiveButton(R.string.delete_atlas_positive, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                deleteConnection(newConnection);
+                showProgressBar();
+            }
+        });
+        builder.setNegativeButton(R.string.delete_atlas_negative, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {}
+        });
+
+        final AlertDialog dialog = builder.create();
+        dialog.setOnShowListener(new DialogInterface.OnShowListener() {
+            @Override
+            public void onShow(DialogInterface dialogInterface) {
+                dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(Color.BLACK);
+            }
+        });
+
+        dialog.show();
     }
 }
