@@ -258,6 +258,12 @@ public class ConnectionManagementService extends IntentService {
             Intent result = new Intent(ERROR_DELETE_CONNECTION);
             result.putExtra(Nunaliit.EXTRA_ERROR, e.getMessage());
             LocalBroadcastManager.getInstance(this).sendBroadcast(result);
+
+            ServiceSupport.createToast(
+                    this,
+                    getResources().getString(R.string.error_delete_atlas),
+                    Toast.LENGTH_LONG
+            );
         }
     }
 
