@@ -41,4 +41,8 @@
         <param name="onload" value="true" />
     </feature>
     <allow-navigation href="cdvfile:*" />
+
+    <feature name="Capture" >
+        <param name="android-package" value="org.apache.cordova.mediacapture.Capture"/>
+    </feature>
 </widget>
