@@ -1,9 +1,11 @@
 package ca.carleton.gcrc.n2android_mobile1.activities;
 
 import android.annotation.SuppressLint;
+import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
@@ -115,16 +117,14 @@ public class EmbeddedCordovaActivity extends CordovaActivity {
         });
 
         navigationView = findViewById(R.id.nav_view);
+        navigationView.setItemIconTintList(null);
         navigationView.setNavigationItemSelectedListener(
                 new NavigationView.OnNavigationItemSelectedListener() {
                     @Override
                     public boolean onNavigationItemSelected(MenuItem menuItem) {
                         if (menuItem.getItemId() == 10000) {
                             synchronizeConnection(connectionInfo);
-                            appView.getView().setVisibility(View.GONE);
-                            findViewById(R.id.sync_progress).setVisibility(View.VISIBLE);
-                            drawerLayout.closeDrawers();
-                            drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED);
+                            showProgressBar();
                         } else if (menuItem.getItemId() == 10001) {
                             manageMode = !manageMode;
 
@@ -141,11 +141,44 @@ public class EmbeddedCordovaActivity extends CordovaActivity {
                         } else if (menuItem.getItemId() == 10002) {
                             startAddConnectionActivity();
                         } else if (menuItem.getItemId() < 10000) {
-                            ConnectionInfo newConnection = displayedConnections.get(menuItem.getItemId());
-                            if (!connectionInfo.getId().equals(newConnection.getId())) {
-                                startConnectionActivity(newConnection);
+                            final ConnectionInfo newConnection = displayedConnections.get(menuItem.getItemId());
+
+                            if (!manageMode) {
+                                if (!connectionInfo.getId().equals(newConnection.getId())) {
+                                    startConnectionActivity(newConnection);
+                                } else {
+                                    drawerLayout.closeDrawers();
+                                    return true;
+                                }
                             } else {
-                                drawerLayout.closeDrawers();
+                                Log.d(TAG, "Delete Atlas");
+
+                                AlertDialog.Builder builder = new AlertDialog.Builder(EmbeddedCordovaActivity.this);
+
+                                builder.setTitle("Remove Account");
+                                builder.setMessage("Are you sure you want to remove the account from your device?");
+                                builder.setPositiveButton("REMOVE", new DialogInterface.OnClickListener() {
+                                    @Override
+                                    public void onClick(DialogInterface dialogInterface, int i) {
+                                        deleteConnection(newConnection);
+                                        showProgressBar();
+                                    }
+                                });
+                                builder.setNegativeButton("CANCEL", new DialogInterface.OnClickListener() {
+                                    @Override
+                                    public void onClick(DialogInterface dialogInterface, int i) {}
+                                });
+
+                                final AlertDialog dialog = builder.create();
+                                dialog.setOnShowListener(new DialogInterface.OnShowListener() {
+                                    @Override
+                                    public void onShow(DialogInterface dialogInterface) {
+                                        dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(Color.BLACK);
+                                    }
+                                });
+
+                                dialog.show();
+
                             }
                         }
 
@@ -166,6 +199,14 @@ public class EmbeddedCordovaActivity extends CordovaActivity {
                 broadcastReceiver,
                 new IntentFilter(ConnectionManagementService.RESULT_SYNC)
         );
+        lbm.registerReceiver(
+                broadcastReceiver,
+                new IntentFilter(ConnectionManagementService.RESULT_DELETE_CONNECTION)
+        );
+        lbm.registerReceiver(
+                broadcastReceiver,
+                new IntentFilter(ConnectionManagementService.ERROR_DELETE_CONNECTION)
+        );
 
         // Request for list of connection infos
         {
@@ -173,6 +214,13 @@ public class EmbeddedCordovaActivity extends CordovaActivity {
             connectionIntent.setAction(ConnectionManagementService.ACTION_GET_CONNECTION_INFOS);
             startService(connectionIntent);
         }
+    }
+
+    private void showProgressBar() {
+        appView.getView().setVisibility(View.GONE);
+        findViewById(R.id.sync_progress).setVisibility(View.VISIBLE);
+        drawerLayout.closeDrawers();
+        drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED);
     }
 
     @Override
@@ -303,6 +351,22 @@ public class EmbeddedCordovaActivity extends CordovaActivity {
         } else if (ConnectionManagementService.RESULT_SYNC.equals(intent.getAction())) {
             drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED, navigationView);
             startConnectionActivity(connectionInfo);
+        } else if( ConnectionManagementService.RESULT_DELETE_CONNECTION.equals(intent.getAction()) ){
+            String connectionId = intent.getStringExtra(Nunaliit.EXTRA_CONNECTION_ID);
+            if (connectionId.equals(connectionInfo.getId())) {
+                // If there is another connection other than the old connection
+                if (displayedConnections.size() > 1) {
+                    ConnectionInfo newConnection = displayedConnections.get(0);
+                    if (newConnection.getId().equals(connectionId)) {
+                        newConnection = displayedConnections.get(1);
+                    }
+                    startConnectionActivity(newConnection);
+                } else {
+                    startMainActivity();
+                }
+            } else {
+                startConnectionActivity(connectionInfo);
+            }
         } else {
             Log.w(TAG, "Ignoring received intent :" + intent.getAction() + Nunaliit.threadId());
         }
@@ -332,6 +396,20 @@ public class EmbeddedCordovaActivity extends CordovaActivity {
         Log.v(TAG, "action:" + syncIntent.getAction() + Nunaliit.threadId());
         syncIntent.putExtra(Nunaliit.EXTRA_CONNECTION_ID, connInfo.getId());
         startService(syncIntent);
+    }
+
+    public void startMainActivity() {
+        Intent intent = new Intent(this, MainActivity.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        startActivity(intent);
+    }
+
+    private void deleteConnection(ConnectionInfo connInfo) {
+        Intent intent = new Intent(this, ConnectionManagementService.class);
+        intent.setAction(ConnectionManagementService.ACTION_DELETE_CONNECTION);
+        Log.v(TAG, "action:" + intent.getAction() + Nunaliit.threadId());
+        intent.putExtra(Nunaliit.EXTRA_CONNECTION_ID, connInfo.getId());
+        startService(intent);
     }
 
     public void startConnectionActivity(ConnectionInfo connInfo){
