@@ -25,7 +25,6 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.TextView;
 
@@ -35,16 +34,15 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
+import ca.carleton.gcrc.n2android_mobile1.Nunaliit;
 import ca.carleton.gcrc.n2android_mobile1.R;
+import ca.carleton.gcrc.n2android_mobile1.connection.ConnectionInfo;
 import ca.carleton.gcrc.n2android_mobile1.connection.ConnectionInfoDb;
 import ca.carleton.gcrc.n2android_mobile1.connection.ConnectionManagementService;
+import ca.carleton.gcrc.n2android_mobile1.cordova.CordovaNunaliitPlugin;
 import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseLiteService;
-import ca.carleton.gcrc.n2android_mobile1.connection.ConnectionInfo;
-import ca.carleton.gcrc.n2android_mobile1.Nunaliit;
 import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseManager;
 import ca.carleton.gcrc.utils.AtlasPictureSingleton;
-
-import ca.carleton.gcrc.n2android_mobile1.cordova.CordovaNunaliitPlugin;
 
 /**
  * Created by jpfiset on 3/9/16.
