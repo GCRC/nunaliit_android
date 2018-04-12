@@ -323,6 +323,7 @@ public class ConnectionSyncProcess {
         String cookie = loginResponse.header("Set-Cookie");
         cookie += "; NunaliitAuth=" + info.getUser();
 
+        document = removeNullAttachments(document);
         String uploadPath = getNunaliitAttachmentPath(document);
         String uploadId = addNunaliitAttachments(document);
 
@@ -426,6 +427,18 @@ public class ConnectionSyncProcess {
         }
     }
 
+    public JSONObject removeNullAttachments(JSONObject document) {
+        if (document.optString("nunaliit_attachments", null).equals("null")) {
+            document.remove("nunaliit_attachments");
+        }
+
+        if (document.optString("nunaliit_mobile_attachments", null).equals("null")) {
+            document.remove("nunaliit_mobile_attachments");
+        }
+
+        return document;
+    }
+
     public String getNunaliitAttachmentPath(JSONObject document) {
         return document.optString("nunaliit_mobile_attachments", null);
     }
@@ -433,7 +446,7 @@ public class ConnectionSyncProcess {
     public String addNunaliitAttachments(JSONObject document) throws Exception {
 
         String path = document.optString("nunaliit_mobile_attachments", null);
-        if (path != null) {
+        if (path != null && !path.equals("null")) {
             String uploadId = UUID.randomUUID().toString();
 
             // Attachment Documents
