@@ -20,6 +20,10 @@
     <string name="error_synchronization_in_progress">Synchronization in progress</string>
     <string name="error_delete_atlas">Error deleting atlas</string>
 
+    <string name="add_atlas_title">Add Atlas</string>
+    <string name="add_atlas_positive">OK</string>
+    <string name="add_atlas_negative">CANCEL</string>
+
     <string name="delete_atlas_title">Remove Account</string>
     <string name="delete_atlas_message">Are you sure you want to remove the account from your device?</string>
     <string name="delete_atlas_positive">REMOVE</string>
@@ -30,6 +34,7 @@
     <string name="label_local_revs_db_name">Revisions database:</string>
     <string name="label_password">PASSWORD</string>
     <string name="label_url">URL</string>
+    <string name="label_name">USER</string>
     <string name="label_user">EMAIL</string>
 
     <string name="nunaliit_logo">ᓄᓇᓖᑦ</string>
