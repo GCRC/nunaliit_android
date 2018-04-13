@@ -47,6 +47,7 @@ import java.util.Vector;
 
 import ca.carleton.gcrc.n2android_mobile1.Nunaliit;
 import ca.carleton.gcrc.n2android_mobile1.R;
+import ca.carleton.gcrc.n2android_mobile1.ServiceSupport;
 import ca.carleton.gcrc.n2android_mobile1.connection.ConnectionInfo;
 import ca.carleton.gcrc.n2android_mobile1.connection.ConnectionInfoDb;
 import ca.carleton.gcrc.n2android_mobile1.connection.ConnectionManagementService;
@@ -134,9 +135,9 @@ public class EmbeddedCordovaActivity extends CordovaActivity {
                         if (menuItem.getItemId() == 10000) {
                             synchronizeConnection(connectionInfo);
                             showProgressBar();
+                            drawerLayout.closeDrawers();
                         } else if (menuItem.getItemId() == 10001) {
                             manageMode = !manageMode;
-
                             updateMenuItems();
                         } else if (menuItem.getItemId() == 10002) {
                             showAddAtlasDialog();
@@ -328,6 +329,7 @@ public class EmbeddedCordovaActivity extends CordovaActivity {
     private void showProgressBar() {
         appView.getView().setVisibility(View.GONE);
         findViewById(R.id.sync_progress).setVisibility(View.VISIBLE);
+
         drawerLayout.closeDrawers();
         drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED);
     }
@@ -347,15 +349,15 @@ public class EmbeddedCordovaActivity extends CordovaActivity {
         return mService;
     }
 
-    protected void receiveBroadcast(Intent intent){
+    protected void receiveBroadcast(final Intent intent) {
         Log.v(TAG, "Received broadcast :" + intent.getAction() + Nunaliit.threadId());
 
-        if( ConnectionManagementService.RESULT_GET_CONNECTION_INFOS.equals(intent.getAction()) ){
+        if (ConnectionManagementService.RESULT_GET_CONNECTION_INFOS.equals(intent.getAction())) {
             ArrayList<Parcelable> parcelables = intent.getParcelableArrayListExtra(Nunaliit.EXTRA_CONNECTION_INFOS);
             List<ConnectionInfo> connectionInfos = new Vector<ConnectionInfo>();
-            for(Parcelable parcelable : parcelables){
-                if( parcelable instanceof ConnectionInfo ){
-                    ConnectionInfo connInfo = (ConnectionInfo)parcelable;
+            for (Parcelable parcelable : parcelables) {
+                if (parcelable instanceof ConnectionInfo) {
+                    ConnectionInfo connInfo = (ConnectionInfo) parcelable;
                     connectionInfos.add(connInfo);
                 }
             }
@@ -366,8 +368,12 @@ public class EmbeddedCordovaActivity extends CordovaActivity {
 
         } else if (ConnectionManagementService.RESULT_SYNC.equals(intent.getAction())) {
             drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED, navigationView);
-            startConnectionActivity(connectionInfo);
-        } else if( ConnectionManagementService.RESULT_DELETE_CONNECTION.equals(intent.getAction()) ){
+
+            hideProgressBar();
+
+            showSyncResultDialog(intent);
+
+        } else if (ConnectionManagementService.RESULT_DELETE_CONNECTION.equals(intent.getAction())) {
             String connectionId = intent.getStringExtra(Nunaliit.EXTRA_CONNECTION_ID);
             if (connectionId.equals(connectionInfo.getId())) {
                 // If there is another connection other than the old connection
@@ -385,7 +391,8 @@ public class EmbeddedCordovaActivity extends CordovaActivity {
             }
         } else if (ConnectionManagementService.ERROR_DELETE_CONNECTION.equals(intent.getAction())) {
             hideProgressBar();
-        } if (ConnectionManagementService.RESULT_ADD_CONNECTION.equals(intent.getAction()) ) {
+        }
+        if (ConnectionManagementService.RESULT_ADD_CONNECTION.equals(intent.getAction())) {
             hideProgressBar();
 
             ConnectionInfo connInfo = null;
@@ -395,7 +402,7 @@ public class EmbeddedCordovaActivity extends CordovaActivity {
             }
             connectionCreated(connInfo);
 
-        } else if (ConnectionManagementService.ERROR_ADD_CONNECTION.equals(intent.getAction()) ) {
+        } else if (ConnectionManagementService.ERROR_ADD_CONNECTION.equals(intent.getAction())) {
             hideProgressBar();
 
             Throwable e = null;
@@ -533,6 +540,42 @@ public class EmbeddedCordovaActivity extends CordovaActivity {
             @Override
             public void onShow(DialogInterface dialogInterface) {
                 dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(Color.BLACK);
+            }
+        });
+
+        dialog.show();
+    }
+
+    private void showSyncResultDialog(final Intent intent) {
+        LayoutInflater inflater = this.getLayoutInflater();
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+
+        builder.setTitle(R.string.sync_result_title);
+        builder.setView(inflater.inflate(R.layout.dialog_sync_result, null));
+        builder.setPositiveButton(R.string.sync_result_positive, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                startConnectionActivity(connectionInfo);
+            }
+        });
+
+        Dialog dialog = builder.create();
+        dialog.setOnShowListener(new DialogInterface.OnShowListener() {
+            @Override
+            public void onShow(DialogInterface dialogInterface) {
+                int clientSuccess = intent.getIntExtra(Nunaliit.EXTRA_SYNC_CLIENT_SUCCESS, 0);
+                int clientTotal = intent.getIntExtra(Nunaliit.EXTRA_SYNC_CLIENT_TOTAL, 0);
+
+                int remoteSuccess = intent.getIntExtra(Nunaliit.EXTRA_SYNC_REMOTE_SUCCESS, 0);
+                int remoteTotal = intent.getIntExtra(Nunaliit.EXTRA_SYNC_REMOTE_TOTAL, 0);
+
+                Dialog innerDialog = (Dialog) dialogInterface;
+
+                TextView clientResult = innerDialog.findViewById(R.id.sync_client_update_result);
+                TextView remoteResult = innerDialog.findViewById(R.id.sync_remote_update_result);
+
+                clientResult.setText(String.format(getString(R.string.sync_client_update), clientSuccess, clientTotal));
+                remoteResult.setText(String.format(getString(R.string.sync_remote_update), remoteSuccess, remoteTotal));
             }
         });
 

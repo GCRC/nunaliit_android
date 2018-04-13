@@ -51,6 +51,8 @@ public class ConnectionSyncProcess {
 
     private OkHttpClient submissionClient;
 
+    private ConnectionSyncResult result = new ConnectionSyncResult();
+
     public ConnectionSyncProcess(CouchbaseLiteService service, Connection connection) throws Exception {
         this.service = service;
         this.connection = connection;
@@ -64,13 +66,15 @@ public class ConnectionSyncProcess {
         submissionClient = new OkHttpClient();
     }
 
-    public void synchronize() throws Exception {
+    public ConnectionSyncResult synchronize() throws Exception {
         Log.v(TAG, "Synchronization started");
 
         List<JSONObject> remoteDocs = fetchAllDocuments();
         updateLocalDocumentsFromRemote(remoteDocs);
 
         updateRemoteDocuments(remoteDocs);
+
+        return result;
     }
 
     public List<JSONObject> fetchAllDocuments() throws Exception {
@@ -117,6 +121,7 @@ public class ConnectionSyncProcess {
 
     public void updateLocalDocumentsFromRemote(List<JSONObject> documents) throws Exception {
         int updatedCount = 0;
+        int failedCount = 0;
         for (JSONObject doc : documents) {
             try {
                 boolean updated = updateDocumentDatabaseIfNeed(doc);
@@ -124,11 +129,16 @@ public class ConnectionSyncProcess {
                     ++updatedCount;
                 }
             } catch (Exception e) {
+                failedCount++;
+
                 Log.d(TAG, "Failure Updating Local Document: " + doc.optString("_id", ""));
                 e.printStackTrace();
                 Log.e(TAG, e.getLocalizedMessage());
             }
         }
+
+        result.setFilesClientUpdated(updatedCount);
+        result.setFilesFailedClientUpdated(failedCount);
 
         Log.i(TAG, "Synchronization updated " + updatedCount + " documents");
 
@@ -203,8 +213,13 @@ public class ConnectionSyncProcess {
         }
 
         if (changedLocally && isNewCommit) {
-            updateRemoteDocument(localDocument);
-            return true;
+            try {
+                updateRemoteDocument(localDocument);
+                result.setFilesRemoteUpdated(result.getFilesRemoteUpdated() + 1);
+                return true;
+            } catch (Exception e) {
+                result.setFilesFailedRemoteUpdated(result.getFilesFailedRemoteUpdated() + 1);
+            }
         }
 
         return false;
@@ -264,8 +279,11 @@ public class ConnectionSyncProcess {
 
                 if (isNewCommit(doc, revisionRecord)) {
                     updateRemoteDocument(doc);
+                    result.setFilesRemoteUpdated(result.getFilesRemoteUpdated() + 1);
                 }
             } catch (Exception e) {
+                result.setFilesFailedRemoteUpdated(result.getFilesFailedRemoteUpdated() + 1);
+
                 Log.d(TAG, "Failure Updating Remote Document: " + doc.optString("_id", ""));
                 Log.e(TAG, e.getLocalizedMessage());
             }
@@ -307,8 +325,6 @@ public class ConnectionSyncProcess {
             document.putOpt("_rev", revisionRecord.getRemoteRevision());
         }
         writeDocumentToSubmissionDatabase(document);
-
-
 
         // The document has been committed. Save a reference to its last commit.
         JSONObject localDocument = documentDb.getDocument(docId);

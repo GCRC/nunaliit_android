@@ -28,6 +28,11 @@
     <string name="add_atlas_positive">OK</string>
     <string name="add_atlas_negative">CANCEL</string>
 
+    <string name="sync_result_title">Sync Result</string>
+    <string name="sync_result_positive">RELOAD ATLAS</string>
+    <string name="sync_client_update">Local Documents Updated: %d / %d</string>
+    <string name="sync_remote_update">Remote Documents Updated: %d / %d</string>
+
     <string name="delete_atlas_title">Remove Account</string>
     <string name="delete_atlas_message">Are you sure you want to remove the account from your device?</string>
     <string name="delete_atlas_positive">REMOVE</string>
