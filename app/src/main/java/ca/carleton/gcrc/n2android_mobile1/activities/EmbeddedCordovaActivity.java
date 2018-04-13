@@ -1,5 +1,6 @@
 package ca.carleton.gcrc.n2android_mobile1.activities;
 
+import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.app.Dialog;
@@ -11,6 +12,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.PorterDuff;
@@ -20,6 +22,8 @@ import android.os.Bundle;
 import android.os.IBinder;
 import android.os.Parcelable;
 import android.support.design.widget.NavigationView;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.widget.Toolbar;
@@ -58,6 +62,8 @@ import okhttp3.HttpUrl;
 public class EmbeddedCordovaActivity extends CordovaActivity {
 
     final protected String TAG = this.getClass().getSimpleName();
+    public static final int MY_PERMISSIONS_REQUEST_LOCATION = 99;
+
     private DrawerLayout drawerLayout;
     private NavigationView navigationView;
     private List<ConnectionInfo> displayedConnections = null;
@@ -191,6 +197,8 @@ public class EmbeddedCordovaActivity extends CordovaActivity {
             connectionIntent.setAction(ConnectionManagementService.ACTION_GET_CONNECTION_INFOS);
             startService(connectionIntent);
         }
+
+        checkLocationPermission();
     }
 
     @Override
@@ -411,11 +419,11 @@ public class EmbeddedCordovaActivity extends CordovaActivity {
                 setAtlasInitialsIcon(menuItem, connInfo);
             }
 
-            MenuItem synchronizeAtlasMenuItem = navigationView.getMenu().add(Menu.NONE, 10000, 10000, "Synchronize Atlas");
+            MenuItem synchronizeAtlasMenuItem = navigationView.getMenu().add(Menu.NONE, 10000, 10000, R.string.atlas_sync);
             synchronizeAtlasMenuItem.setIcon(R.drawable.ic_synchronize);
-            MenuItem manageAtlasMenuItem = navigationView.getMenu().add(Menu.NONE, 10001, 10001, "Manage Atlas");
+            MenuItem manageAtlasMenuItem = navigationView.getMenu().add(Menu.NONE, 10001, 10001, R.string.atlas_manage);
             manageAtlasMenuItem.setIcon(R.drawable.ic_manage);
-            MenuItem addAtlasMenuItem = navigationView.getMenu().add(Menu.NONE, 10002, 10002, "Add Atlas");
+            navigationView.getMenu().add(Menu.NONE, 10002, 10002, R.string.atlas_add);
         }
     }
 
@@ -582,5 +590,39 @@ public class EmbeddedCordovaActivity extends CordovaActivity {
                 .show();
 
         Log.e(TAG, "Error while creating connection", e);
+    }
+
+    public boolean checkLocationPermission() {
+        if (ContextCompat.checkSelfPermission(this,
+                Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) {
+
+            if (ActivityCompat.shouldShowRequestPermissionRationale(this,
+                    Manifest.permission.ACCESS_FINE_LOCATION)) {
+
+                new AlertDialog.Builder(this)
+                        .setTitle(R.string.location_permission_title)
+                        .setMessage(R.string.location_permission_text)
+                        .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialogInterface, int i) {
+                                //Prompt the user once explanation has been shown
+                                ActivityCompat.requestPermissions(EmbeddedCordovaActivity.this,
+                                        new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
+                                        MY_PERMISSIONS_REQUEST_LOCATION);
+                            }
+                        })
+                        .create()
+                        .show();
+
+            } else {
+                ActivityCompat.requestPermissions(this,
+                        new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
+                        MY_PERMISSIONS_REQUEST_LOCATION);
+            }
+            return false;
+        } else {
+            return true;
+        }
     }
 }
