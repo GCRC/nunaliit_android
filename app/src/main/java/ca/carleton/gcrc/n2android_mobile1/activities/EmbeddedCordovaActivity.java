@@ -11,6 +11,7 @@ import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.graphics.Bitmap;
 import android.graphics.Color;
+import android.graphics.PorterDuff;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
@@ -106,6 +107,10 @@ public class EmbeddedCordovaActivity extends CordovaActivity {
                     MenuItem item = menu.getItem(i);
                     ConnectionInfo connInfo = displayedConnections.get(i);
                     setAtlasInitialsIcon(item, connInfo);
+
+                    Drawable menuIcon = item.getIcon();
+                    menuIcon.mutate();
+                    menuIcon.setColorFilter(getResources().getColor(R.color.pink), PorterDuff.Mode.SRC_IN);
                 }
             }
 
@@ -118,7 +123,6 @@ public class EmbeddedCordovaActivity extends CordovaActivity {
         });
 
         navigationView = findViewById(R.id.nav_view);
-        navigationView.setItemIconTintList(null);
         navigationView.setNavigationItemSelectedListener(
                 new NavigationView.OnNavigationItemSelectedListener() {
                     @Override

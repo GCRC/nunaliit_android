@@ -38,7 +38,7 @@ public class AtlasPictureSingleton {
             paint.setColor(Color.WHITE);
             canvas.drawPaint(paint);
 
-            paint.setColor(Color.WHITE);
+            paint.setAlpha(0);
             paint.setTextSize(imageSize / 2.5F);
 
             Rect textBounds = new Rect();
