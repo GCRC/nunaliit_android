@@ -2,6 +2,10 @@
     <string name="app_name">Nunaliit Mobile</string>
     <string name="couchDbService_label">Nunaliit Database Service</string>
 
+    <string name="atlas_sync">Synchronize Atlas</string>
+    <string name="atlas_manage">Manage Atlas</string>
+    <string name="atlas_add">Add Atlas</string>
+
     <string name="add_connection">Add Connection</string>
     <string name="connection">Connection</string>
     <string name="connection_created">"Connection Created"</string>
@@ -50,4 +54,8 @@
 
     <string name="atlas_shared_pref">ca.carleton.gcrc.atlas</string>
     <string name="atlas_last_used">ca.carleton.gcrc.atlas.last_used</string>
+
+    <string name="location_permission_title">Allow Location?</string>
+    <string name="location_permission_text">Documents you create can be tagged with your current location. Enable location to enable document tagging.</string>
+    <string name="ok">OK</string>
 </resources>
