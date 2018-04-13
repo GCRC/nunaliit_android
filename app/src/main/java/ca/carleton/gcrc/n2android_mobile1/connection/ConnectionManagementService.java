@@ -278,11 +278,18 @@ public class ConnectionManagementService extends IntentService {
             Connection connection = new Connection(mgr, connInfo);
 
             ConnectionSyncProcess syncProcess = new ConnectionSyncProcess(mCouchbaseService, connection);
-            syncProcess.synchronize();
+            ConnectionSyncResult syncResult = syncProcess.synchronize();
 
             Intent result = new Intent(RESULT_SYNC);
             Log.v(TAG, "Result: " + result.getAction() + Nunaliit.threadId());
             result.putExtra(Nunaliit.EXTRA_CONNECTION_ID, connId);
+
+            result.putExtra(Nunaliit.EXTRA_SYNC_CLIENT_SUCCESS, syncResult.getFilesClientUpdated());
+            result.putExtra(Nunaliit.EXTRA_SYNC_CLIENT_TOTAL, syncResult.getFilesClientUpdated() + syncResult.getFilesFailedClientUpdated());
+
+            result.putExtra(Nunaliit.EXTRA_SYNC_REMOTE_SUCCESS, syncResult.getFilesRemoteUpdated());
+            result.putExtra(Nunaliit.EXTRA_SYNC_REMOTE_TOTAL, syncResult.getFilesRemoteUpdated() + syncResult.getFilesFailedRemoteUpdated());
+
             LocalBroadcastManager.getInstance(this).sendBroadcast(result);
 
             ServiceSupport.createToast(

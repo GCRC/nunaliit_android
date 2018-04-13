@@ -1,7 +1,9 @@
 package ca.carleton.gcrc.n2android_mobile1.activities;
 
+import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.AlertDialog;
+import android.app.Dialog;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
@@ -9,33 +11,43 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
+import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.Color;
+import android.graphics.PorterDuff;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.Parcelable;
 import android.support.design.widget.NavigationView;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import org.apache.cordova.CordovaActivity;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
 import ca.carleton.gcrc.n2android_mobile1.Nunaliit;
 import ca.carleton.gcrc.n2android_mobile1.R;
+import ca.carleton.gcrc.n2android_mobile1.ServiceSupport;
 import ca.carleton.gcrc.n2android_mobile1.connection.ConnectionInfo;
 import ca.carleton.gcrc.n2android_mobile1.connection.ConnectionInfoDb;
 import ca.carleton.gcrc.n2android_mobile1.connection.ConnectionManagementService;
@@ -43,6 +55,7 @@ import ca.carleton.gcrc.n2android_mobile1.cordova.CordovaNunaliitPlugin;
 import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseLiteService;
 import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseManager;
 import ca.carleton.gcrc.utils.AtlasPictureSingleton;
+import okhttp3.HttpUrl;
 
 /**
  * Created by jpfiset on 3/9/16.
@@ -50,6 +63,8 @@ import ca.carleton.gcrc.utils.AtlasPictureSingleton;
 public class EmbeddedCordovaActivity extends CordovaActivity {
 
     final protected String TAG = this.getClass().getSimpleName();
+    public static final int MY_PERMISSIONS_REQUEST_LOCATION = 99;
+
     private DrawerLayout drawerLayout;
     private NavigationView navigationView;
     private List<ConnectionInfo> displayedConnections = null;
@@ -101,12 +116,7 @@ public class EmbeddedCordovaActivity extends CordovaActivity {
             public void onDrawerStateChanged(int newState) {
                 EmbeddedCordovaActivity.this.manageMode = false;
 
-                Menu menu = navigationView.getMenu();
-                for (int i=0; i<displayedConnections.size(); i++) {
-                    MenuItem item = menu.getItem(i);
-                    ConnectionInfo connInfo = displayedConnections.get(i);
-                    setAtlasInitialsIcon(item, connInfo);
-                }
+                updateMenuItems();
             }
 
             @Override
@@ -118,7 +128,6 @@ public class EmbeddedCordovaActivity extends CordovaActivity {
         });
 
         navigationView = findViewById(R.id.nav_view);
-        navigationView.setItemIconTintList(null);
         navigationView.setNavigationItemSelectedListener(
                 new NavigationView.OnNavigationItemSelectedListener() {
                     @Override
@@ -126,21 +135,12 @@ public class EmbeddedCordovaActivity extends CordovaActivity {
                         if (menuItem.getItemId() == 10000) {
                             synchronizeConnection(connectionInfo);
                             showProgressBar();
+                            drawerLayout.closeDrawers();
                         } else if (menuItem.getItemId() == 10001) {
                             manageMode = !manageMode;
-
-                            Menu menu = navigationView.getMenu();
-                            for (int i=0; i<displayedConnections.size(); i++) {
-                                MenuItem item = menu.getItem(i);
-                                if (manageMode) {
-                                    item.setIcon(R.drawable.ic_trash);
-                                } else {
-                                    ConnectionInfo connInfo = displayedConnections.get(i);
-                                    setAtlasInitialsIcon(item, connInfo);
-                                }
-                            }
+                            updateMenuItems();
                         } else if (menuItem.getItemId() == 10002) {
-                            startAddConnectionActivity();
+                            showAddAtlasDialog();
                         } else if (menuItem.getItemId() < 10000) {
                             final ConnectionInfo newConnection = displayedConnections.get(menuItem.getItemId());
 
@@ -183,6 +183,14 @@ public class EmbeddedCordovaActivity extends CordovaActivity {
                 broadcastReceiver,
                 new IntentFilter(ConnectionManagementService.ERROR_DELETE_CONNECTION)
         );
+        lbm.registerReceiver(
+                broadcastReceiver,
+                new IntentFilter(ConnectionManagementService.RESULT_ADD_CONNECTION)
+        );
+        lbm.registerReceiver(
+                broadcastReceiver,
+                new IntentFilter(ConnectionManagementService.ERROR_ADD_CONNECTION)
+        );
 
         // Request for list of connection infos
         {
@@ -190,6 +198,8 @@ public class EmbeddedCordovaActivity extends CordovaActivity {
             connectionIntent.setAction(ConnectionManagementService.ACTION_GET_CONNECTION_INFOS);
             startService(connectionIntent);
         }
+
+        checkLocationPermission();
     }
 
     @Override
@@ -296,9 +306,30 @@ public class EmbeddedCordovaActivity extends CordovaActivity {
         });
     }
 
+    private void updateMenuItems() {
+        Menu menu = navigationView.getMenu();
+        int [] colorIdArray = getResources().getIntArray(R.array.atlas_icon_id_list);
+
+        for (int i=0; i<displayedConnections.size(); i++) {
+            MenuItem item = menu.getItem(i);
+            if (manageMode) {
+                item.setIcon(R.drawable.ic_trash);
+            } else {
+                item.setChecked(displayedConnections.get(i).getId().equals(connectionInfo.getId()));
+                ConnectionInfo connInfo = displayedConnections.get(i);
+                setAtlasInitialsIcon(item, connInfo);
+
+                Drawable menuIcon = item.getIcon();
+                menuIcon.mutate();
+                menuIcon.setColorFilter(colorIdArray[i % colorIdArray.length], PorterDuff.Mode.SRC_IN);
+            }
+        }
+    }
+
     private void showProgressBar() {
         appView.getView().setVisibility(View.GONE);
         findViewById(R.id.sync_progress).setVisibility(View.VISIBLE);
+
         drawerLayout.closeDrawers();
         drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED);
     }
@@ -318,15 +349,15 @@ public class EmbeddedCordovaActivity extends CordovaActivity {
         return mService;
     }
 
-    protected void receiveBroadcast(Intent intent){
+    protected void receiveBroadcast(final Intent intent) {
         Log.v(TAG, "Received broadcast :" + intent.getAction() + Nunaliit.threadId());
 
-        if( ConnectionManagementService.RESULT_GET_CONNECTION_INFOS.equals(intent.getAction()) ){
+        if (ConnectionManagementService.RESULT_GET_CONNECTION_INFOS.equals(intent.getAction())) {
             ArrayList<Parcelable> parcelables = intent.getParcelableArrayListExtra(Nunaliit.EXTRA_CONNECTION_INFOS);
             List<ConnectionInfo> connectionInfos = new Vector<ConnectionInfo>();
-            for(Parcelable parcelable : parcelables){
-                if( parcelable instanceof ConnectionInfo ){
-                    ConnectionInfo connInfo = (ConnectionInfo)parcelable;
+            for (Parcelable parcelable : parcelables) {
+                if (parcelable instanceof ConnectionInfo) {
+                    ConnectionInfo connInfo = (ConnectionInfo) parcelable;
                     connectionInfos.add(connInfo);
                 }
             }
@@ -337,8 +368,12 @@ public class EmbeddedCordovaActivity extends CordovaActivity {
 
         } else if (ConnectionManagementService.RESULT_SYNC.equals(intent.getAction())) {
             drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED, navigationView);
-            startConnectionActivity(connectionInfo);
-        } else if( ConnectionManagementService.RESULT_DELETE_CONNECTION.equals(intent.getAction()) ){
+
+            hideProgressBar();
+
+            showSyncResultDialog(intent);
+
+        } else if (ConnectionManagementService.RESULT_DELETE_CONNECTION.equals(intent.getAction())) {
             String connectionId = intent.getStringExtra(Nunaliit.EXTRA_CONNECTION_ID);
             if (connectionId.equals(connectionInfo.getId())) {
                 // If there is another connection other than the old connection
@@ -356,6 +391,26 @@ public class EmbeddedCordovaActivity extends CordovaActivity {
             }
         } else if (ConnectionManagementService.ERROR_DELETE_CONNECTION.equals(intent.getAction())) {
             hideProgressBar();
+        }
+        if (ConnectionManagementService.RESULT_ADD_CONNECTION.equals(intent.getAction())) {
+            hideProgressBar();
+
+            ConnectionInfo connInfo = null;
+            Parcelable parcelable = intent.getParcelableExtra(Nunaliit.EXTRA_CONNECTION_INFO);
+            if (parcelable instanceof ConnectionInfo) {
+                connInfo = (ConnectionInfo) parcelable;
+            }
+            connectionCreated(connInfo);
+
+        } else if (ConnectionManagementService.ERROR_ADD_CONNECTION.equals(intent.getAction())) {
+            hideProgressBar();
+
+            Throwable e = null;
+            Serializable ser = intent.getSerializableExtra(Nunaliit.EXTRA_ERROR);
+            if (ser instanceof Throwable) {
+                e = (Throwable) ser;
+            }
+            errorOnConnection(e);
         } else {
             Log.w(TAG, "Ignoring received intent :" + intent.getAction() + Nunaliit.threadId());
         }
@@ -371,11 +426,11 @@ public class EmbeddedCordovaActivity extends CordovaActivity {
                 setAtlasInitialsIcon(menuItem, connInfo);
             }
 
-            MenuItem synchronizeAtlasMenuItem = navigationView.getMenu().add(Menu.NONE, 10000, 10000, "Synchronize Atlas");
+            MenuItem synchronizeAtlasMenuItem = navigationView.getMenu().add(Menu.NONE, 10000, 10000, R.string.atlas_sync);
             synchronizeAtlasMenuItem.setIcon(R.drawable.ic_synchronize);
-            MenuItem manageAtlasMenuItem = navigationView.getMenu().add(Menu.NONE, 10001, 10001, "Manage Atlas");
+            MenuItem manageAtlasMenuItem = navigationView.getMenu().add(Menu.NONE, 10001, 10001, R.string.atlas_manage);
             manageAtlasMenuItem.setIcon(R.drawable.ic_manage);
-            MenuItem addAtlasMenuItem = navigationView.getMenu().add(Menu.NONE, 10002, 10002, "Add Atlas");
+            navigationView.getMenu().add(Menu.NONE, 10002, 10002, R.string.atlas_add);
         }
     }
 
@@ -402,6 +457,11 @@ public class EmbeddedCordovaActivity extends CordovaActivity {
     }
 
     public void startConnectionActivity(ConnectionInfo connInfo){
+        SharedPreferences sharedPref = this.getSharedPreferences(getString(R.string.atlas_shared_pref), Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPref.edit();
+        editor.putString(getString(R.string.atlas_last_used), connInfo.getId());
+        editor.apply();
+
         Intent intent = new Intent(this, EmbeddedCordovaActivity.class);
         intent.putExtra(Nunaliit.EXTRA_CONNECTION_ID, connInfo.getId());
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
@@ -420,6 +480,42 @@ public class EmbeddedCordovaActivity extends CordovaActivity {
     public void startAddConnectionActivity(){
         Intent intent = new Intent(this, AddConnectionActivity.class);
         startActivity(intent);
+    }
+
+    private void showAddAtlasDialog() {
+        LayoutInflater inflater = this.getLayoutInflater();
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(EmbeddedCordovaActivity.this);
+
+        builder.setTitle(R.string.add_atlas_title);
+        builder.setView(inflater.inflate(R.layout.dialog_add_atlas, null));
+        builder.setPositiveButton(R.string.add_atlas_positive, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                EditText urlEditText = ((Dialog)dialogInterface).findViewById(R.id.url);
+                EditText userNameEditText = ((Dialog)dialogInterface).findViewById(R.id.userName);
+                EditText userPasswordEditText = ((Dialog)dialogInterface).findViewById(R.id.userPassword);
+
+                HttpUrl url = HttpUrl.parse(urlEditText.getText().toString());
+                String host = url.host();
+
+                createConnection(
+                        host,
+                        urlEditText.getText().toString(),
+                        userNameEditText.getText().toString(),
+                        userPasswordEditText.getText().toString()
+                );
+            }
+        });
+        builder.setNegativeButton(R.string.add_atlas_negative, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+
+            }
+        });
+        AlertDialog dialog = builder.create();
+
+        dialog.show();
     }
 
     private void showDeleteAtlasDialog(final ConnectionInfo newConnection) {
@@ -448,5 +544,128 @@ public class EmbeddedCordovaActivity extends CordovaActivity {
         });
 
         dialog.show();
+    }
+
+    private void showSyncResultDialog(final Intent intent) {
+        LayoutInflater inflater = this.getLayoutInflater();
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+
+        builder.setTitle(R.string.sync_result_title);
+        builder.setView(inflater.inflate(R.layout.dialog_sync_result, null));
+        builder.setPositiveButton(R.string.sync_result_positive, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                startConnectionActivity(connectionInfo);
+            }
+        });
+
+        Dialog dialog = builder.create();
+        dialog.setOnShowListener(new DialogInterface.OnShowListener() {
+            @Override
+            public void onShow(DialogInterface dialogInterface) {
+                int clientSuccess = intent.getIntExtra(Nunaliit.EXTRA_SYNC_CLIENT_SUCCESS, 0);
+                int clientTotal = intent.getIntExtra(Nunaliit.EXTRA_SYNC_CLIENT_TOTAL, 0);
+
+                int remoteSuccess = intent.getIntExtra(Nunaliit.EXTRA_SYNC_REMOTE_SUCCESS, 0);
+                int remoteTotal = intent.getIntExtra(Nunaliit.EXTRA_SYNC_REMOTE_TOTAL, 0);
+
+                Dialog innerDialog = (Dialog) dialogInterface;
+
+                TextView clientResult = innerDialog.findViewById(R.id.sync_client_update_result);
+                TextView remoteResult = innerDialog.findViewById(R.id.sync_remote_update_result);
+
+                clientResult.setText(String.format(getString(R.string.sync_client_update), clientSuccess, clientTotal));
+                remoteResult.setText(String.format(getString(R.string.sync_remote_update), remoteSuccess, remoteTotal));
+            }
+        });
+
+        dialog.show();
+    }
+
+    public void createConnection(String connectionName, String url, String userName, String userPassword) {
+        Log.v(TAG, "Connection " + connectionName + "/" + url + "/" + userName + "/" + userPassword);
+
+        try {
+            showProgressBar();
+
+            ConnectionInfo info = new ConnectionInfo();
+            info.setName(connectionName);
+            info.setUrl(url);
+            info.setUser(userName);
+            info.setPassword(userPassword);
+
+            Intent intent = new Intent(this, ConnectionManagementService.class);
+            intent.setAction(ConnectionManagementService.ACTION_ADD_CONNECTION);
+            intent.putExtra(Nunaliit.EXTRA_CONNECTION_INFO,info);
+            startService(intent);
+
+        } catch(Exception e) {
+            hideProgressBar();
+
+            errorOnConnection(e);
+        }
+    }
+
+    public void connectionCreated(ConnectionInfo info){
+        try {
+            Toast
+                    .makeText(
+                            getApplicationContext(),
+                            getResources().getString(R.string.connection_created),
+                            Toast.LENGTH_LONG
+                    )
+                    .show();
+
+            startConnectionActivity(info);
+
+        } catch(Exception e) {
+            errorOnConnection(e);
+        }
+    }
+
+    public void errorOnConnection(Throwable e){
+        Toast
+                .makeText(
+                        getApplicationContext(),
+                        getResources().getString(R.string.error_creating_connection),
+                        Toast.LENGTH_LONG
+                )
+                .show();
+
+        Log.e(TAG, "Error while creating connection", e);
+    }
+
+    public boolean checkLocationPermission() {
+        if (ContextCompat.checkSelfPermission(this,
+                Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) {
+
+            if (ActivityCompat.shouldShowRequestPermissionRationale(this,
+                    Manifest.permission.ACCESS_FINE_LOCATION)) {
+
+                new AlertDialog.Builder(this)
+                        .setTitle(R.string.location_permission_title)
+                        .setMessage(R.string.location_permission_text)
+                        .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialogInterface, int i) {
+                                //Prompt the user once explanation has been shown
+                                ActivityCompat.requestPermissions(EmbeddedCordovaActivity.this,
+                                        new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
+                                        MY_PERMISSIONS_REQUEST_LOCATION);
+                            }
+                        })
+                        .create()
+                        .show();
+
+            } else {
+                ActivityCompat.requestPermissions(this,
+                        new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
+                        MY_PERMISSIONS_REQUEST_LOCATION);
+            }
+            return false;
+        } else {
+            return true;
+        }
     }
 }

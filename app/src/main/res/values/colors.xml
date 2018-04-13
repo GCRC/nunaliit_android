@@ -5,4 +5,25 @@
     <color name="colorAccent">#FF4081</color>
 
     <color name="black_overlay">#66000000</color>
+
+    <color name="atlas_icon0">#E69C1E</color>
+    <color name="atlas_icon1">#E6C700</color>
+    <color name="atlas_icon2">#BDDB23</color>
+    <color name="atlas_icon3">#8BC27A</color>
+    <color name="atlas_icon4">#96B5D9</color>
+    <color name="atlas_icon5">#A489C4</color>
+    <color name="atlas_icon6">#D184B7</color>
+    <color name="atlas_icon7">#DE666A</color>
+
+    <array name="atlas_icon_id_list">
+        <item>@color/atlas_icon0</item>
+        <item>@color/atlas_icon1</item>
+        <item>@color/atlas_icon2</item>
+        <item>@color/atlas_icon3</item>
+        <item>@color/atlas_icon4</item>
+        <item>@color/atlas_icon5</item>
+        <item>@color/atlas_icon6</item>
+        <item>@color/atlas_icon7</item>
+    </array>
+
 </resources>

@@ -34,7 +34,7 @@ public class ConnectionProcess {
             info = infoDb.createConnectionInfo(info);
 
             ConnectionSyncProcess sync = new ConnectionSyncProcess(service, connection);
-            sync.synchronize();
+            ConnectionSyncResult syncResult = sync.synchronize();
 
         } catch(Exception e) {
             throw new Exception("Error while adding a connection",e);
