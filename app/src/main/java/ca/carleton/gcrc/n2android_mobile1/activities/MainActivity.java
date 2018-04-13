@@ -4,6 +4,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Parcelable;
 import android.support.v4.content.LocalBroadcastManager;
@@ -349,6 +350,26 @@ public class MainActivity extends AppCompatActivity {
                 setContentView(R.layout.activity_first_user);
                 setUpFirstUserView();
             } else {
+                SharedPreferences sharedPref = this.getSharedPreferences(getString(R.string.atlas_shared_pref), Context.MODE_PRIVATE);
+                String lastUsedAtlasId = sharedPref.getString(getString(R.string.atlas_last_used), null);
+
+                if (lastUsedAtlasId != null) {
+                    for (int i = 0; i < displayedConnections.size(); i++) {
+                        if (displayedConnections.get(i).getId().equals(lastUsedAtlasId)) {
+                            startConnectionActivity(displayedConnections.get(i));
+                            LocalBroadcastManager lbm = LocalBroadcastManager.getInstance(this);
+                            lbm.unregisterReceiver(broadcastReceiver);
+
+                            return;
+                        }
+                    }
+
+                }
+
+                SharedPreferences.Editor editor = sharedPref.edit();
+                editor.putString(getString(R.string.atlas_last_used), displayedConnections.get(0).getId());
+                editor.apply();
+
                 startConnectionActivity(displayedConnections.get(0));
                 LocalBroadcastManager lbm = LocalBroadcastManager.getInstance(this);
                 lbm.unregisterReceiver(broadcastReceiver);

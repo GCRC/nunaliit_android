@@ -38,14 +38,14 @@ public class AtlasPictureSingleton {
             paint.setColor(Color.WHITE);
             canvas.drawPaint(paint);
 
-            paint.setColor(Color.WHITE);
+            paint.setAlpha(0);
             paint.setTextSize(imageSize / 2.5F);
 
             Rect textBounds = new Rect();
-            paint.getTextBounds(initials, 0, 1, textBounds);
+            paint.getTextBounds(initials.toUpperCase(), 0, 1, textBounds);
             float textOffsetX = (imageSize - paint.measureText(initials)) / 2F;
             float textOffsetY = (imageSize - textBounds.height()) - (imageSize * 0.05F);
-            canvas.drawText(initials,
+            canvas.drawText(initials.toUpperCase(),
                     textOffsetX,
                     textOffsetY,
                     paint);

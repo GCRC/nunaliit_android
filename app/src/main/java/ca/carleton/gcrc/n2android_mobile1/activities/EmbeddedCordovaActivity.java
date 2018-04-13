@@ -10,8 +10,10 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.Color;
+import android.graphics.PorterDuff;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
@@ -48,6 +50,7 @@ import ca.carleton.gcrc.n2android_mobile1.cordova.CordovaNunaliitPlugin;
 import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseLiteService;
 import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseManager;
 import ca.carleton.gcrc.utils.AtlasPictureSingleton;
+import okhttp3.HttpUrl;
 
 /**
  * Created by jpfiset on 3/9/16.
@@ -106,12 +109,7 @@ public class EmbeddedCordovaActivity extends CordovaActivity {
             public void onDrawerStateChanged(int newState) {
                 EmbeddedCordovaActivity.this.manageMode = false;
 
-                Menu menu = navigationView.getMenu();
-                for (int i=0; i<displayedConnections.size(); i++) {
-                    MenuItem item = menu.getItem(i);
-                    ConnectionInfo connInfo = displayedConnections.get(i);
-                    setAtlasInitialsIcon(item, connInfo);
-                }
+                updateMenuItems();
             }
 
             @Override
@@ -123,7 +121,6 @@ public class EmbeddedCordovaActivity extends CordovaActivity {
         });
 
         navigationView = findViewById(R.id.nav_view);
-        navigationView.setItemIconTintList(null);
         navigationView.setNavigationItemSelectedListener(
                 new NavigationView.OnNavigationItemSelectedListener() {
                     @Override
@@ -134,16 +131,7 @@ public class EmbeddedCordovaActivity extends CordovaActivity {
                         } else if (menuItem.getItemId() == 10001) {
                             manageMode = !manageMode;
 
-                            Menu menu = navigationView.getMenu();
-                            for (int i=0; i<displayedConnections.size(); i++) {
-                                MenuItem item = menu.getItem(i);
-                                if (manageMode) {
-                                    item.setIcon(R.drawable.ic_trash);
-                                } else {
-                                    ConnectionInfo connInfo = displayedConnections.get(i);
-                                    setAtlasInitialsIcon(item, connInfo);
-                                }
-                            }
+                            updateMenuItems();
                         } else if (menuItem.getItemId() == 10002) {
                             showAddAtlasDialog();
                         } else if (menuItem.getItemId() < 10000) {
@@ -309,6 +297,26 @@ public class EmbeddedCordovaActivity extends CordovaActivity {
         });
     }
 
+    private void updateMenuItems() {
+        Menu menu = navigationView.getMenu();
+        int [] colorIdArray = getResources().getIntArray(R.array.atlas_icon_id_list);
+
+        for (int i=0; i<displayedConnections.size(); i++) {
+            MenuItem item = menu.getItem(i);
+            if (manageMode) {
+                item.setIcon(R.drawable.ic_trash);
+            } else {
+                item.setChecked(displayedConnections.get(i).getId().equals(connectionInfo.getId()));
+                ConnectionInfo connInfo = displayedConnections.get(i);
+                setAtlasInitialsIcon(item, connInfo);
+
+                Drawable menuIcon = item.getIcon();
+                menuIcon.mutate();
+                menuIcon.setColorFilter(colorIdArray[i % colorIdArray.length], PorterDuff.Mode.SRC_IN);
+            }
+        }
+    }
+
     private void showProgressBar() {
         appView.getView().setVisibility(View.GONE);
         findViewById(R.id.sync_progress).setVisibility(View.VISIBLE);
@@ -434,6 +442,11 @@ public class EmbeddedCordovaActivity extends CordovaActivity {
     }
 
     public void startConnectionActivity(ConnectionInfo connInfo){
+        SharedPreferences sharedPref = this.getSharedPreferences(getString(R.string.atlas_shared_pref), Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPref.edit();
+        editor.putString(getString(R.string.atlas_last_used), connInfo.getId());
+        editor.apply();
+
         Intent intent = new Intent(this, EmbeddedCordovaActivity.class);
         intent.putExtra(Nunaliit.EXTRA_CONNECTION_ID, connInfo.getId());
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
@@ -459,8 +472,6 @@ public class EmbeddedCordovaActivity extends CordovaActivity {
 
         AlertDialog.Builder builder = new AlertDialog.Builder(EmbeddedCordovaActivity.this);
 
-        AlertDialog dialog = null;
-
         builder.setTitle(R.string.add_atlas_title);
         builder.setView(inflater.inflate(R.layout.dialog_add_atlas, null));
         builder.setPositiveButton(R.string.add_atlas_positive, new DialogInterface.OnClickListener() {
@@ -470,8 +481,11 @@ public class EmbeddedCordovaActivity extends CordovaActivity {
                 EditText userNameEditText = ((Dialog)dialogInterface).findViewById(R.id.userName);
                 EditText userPasswordEditText = ((Dialog)dialogInterface).findViewById(R.id.userPassword);
 
+                HttpUrl url = HttpUrl.parse(urlEditText.getText().toString());
+                String host = url.host();
+
                 createConnection(
-                        urlEditText.getText().toString(),
+                        host,
                         urlEditText.getText().toString(),
                         userNameEditText.getText().toString(),
                         userPasswordEditText.getText().toString()
@@ -484,7 +498,7 @@ public class EmbeddedCordovaActivity extends CordovaActivity {
 
             }
         });
-        dialog = builder.create();
+        AlertDialog dialog = builder.create();
 
         dialog.show();
     }
