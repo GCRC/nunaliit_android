@@ -2,6 +2,7 @@ package ca.carleton.gcrc.n2android_mobile1.activities;
 
 import android.annotation.SuppressLint;
 import android.app.AlertDialog;
+import android.app.Dialog;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
@@ -22,15 +23,19 @@ import android.support.v4.content.LocalBroadcastManager;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import org.apache.cordova.CordovaActivity;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
@@ -144,7 +149,7 @@ public class EmbeddedCordovaActivity extends CordovaActivity {
                                 }
                             }
                         } else if (menuItem.getItemId() == 10002) {
-                            startAddConnectionActivity();
+                            showAddAtlasDialog();
                         } else if (menuItem.getItemId() < 10000) {
                             final ConnectionInfo newConnection = displayedConnections.get(menuItem.getItemId());
 
@@ -186,6 +191,14 @@ public class EmbeddedCordovaActivity extends CordovaActivity {
         lbm.registerReceiver(
                 broadcastReceiver,
                 new IntentFilter(ConnectionManagementService.ERROR_DELETE_CONNECTION)
+        );
+        lbm.registerReceiver(
+                broadcastReceiver,
+                new IntentFilter(ConnectionManagementService.RESULT_ADD_CONNECTION)
+        );
+        lbm.registerReceiver(
+                broadcastReceiver,
+                new IntentFilter(ConnectionManagementService.ERROR_ADD_CONNECTION)
         );
 
         // Request for list of connection infos
@@ -360,6 +373,25 @@ public class EmbeddedCordovaActivity extends CordovaActivity {
             }
         } else if (ConnectionManagementService.ERROR_DELETE_CONNECTION.equals(intent.getAction())) {
             hideProgressBar();
+        } if (ConnectionManagementService.RESULT_ADD_CONNECTION.equals(intent.getAction()) ) {
+            hideProgressBar();
+
+            ConnectionInfo connInfo = null;
+            Parcelable parcelable = intent.getParcelableExtra(Nunaliit.EXTRA_CONNECTION_INFO);
+            if (parcelable instanceof ConnectionInfo) {
+                connInfo = (ConnectionInfo) parcelable;
+            }
+            connectionCreated(connInfo);
+
+        } else if (ConnectionManagementService.ERROR_ADD_CONNECTION.equals(intent.getAction()) ) {
+            hideProgressBar();
+
+            Throwable e = null;
+            Serializable ser = intent.getSerializableExtra(Nunaliit.EXTRA_ERROR);
+            if (ser instanceof Throwable) {
+                e = (Throwable) ser;
+            }
+            errorOnConnection(e);
         } else {
             Log.w(TAG, "Ignoring received intent :" + intent.getAction() + Nunaliit.threadId());
         }
@@ -426,6 +458,41 @@ public class EmbeddedCordovaActivity extends CordovaActivity {
         startActivity(intent);
     }
 
+    private void showAddAtlasDialog() {
+        LayoutInflater inflater = this.getLayoutInflater();
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(EmbeddedCordovaActivity.this);
+
+        AlertDialog dialog = null;
+
+        builder.setTitle(R.string.add_atlas_title);
+        builder.setView(inflater.inflate(R.layout.dialog_add_atlas, null));
+        builder.setPositiveButton(R.string.add_atlas_positive, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                EditText urlEditText = ((Dialog)dialogInterface).findViewById(R.id.url);
+                EditText userNameEditText = ((Dialog)dialogInterface).findViewById(R.id.userName);
+                EditText userPasswordEditText = ((Dialog)dialogInterface).findViewById(R.id.userPassword);
+
+                createConnection(
+                        urlEditText.getText().toString(),
+                        urlEditText.getText().toString(),
+                        userNameEditText.getText().toString(),
+                        userPasswordEditText.getText().toString()
+                );
+            }
+        });
+        builder.setNegativeButton(R.string.add_atlas_negative, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+
+            }
+        });
+        dialog = builder.create();
+
+        dialog.show();
+    }
+
     private void showDeleteAtlasDialog(final ConnectionInfo newConnection) {
         AlertDialog.Builder builder = new AlertDialog.Builder(EmbeddedCordovaActivity.this);
 
@@ -452,5 +519,58 @@ public class EmbeddedCordovaActivity extends CordovaActivity {
         });
 
         dialog.show();
+    }
+
+    public void createConnection(String connectionName, String url, String userName, String userPassword) {
+        Log.v(TAG, "Connection " + connectionName + "/" + url + "/" + userName + "/" + userPassword);
+
+        try {
+            showProgressBar();
+
+            ConnectionInfo info = new ConnectionInfo();
+            info.setName(connectionName);
+            info.setUrl(url);
+            info.setUser(userName);
+            info.setPassword(userPassword);
+
+            Intent intent = new Intent(this, ConnectionManagementService.class);
+            intent.setAction(ConnectionManagementService.ACTION_ADD_CONNECTION);
+            intent.putExtra(Nunaliit.EXTRA_CONNECTION_INFO,info);
+            startService(intent);
+
+        } catch(Exception e) {
+            hideProgressBar();
+
+            errorOnConnection(e);
+        }
+    }
+
+    public void connectionCreated(ConnectionInfo info){
+        try {
+            Toast
+                    .makeText(
+                            getApplicationContext(),
+                            getResources().getString(R.string.connection_created),
+                            Toast.LENGTH_LONG
+                    )
+                    .show();
+
+            startConnectionActivity(info);
+
+        } catch(Exception e) {
+            errorOnConnection(e);
+        }
+    }
+
+    public void errorOnConnection(Throwable e){
+        Toast
+                .makeText(
+                        getApplicationContext(),
+                        getResources().getString(R.string.error_creating_connection),
+                        Toast.LENGTH_LONG
+                )
+                .show();
+
+        Log.e(TAG, "Error while creating connection", e);
     }
 }
