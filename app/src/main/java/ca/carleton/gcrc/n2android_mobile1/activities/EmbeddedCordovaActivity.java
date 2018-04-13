@@ -191,6 +191,10 @@ public class EmbeddedCordovaActivity extends CordovaActivity {
                 broadcastReceiver,
                 new IntentFilter(ConnectionManagementService.ERROR_ADD_CONNECTION)
         );
+        lbm.registerReceiver(
+                broadcastReceiver,
+                new IntentFilter(ConnectionManagementService.PROGRESS_SYNC)
+        );
 
         // Request for list of connection infos
         {
@@ -411,6 +415,17 @@ public class EmbeddedCordovaActivity extends CordovaActivity {
                 e = (Throwable) ser;
             }
             errorOnConnection(e);
+        } else if (ConnectionManagementService.PROGRESS_SYNC.equals(intent.getAction())) {
+            int state = intent.getIntExtra(Nunaliit.EXTRA_SYNC_PROGRESS_STATE, 0);
+            TextView messageView = findViewById(R.id.sync_progress_message);
+
+            if (state == ConnectionManagementService.PROGRESS_SYNC_DOWNLOADING_DOCUMENTS) {
+                messageView.setText(R.string.sync_progress_downloading);
+            } else if (state == ConnectionManagementService.PROGRESS_SYNC_UPDATING_LOCAL_DOCUMENTS) {
+                messageView.setText(R.string.sync_progress_update_local);
+            } else if (state == ConnectionManagementService.PROGRESS_SYNC_UPDATING_REMOTE_DOCUMENTS) {
+                messageView.setText(R.string.sync_progress_update_remote);
+            }
         } else {
             Log.w(TAG, "Ignoring received intent :" + intent.getAction() + Nunaliit.threadId());
         }
