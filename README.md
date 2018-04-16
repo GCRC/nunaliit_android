@@ -11,7 +11,7 @@ Android application for Nunaliit
 2. Then the nunaliit2-js and nunaliit2-js-external components need to be built (requires maven):
 
 ```
-cd nunaliit2 && mvn install
+cd nunaliit2 && mvn clean install
 cd nunaliit2-js && mvn package
 cd ../nunaliit2-js-external && mvn package
 ```
