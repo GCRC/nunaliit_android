@@ -683,4 +683,8 @@ public class EmbeddedCordovaActivity extends CordovaActivity {
             return true;
         }
     }
+
+    public void onSyncInBackgroundClicked(View view) {
+        hideProgressBar();
+    }
 }
