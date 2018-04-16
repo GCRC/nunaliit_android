@@ -193,5 +193,78 @@ cordova.define('cordova/plugin_list', function(require, exports, module) {
                 "window"
             ]
         },
+
+
+
+        {
+            "file": "plugins/org.apache.cordova.mediacapture/www/CaptureAudioOptions.js",
+            "id": "org.apache.cordova.mediacapture.CaptureAudioOptions",
+            "clobbers": [
+                "CaptureAudioOptions"
+            ]
+        },
+        {
+            "file": "plugins/org.apache.cordova.mediacapture/www/CaptureImageOptions.js",
+            "id": "org.apache.cordova.mediacapture.CaptureImageOptions",
+            "clobbers": [
+                "CaptureImageOptions"
+            ]
+        },
+        {
+            "file": "plugins/org.apache.cordova.mediacapture/www/CaptureVideoOptions.js",
+            "id": "org.apache.cordova.mediacapture.CaptureVideoOptions",
+            "clobbers": [
+                "CaptureVideoOptions"
+            ]
+        },
+        {
+            "file": "plugins/org.apache.cordova.mediacapture/www/CaptureError.js",
+            "id": "org.apache.cordova.mediacapture.CaptureError",
+            "clobbers": [
+                "CaptureError"
+            ]
+        },
+        {
+            "file": "plugins/org.apache.cordova.mediacapture/www/MediaFileData.js",
+            "id": "org.apache.cordova.mediacapture.MediaFileData",
+            "clobbers": [
+                "MediaFileData"
+            ]
+        },
+        {
+            "file": "plugins/org.apache.cordova.mediacapture/www/MediaFile.js",
+            "id": "org.apache.cordova.mediacapture.MediaFile",
+            "clobbers": [
+                "MediaFile"
+            ]
+        },
+        {
+            "file": "plugins/org.apache.cordova.mediacapture/www/capture.js",
+            "id": "org.apache.cordova.mediacapture.capture",
+            "clobbers": [
+                "navigator.device.capture"
+            ]
+        },
+        {
+            "file": "plugins/org.apache.cordova.mediacapture/www/helpers.js",
+            "id": "org.apache.cordova.mediacapture.helpers"
+        },
+
+
+
+        {
+            "file": "plugins/org.apache.cordova.media/www/Media.js",
+            "id": "org.apache.cordova.media.Media",
+            "clobbers": [
+                "window.Media"
+            ]
+        },
+        {
+            "file": "plugins/org.apache.cordova.media/www/MediaError.js",
+            "id": "org.apache.cordova.media.MediaError",
+            "clobbers": [
+                "window.MediaError"
+            ]
+        },
     ];
 });
