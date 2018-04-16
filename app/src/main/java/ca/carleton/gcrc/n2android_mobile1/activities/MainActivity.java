@@ -33,6 +33,7 @@ import ca.carleton.gcrc.n2android_mobile1.connection.ConnectionInfo;
 import ca.carleton.gcrc.n2android_mobile1.Nunaliit;
 import ca.carleton.gcrc.n2android_mobile1.R;
 import ca.carleton.gcrc.n2android_mobile1.connection.ConnectionManagementService;
+import okhttp3.HttpUrl;
 
 /**
  * An example full-screen activity that shows and hides the system UI (i.e.
@@ -280,8 +281,11 @@ public class MainActivity extends AppCompatActivity {
         Log.v(TAG, "Connection " + "/" + url + "/" + userName + "/" + userPassword);
 
         try {
+            HttpUrl httpUrl = HttpUrl.parse(url.toString());
+            String host = httpUrl.host();
+
             ConnectionInfo info = new ConnectionInfo();
-            info.setName("Atlas Name");
+            info.setName(host);
             info.setUrl(url);
             info.setUser(userName);
             info.setPassword(userPassword);
