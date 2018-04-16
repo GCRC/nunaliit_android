@@ -47,7 +47,6 @@ import java.util.Vector;
 
 import ca.carleton.gcrc.n2android_mobile1.Nunaliit;
 import ca.carleton.gcrc.n2android_mobile1.R;
-import ca.carleton.gcrc.n2android_mobile1.ServiceSupport;
 import ca.carleton.gcrc.n2android_mobile1.connection.ConnectionInfo;
 import ca.carleton.gcrc.n2android_mobile1.connection.ConnectionInfoDb;
 import ca.carleton.gcrc.n2android_mobile1.connection.ConnectionManagementService;
@@ -458,9 +457,18 @@ public class EmbeddedCordovaActivity extends CordovaActivity {
     }
 
     public void startMainActivity() {
-        Intent intent = new Intent(this, MainActivity.class);
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-        startActivity(intent);
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                Intent intent = new Intent(EmbeddedCordovaActivity.this, MainActivity.class);
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+
+                destroyWebView();
+
+                startActivity(intent);
+            }
+        });
+
     }
 
     private void deleteConnection(ConnectionInfo connInfo) {
@@ -471,16 +479,37 @@ public class EmbeddedCordovaActivity extends CordovaActivity {
         startService(intent);
     }
 
-    public void startConnectionActivity(ConnectionInfo connInfo){
-        SharedPreferences sharedPref = this.getSharedPreferences(getString(R.string.atlas_shared_pref), Context.MODE_PRIVATE);
-        SharedPreferences.Editor editor = sharedPref.edit();
-        editor.putString(getString(R.string.atlas_last_used), connInfo.getId());
-        editor.apply();
+    public void startConnectionActivity(final ConnectionInfo connInfo){
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                destroyWebView();
 
-        Intent intent = new Intent(this, EmbeddedCordovaActivity.class);
-        intent.putExtra(Nunaliit.EXTRA_CONNECTION_ID, connInfo.getId());
-        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-        startActivity(intent);
+                SharedPreferences sharedPref = EmbeddedCordovaActivity.this.getSharedPreferences(getString(R.string.atlas_shared_pref), Context.MODE_PRIVATE);
+                SharedPreferences.Editor editor = sharedPref.edit();
+                editor.putString(getString(R.string.atlas_last_used), connInfo.getId());
+                editor.apply();
+
+                Intent intent = new Intent(EmbeddedCordovaActivity.this, EmbeddedCordovaActivity.class);
+                intent.putExtra(Nunaliit.EXTRA_CONNECTION_ID, connInfo.getId());
+                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                startActivity(intent);
+            }
+        });
+
+    }
+
+    private void destroyWebView() {
+        ViewGroup vg = findViewById(R.id.content_container);
+        vg.removeAllViews();
+
+        appView.clearCache();
+        appView.clearHistory();
+
+        appView.loadUrl("about:blank");
+
+        appView.getEngine().destroy();
+        appView = null;
     }
 
     private void setAtlasInitialsIcon(MenuItem menuItem, ConnectionInfo connInfo) {
@@ -493,6 +522,8 @@ public class EmbeddedCordovaActivity extends CordovaActivity {
     }
 
     public void startAddConnectionActivity(){
+        destroyWebView();
+
         Intent intent = new Intent(this, AddConnectionActivity.class);
         startActivity(intent);
     }
