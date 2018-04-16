@@ -28,6 +28,8 @@
     <string name="add_atlas_positive">OK</string>
     <string name="add_atlas_negative">CANCEL</string>
 
+    <string name="sync_in_background_button">Sync in background</string>
+
     <string name="sync_result_title">Sync Result</string>
     <string name="sync_result_positive">RELOAD ATLAS</string>
     <string name="sync_client_update">Local Documents Updated: %d / %d</string>
@@ -58,4 +60,8 @@
     <string name="location_permission_title">Allow Location?</string>
     <string name="location_permission_text">Documents you create can be tagged with your current location. Enable location to enable document tagging.</string>
     <string name="ok">OK</string>
+
+    <string name="sync_progress_downloading">Downloading Documents...</string>
+    <string name="sync_progress_update_local">Updating Local Documents...</string>
+    <string name="sync_progress_update_remote">Updating Remote Documents...</string>
 </resources>

@@ -48,7 +48,12 @@ public class ConnectionManagementService extends IntentService {
     public static String RESULT_DELETE_CONNECTION = ConnectionManagementService.class.getName()+".DELETE_CONNECTION_RESULT";
     public static String ERROR_DELETE_CONNECTION = ConnectionManagementService.class.getName()+".DELETE_CONNECTION_ERROR";
     public static String RESULT_SYNC = ConnectionManagementService.class.getName()+".SYNC_RESULT";
+    public static String PROGRESS_SYNC = ConnectionManagementService.class.getName()+".SYNC_PROGRESS";
     public static String ERROR_SYNC = ConnectionManagementService.class.getName()+".SYNC_ERROR";
+
+    public static int PROGRESS_SYNC_DOWNLOADING_DOCUMENTS = 2;
+    public static int PROGRESS_SYNC_UPDATING_LOCAL_DOCUMENTS = 3;
+    public static int PROGRESS_SYNC_UPDATING_REMOTE_DOCUMENTS = 4;
 
     public static String TAG = "NunaliitMobileConnections";
 

@@ -1,5 +1,7 @@
 package ca.carleton.gcrc.n2android_mobile1.connection;
 
+import android.content.Intent;
+import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.webkit.MimeTypeMap;
 
@@ -22,6 +24,7 @@ import ca.carleton.gcrc.couch.client.CouchDesignDocument;
 import ca.carleton.gcrc.couch.client.CouchQuery;
 import ca.carleton.gcrc.couch.client.CouchQueryResults;
 import ca.carleton.gcrc.n2android_mobile1.JSONGlue;
+import ca.carleton.gcrc.n2android_mobile1.Nunaliit;
 import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseDocInfo;
 import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseLiteService;
 import okhttp3.FormBody;
@@ -69,8 +72,13 @@ public class ConnectionSyncProcess {
     public ConnectionSyncResult synchronize() throws Exception {
         Log.v(TAG, "Synchronization started");
 
+        sendSyncProgressIntent(ConnectionManagementService.PROGRESS_SYNC_DOWNLOADING_DOCUMENTS);
+
         List<JSONObject> remoteDocs = fetchAllDocuments();
+        sendSyncProgressIntent(ConnectionManagementService.PROGRESS_SYNC_UPDATING_LOCAL_DOCUMENTS);
+
         updateLocalDocumentsFromRemote(remoteDocs);
+        sendSyncProgressIntent(ConnectionManagementService.PROGRESS_SYNC_UPDATING_REMOTE_DOCUMENTS);
 
         updateRemoteDocuments(remoteDocs);
 
@@ -488,5 +496,15 @@ public class ConnectionSyncProcess {
         }
 
         return null;
+    }
+
+    private void sendSyncProgressIntent(int progressState) {
+        Intent progress = new Intent(ConnectionManagementService.PROGRESS_SYNC);
+        Log.v(TAG, "Result: " + progress.getAction() + Nunaliit.threadId());
+        progress.putExtra(Nunaliit.EXTRA_CONNECTION_ID, connection.getConnectionInfo().getId());
+
+        progress.putExtra(Nunaliit.EXTRA_SYNC_PROGRESS_STATE, progressState);
+
+        LocalBroadcastManager.getInstance(service).sendBroadcast(progress);
     }
 }
