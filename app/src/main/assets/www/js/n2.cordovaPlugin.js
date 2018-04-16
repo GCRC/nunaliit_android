@@ -390,6 +390,4 @@
         ,registerCallback: registerCallback
     };
 
-    window.CordovaNunaliitPlugin = $n2.cordovaPlugin;
-
 })(nunaliit2);
