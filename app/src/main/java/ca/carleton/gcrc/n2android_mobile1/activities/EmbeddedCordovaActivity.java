@@ -539,6 +539,9 @@ public class EmbeddedCordovaActivity extends CordovaActivity {
                 EditText userPasswordEditText = ((Dialog)dialogInterface).findViewById(R.id.userPassword);
 
                 HttpUrl url = HttpUrl.parse(urlEditText.getText().toString());
+
+                if (url == null) return;
+
                 String host = url.host();
 
                 createConnection(
