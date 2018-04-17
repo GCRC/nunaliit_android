@@ -144,12 +144,7 @@ public class EmbeddedCordovaActivity extends CordovaActivity {
                             final ConnectionInfo newConnection = displayedConnections.get(menuItem.getItemId());
 
                             if (!manageMode) {
-                                if (!connectionInfo.getId().equals(newConnection.getId())) {
-                                    startConnectionActivity(newConnection);
-                                } else {
-                                    drawerLayout.closeDrawers();
-                                    return true;
-                                }
+                                startConnectionActivity(newConnection);
                             } else {
                                 Log.d(TAG, "Delete Atlas");
 
@@ -432,19 +427,20 @@ public class EmbeddedCordovaActivity extends CordovaActivity {
 
     private void drawList() {
         if( null != displayedConnections ) {
+            MenuItem synchronizeAtlasMenuItem = navigationView.getMenu().add(1, 10000, 10000, R.string.atlas_sync);
+            synchronizeAtlasMenuItem.setIcon(R.drawable.ic_synchronize);
+
             for (int i = 0, e = displayedConnections.size(); i < e; ++i) {
                 ConnectionInfo connectionInfo = displayedConnections.get(i);
-                MenuItem menuItem = navigationView.getMenu().add(Menu.NONE, i, i, connectionInfo.getName());
+                MenuItem menuItem = navigationView.getMenu().add(2, i, i, connectionInfo.getName());
 
                 ConnectionInfo connInfo = displayedConnections.get(i);
                 setAtlasInitialsIcon(menuItem, connInfo);
             }
 
-            MenuItem synchronizeAtlasMenuItem = navigationView.getMenu().add(Menu.NONE, 10000, 10000, R.string.atlas_sync);
-            synchronizeAtlasMenuItem.setIcon(R.drawable.ic_synchronize);
-            MenuItem manageAtlasMenuItem = navigationView.getMenu().add(Menu.NONE, 10001, 10001, R.string.atlas_manage);
+            MenuItem manageAtlasMenuItem = navigationView.getMenu().add(3, 10001, 10001, R.string.atlas_manage);
             manageAtlasMenuItem.setIcon(R.drawable.ic_manage);
-            navigationView.getMenu().add(Menu.NONE, 10002, 10002, R.string.atlas_add);
+            navigationView.getMenu().add(2, 10002, 10002, R.string.atlas_add);
         }
     }
 
