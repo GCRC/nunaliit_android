@@ -499,6 +499,11 @@ public class EmbeddedCordovaActivity extends CordovaActivity {
 
     }
 
+    @Override
+    public void onBackPressed() {
+        startMainActivity();
+    }
+
     private void destroyWebView() {
         ViewGroup vg = findViewById(R.id.content_container);
         vg.removeAllViews();
