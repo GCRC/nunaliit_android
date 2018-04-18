@@ -1,6 +1,27 @@
 # nunaliit_android
 
-Android application for Nunaliit
+Android application for working with [Nunaliit](http://nunaliit.org) atlas data while offline.
+
+In development:
+
+- sync documents to Android device (version 6 or higher) while online
+- add, edit, and delete documents
+- record and attach multimedia to documents
+- insert device location into documents
+- submit new and modified documents to atlas submissions database when online
+
+Near future features:
+
+- Filter document list by schema type
+- Sort document list alphabetically, chronologically, by proximity to device
+- Search documents
+- Backup app data to SDCard
+- Restore app data from SDCard
+
+Wish list:
+
+- online map view
+- offline-capable map view
 
 ## Building
 
