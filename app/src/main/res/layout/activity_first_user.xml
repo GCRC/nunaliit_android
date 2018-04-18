@@ -76,9 +76,7 @@
             android:layout_height="wrap_content"
             android:hint="@string/label_url"
             android:maxLines="1"
-            android:inputType="text"
-            android:text="https://develop.gcrc.carleton.ca"
-            />
+            android:inputType="text" />
 
         <EditText
             android:id="@+id/userName"
@@ -86,8 +84,7 @@
             android:layout_height="wrap_content"
             android:hint="@string/label_user"
             android:maxLines="1"
-            android:inputType="text"
-            android:text="demo" />
+            android:inputType="text" />
 
         <EditText
             android:id="@+id/userPassword"
@@ -96,8 +93,7 @@
             android:ems="10"
             android:hint="@string/label_password"
             android:inputType="textPassword"
-            android:maxLines="1"
-            android:text="demopassword" />
+            android:maxLines="1" />
 
         <Space
             android:layout_width="match_parent"
