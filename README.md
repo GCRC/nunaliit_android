@@ -1,8 +1,31 @@
 # nunaliit_android
 
-Android application for Nunaliit
+Android application for working with [Nunaliit](http://nunaliit.org) atlas data while offline.
 
-## After cloning: Build nunaliit2
+In development:
+
+- sync documents to Android device (version 6 or higher) while online
+- add, edit, and delete documents
+- record and attach multimedia to documents
+- insert device location into documents
+- submit new and modified documents to atlas submissions database when online
+
+Near future features:
+
+- Filter document list by schema type
+- Sort document list alphabetically, chronologically, by proximity to device
+- Search documents
+- Backup app data to SDCard
+- Restore app data from SDCard
+
+Wish list:
+
+- online map view
+- offline-capable map view
+
+## Building
+
+After cloning you must build nunaliit2.
 
 1. The nunaliit2 project is referenced as a git submodule and needs to be cloned separately after cloning the Android project repo:
 
@@ -16,7 +39,15 @@ cd nunaliit2-js && mvn package
 cd ../nunaliit2-js-external && mvn package
 ```
 
-After doing the above steps you should have the entrypoint script used by the Android app's webview, nunaliit2-debug.js, and be able to build & run it.
+After doing the above steps you should have the entrypoint script used by the Android app's webview, nunaliit2-debug.js, and be able to build & run it in Android Studio.
+
+## Updating
+
+```
+git fetch
+git pull origin master
+git submodule update
+```
 
 ----
 Possible pitfalls:

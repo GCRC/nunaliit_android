@@ -266,5 +266,15 @@ cordova.define('cordova/plugin_list', function(require, exports, module) {
                 "window.MediaError"
             ]
         },
+
+
+
+        {
+            "file": "plugins/io.github.pwlin.cordova.plugins.fileopener2/www/plugins.FileOpener2.js",
+            "id": "io.github.pwlin.cordova.plugins.fileopener2.FileOpener2",
+            "clobbers": [
+                "window.cordova.plugins.fileOpener2"
+            ]
+        },
     ];
 });
