@@ -2,7 +2,9 @@
 
 Android application for Nunaliit
 
-## After cloning: Build nunaliit2
+## Building
+
+After cloning you must build nunaliit2.
 
 1. The nunaliit2 project is referenced as a git submodule and needs to be cloned separately after cloning the Android project repo:
 
@@ -16,7 +18,15 @@ cd nunaliit2-js && mvn package
 cd ../nunaliit2-js-external && mvn package
 ```
 
-After doing the above steps you should have the entrypoint script used by the Android app's webview, nunaliit2-debug.js, and be able to build & run it.
+After doing the above steps you should have the entrypoint script used by the Android app's webview, nunaliit2-debug.js, and be able to build & run it in Android Studio.
+
+## Updating
+
+```
+git fetch
+git pull origin master
+git submodule update
+```
 
 ----
 Possible pitfalls:
