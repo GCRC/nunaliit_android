@@ -42,6 +42,7 @@ import org.apache.cordova.CordovaActivity;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Vector;
 
@@ -69,6 +70,8 @@ public class EmbeddedCordovaActivity extends CordovaActivity {
     private List<ConnectionInfo> displayedConnections = null;
 
     private boolean manageMode = false;
+
+    private long timeSinceLastBackButton = 0;
 
     private ServiceConnection mConnection = new ServiceConnection() {
 
@@ -497,7 +500,24 @@ public class EmbeddedCordovaActivity extends CordovaActivity {
 
     @Override
     public void onBackPressed() {
-        startMainActivity();
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                appView.clearCache();
+                appView.clearHistory();
+
+                long currentTime = new Date().getTime();
+
+                if (timeSinceLastBackButton + 1000 < currentTime) {
+                    timeSinceLastBackButton = currentTime;
+
+                    appView.loadUrl("about:blank");
+                    appView.loadUrl(launchUrl);
+                } else {
+                    finish();
+                }
+            }
+        });
     }
 
     private void destroyWebView() {
