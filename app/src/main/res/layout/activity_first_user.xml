@@ -76,7 +76,7 @@
             android:layout_height="wrap_content"
             android:hint="@string/label_url"
             android:maxLines="1"
-            android:inputType="text" />
+            android:inputType="textUri" />
 
         <EditText
             android:id="@+id/userName"
@@ -103,7 +103,7 @@
             android:id="@+id/button_create"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="CONNECT" />
+            android:text="@string/create_connection" />
 
         <ProgressBar
             android:id="@+id/spinner"
