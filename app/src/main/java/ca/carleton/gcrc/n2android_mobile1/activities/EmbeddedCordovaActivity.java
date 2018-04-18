@@ -29,7 +29,6 @@ import android.support.v4.widget.DrawerLayout;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.LayoutInflater;
-import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
@@ -37,6 +36,7 @@ import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.widget.ToggleButton;
 
 import org.apache.cordova.CordovaActivity;
 
@@ -61,6 +61,10 @@ import okhttp3.HttpUrl;
  */
 public class EmbeddedCordovaActivity extends CordovaActivity {
 
+    public static final int MENU_ITEM_SYNCHRONIZATION = 10000;
+    public static final int MENU_ITEM_ADD_ATLAS = 10001;
+    public static final int MENU_ITEM_DELETE_ATLAS = 10002;
+
     final protected String TAG = this.getClass().getSimpleName();
     public static final int MY_PERMISSIONS_REQUEST_LOCATION = 99;
 
@@ -68,7 +72,8 @@ public class EmbeddedCordovaActivity extends CordovaActivity {
     private NavigationView navigationView;
     private List<ConnectionInfo> displayedConnections = null;
 
-    private boolean manageMode = false;
+    private boolean isManageMode = false;
+    private boolean isAtlasListExpanded = false;
 
     private ServiceConnection mConnection = new ServiceConnection() {
 
@@ -112,18 +117,22 @@ public class EmbeddedCordovaActivity extends CordovaActivity {
         drawerLayout = findViewById(R.id.drawer_layout);
         drawerLayout.addDrawerListener(new DrawerLayout.DrawerListener() {
             @Override
-            public void onDrawerStateChanged(int newState) {
-                EmbeddedCordovaActivity.this.manageMode = false;
-
-                updateMenuItems();
-            }
+            public void onDrawerStateChanged(int newState) {}
 
             @Override
             public void onDrawerSlide(View drawerView, float slideOffset) {}
             @Override
             public void onDrawerOpened(View drawerView) {}
             @Override
-            public void onDrawerClosed(View drawerView) {}
+            public void onDrawerClosed(View drawerView) {
+                EmbeddedCordovaActivity.this.isManageMode = false;
+                EmbeddedCordovaActivity.this.isAtlasListExpanded = false;
+
+                updateMenuList();
+
+                ToggleButton atlasEditToggle = navigationView.getHeaderView(0).findViewById(R.id.account_view_icon_button);
+                atlasEditToggle.setChecked(false);
+            }
         });
 
         navigationView = findViewById(R.id.nav_view);
@@ -131,19 +140,19 @@ public class EmbeddedCordovaActivity extends CordovaActivity {
                 new NavigationView.OnNavigationItemSelectedListener() {
                     @Override
                     public boolean onNavigationItemSelected(MenuItem menuItem) {
-                        if (menuItem.getItemId() == 10000) {
+                        if (menuItem.getItemId() == MENU_ITEM_SYNCHRONIZATION) {
                             synchronizeConnection(connectionInfo);
                             showProgressBar();
                             drawerLayout.closeDrawers();
-                        } else if (menuItem.getItemId() == 10001) {
-                            manageMode = !manageMode;
-                            updateMenuItems();
-                        } else if (menuItem.getItemId() == 10002) {
+                        } else if (menuItem.getItemId() == MENU_ITEM_DELETE_ATLAS) {
+                            isManageMode = !isManageMode;
+                            updateMenuList();
+                        } else if (menuItem.getItemId() == MENU_ITEM_ADD_ATLAS) {
                             showAddAtlasDialog();
                         } else if (menuItem.getItemId() < 10000) {
                             final ConnectionInfo newConnection = displayedConnections.get(menuItem.getItemId());
 
-                            if (!manageMode) {
+                            if (!isManageMode) {
                                 startConnectionActivity(newConnection);
                             } else {
                                 Log.d(TAG, "Delete Atlas");
@@ -155,6 +164,15 @@ public class EmbeddedCordovaActivity extends CordovaActivity {
                         return true;
                     }
                 });
+
+        ToggleButton atlasEditToggle = navigationView.getHeaderView(0).findViewById(R.id.account_view_icon_button);
+        atlasEditToggle.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                isAtlasListExpanded = !isAtlasListExpanded;
+                updateMenuList();
+            }
+        });
 
         LocalBroadcastManager lbm = LocalBroadcastManager.getInstance(this);
         lbm.registerReceiver(
@@ -304,26 +322,6 @@ public class EmbeddedCordovaActivity extends CordovaActivity {
         });
     }
 
-    private void updateMenuItems() {
-        Menu menu = navigationView.getMenu();
-        int [] colorIdArray = getResources().getIntArray(R.array.atlas_icon_id_list);
-
-        for (int i=0; i<displayedConnections.size(); i++) {
-            MenuItem item = menu.getItem(i);
-            if (manageMode) {
-                item.setIcon(R.drawable.ic_trash);
-            } else {
-                item.setChecked(displayedConnections.get(i).getId().equals(connectionInfo.getId()));
-                ConnectionInfo connInfo = displayedConnections.get(i);
-                setAtlasInitialsIcon(item, connInfo);
-
-                Drawable menuIcon = item.getIcon();
-                menuIcon.mutate();
-                menuIcon.setColorFilter(colorIdArray[i % colorIdArray.length], PorterDuff.Mode.SRC_IN);
-            }
-        }
-    }
-
     private void showProgressBar() {
         appView.getView().setVisibility(View.GONE);
         findViewById(R.id.sync_progress).setVisibility(View.VISIBLE);
@@ -360,7 +358,7 @@ public class EmbeddedCordovaActivity extends CordovaActivity {
                 }
             }
             displayedConnections = connectionInfos;
-            drawList();
+            updateMenuList();
 
             retrieveConnection();
 
@@ -425,23 +423,51 @@ public class EmbeddedCordovaActivity extends CordovaActivity {
         }
     }
 
-    private void drawList() {
+    private void updateMenuList() {
+        navigationView.getMenu().clear();
+
         if( null != displayedConnections ) {
-            MenuItem synchronizeAtlasMenuItem = navigationView.getMenu().add(1, 10000, 10000, R.string.atlas_sync);
-            synchronizeAtlasMenuItem.setIcon(R.drawable.ic_synchronize);
 
-            for (int i = 0, e = displayedConnections.size(); i < e; ++i) {
-                ConnectionInfo connectionInfo = displayedConnections.get(i);
-                MenuItem menuItem = navigationView.getMenu().add(2, i, i, connectionInfo.getName());
+            if (isAtlasListExpanded) {
+                int [] colorIdArray = getResources().getIntArray(R.array.atlas_icon_id_list);
 
-                ConnectionInfo connInfo = displayedConnections.get(i);
-                setAtlasInitialsIcon(menuItem, connInfo);
+                for (int i = 0; i < displayedConnections.size(); ++i) {
+                    ConnectionInfo connInfo = displayedConnections.get(i);
+                    MenuItem item = navigationView.getMenu().add(1, i, i, connInfo.getName());
+                    setAtlasInitialsIcon(item, connInfo);
+
+                    if (isManageMode) {
+                        item.setIcon(R.drawable.ic_delete_black);
+                    } else {
+                        setAtlasInitialsIcon(item, connInfo);
+
+                        Drawable menuIcon = item.getIcon();
+                        menuIcon.mutate();
+                        menuIcon.setColorFilter(colorIdArray[i % colorIdArray.length], PorterDuff.Mode.SRC_IN);
+                    }
+
+                    boolean enabled = displayedConnections.get(i).getId().equals(connectionInfo.getId());
+                    item.setChecked(enabled);
+                }
+
+                MenuItem addMenuItem = navigationView.getMenu().add(2, MENU_ITEM_ADD_ATLAS, MENU_ITEM_ADD_ATLAS, R.string.atlas_add);
+                addMenuItem.setIcon(R.drawable.ic_add_circle_outline_black);
+
+                if (!isManageMode) {
+                    MenuItem manageAtlasMenuItem = navigationView.getMenu().add(2, MENU_ITEM_DELETE_ATLAS, MENU_ITEM_DELETE_ATLAS, R.string.atlas_manage);
+                    manageAtlasMenuItem.setIcon(R.drawable.ic_lock_outline_black);
+                } else {
+                    MenuItem manageAtlasMenuItem = navigationView.getMenu().add(2, MENU_ITEM_DELETE_ATLAS, MENU_ITEM_DELETE_ATLAS, R.string.atlas_manage_cancel);
+                    manageAtlasMenuItem.setIcon(R.drawable.ic_lock_open_black);
+                }
+
+            } else {
+                MenuItem synchronizeAtlasMenuItem = navigationView.getMenu().add(1, MENU_ITEM_SYNCHRONIZATION, MENU_ITEM_SYNCHRONIZATION, R.string.atlas_sync);
+                synchronizeAtlasMenuItem.setIcon(R.drawable.ic_sync_black);
             }
-
-            MenuItem manageAtlasMenuItem = navigationView.getMenu().add(3, 10001, 10001, R.string.atlas_manage);
-            manageAtlasMenuItem.setIcon(R.drawable.ic_manage);
-            navigationView.getMenu().add(2, 10002, 10002, R.string.atlas_add);
         }
+
+
     }
 
     private void synchronizeConnection(ConnectionInfo connInfo) {

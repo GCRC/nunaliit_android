@@ -5,21 +5,38 @@
     android:background="?attr/colorPrimaryDark"
     android:padding="16dp"
     android:theme="@style/ThemeOverlay.AppCompat.Dark"
-    android:orientation="vertical"
+    android:orientation="horizontal"
     android:gravity="bottom">
 
-    <TextView
-        android:id="@+id/atlas_title"
-        android:layout_width="match_parent"
+    <LinearLayout
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Atlas Name"
-        android:textAppearance="@style/TextAppearance.AppCompat.Body1"/>
+        android:layout_weight=".80"
+        android:orientation="vertical">
 
-    <TextView
-        android:id="@+id/atlas_url"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Atlas URL"
-        android:textAppearance="@style/Base.TextAppearance.AppCompat.Caption"/>
+        <TextView
+            android:id="@+id/atlas_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Atlas Name"
+            android:textAppearance="@style/TextAppearance.AppCompat.Body1"/>
+
+        <TextView
+            android:id="@+id/atlas_url"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Atlas URL"
+            android:textAppearance="@style/Base.TextAppearance.AppCompat.Caption" />
+
+    </LinearLayout>
+
+    <ToggleButton
+        android:id="@+id/account_view_icon_button"
+        android:layout_weight=".20"
+        android:layout_width="20dp"
+        android:layout_height="24dp"
+        android:background="@drawable/toggle_expand_collapse"
+        android:textOff="@null"
+        android:textOn="@null" />
 
 </LinearLayout>
