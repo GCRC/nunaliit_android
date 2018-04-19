@@ -3,7 +3,8 @@
     <string name="couchDbService_label">Nunaliit Database Service</string>
 
     <string name="atlas_sync">Synchronize Atlas</string>
-    <string name="atlas_manage">Delete Atlas</string>
+    <string name="atlas_manage">Remove Atlas</string>
+    <string name="atlas_manage_cancel">Finish Removing Atlases</string>
     <string name="atlas_add">Add Atlas</string>
 
     <string name="add_connection">Add Connection</string>
