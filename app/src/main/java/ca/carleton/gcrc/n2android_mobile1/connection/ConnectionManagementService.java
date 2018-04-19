@@ -11,6 +11,8 @@ import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.widget.Toast;
 
+import org.json.JSONObject;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -20,6 +22,10 @@ import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseDb;
 import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseLiteService;
 import ca.carleton.gcrc.n2android_mobile1.Nunaliit;
 import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseManager;
+import okhttp3.HttpUrl;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
 
 /**
  * Created by jpfiset on 3/22/16.
@@ -132,6 +138,12 @@ public class ConnectionManagementService extends IntentService {
             if( parcelable instanceof ConnectionInfo ){
                 connInfo = (ConnectionInfo)parcelable;
             }
+
+            String userId = fetchUserId(connInfo.getUrl(), connInfo.getUser());
+            if (userId != null && !userId.isEmpty()) {
+                connInfo.setUser(userId);
+            }
+
             addConnection(connInfo);
 
         } else if( ACTION_GET_CONNECTION_INFOS.equals(intent.getAction()) ){
@@ -314,6 +326,31 @@ public class ConnectionManagementService extends IntentService {
                     getResources().getString(R.string.error_synchronization),
                     Toast.LENGTH_LONG
             );
+        }
+    }
+
+    private String fetchUserId(String url, String email) {
+
+        try {
+            OkHttpClient client = new OkHttpClient();
+
+            HttpUrl httpUrl = HttpUrl.parse(url).newBuilder()
+                    .addPathSegments("/servlet/user/getUser")
+                    .addQueryParameter("email", email).build();
+
+            Request request = new Request.Builder()
+                    .url(httpUrl)
+                    .build();
+
+            Response response = client.newCall(request).execute();
+
+            String body = response.body().string();
+            JSONObject responseJson = new JSONObject(body);
+
+            return responseJson.optString("name", "");
+
+        } catch (Exception e) {
+            return "";
         }
     }
 }
