@@ -39,10 +39,6 @@ public class PluginActions {
     private CordovaInterface cordovaInterface = null;
     private FusedLocationProviderClient fusedLocationProviderClient;
 
-    // Replace this once the locaton button has been added.
-    private boolean alwaysAddLocationOnCreate = true;
-    private boolean alwaysAddLocationOnUpdate = false;
-
     public PluginActions(CordovaInterface cordovaInterface, Context context){
         this.cordovaInterface = cordovaInterface;
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(context);
@@ -114,8 +110,7 @@ public class PluginActions {
                                 if (location != null) {
                                     Log.v(TAG, location.toString());
 
-                                    if (doc.optBoolean("nunaliit_mobile_needs_new_location", false) ||
-                                            alwaysAddLocationOnCreate) {
+                                    if (doc.optBoolean("nunaliit_mobile_needs_new_location", false)) {
                                         updateDocumentGeometry(doc, location);
                                     }
                                     // This is a sanity check and is not displayed in app.
@@ -171,8 +166,7 @@ public class PluginActions {
                                 if (location != null) {
                                     Log.v(TAG, location.toString());
 
-                                    if (doc.optBoolean("nunaliit_mobile_needs_new_location", false) ||
-                                            alwaysAddLocationOnUpdate) {
+                                    if (doc.optBoolean("nunaliit_mobile_needs_new_location", false)) {
                                         updateDocumentGeometry(doc, location);
                                         updateDocumentLocation(doc, location);
                                     }
