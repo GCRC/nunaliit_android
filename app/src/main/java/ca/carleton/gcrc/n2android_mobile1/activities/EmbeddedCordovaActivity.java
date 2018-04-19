@@ -27,6 +27,8 @@ import android.support.v4.content.ContextCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.widget.Toolbar;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
@@ -570,9 +572,7 @@ public class EmbeddedCordovaActivity extends CordovaActivity {
                 EditText userPasswordEditText = ((Dialog)dialogInterface).findViewById(R.id.userPassword);
 
                 HttpUrl url = HttpUrl.parse(urlEditText.getText().toString());
-
                 if (url == null) return;
-
                 String host = url.host();
 
                 createConnection(
@@ -589,7 +589,50 @@ public class EmbeddedCordovaActivity extends CordovaActivity {
 
             }
         });
-        AlertDialog dialog = builder.create();
+        final AlertDialog dialog = builder.create();
+
+        final TextWatcher addDialogTextWatcher = new TextWatcher() {
+            @Override
+            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+                EditText urlEditText = dialog.findViewById(R.id.url);
+                EditText userNameEditText = dialog.findViewById(R.id.userName);
+                EditText userPasswordEditText = dialog.findViewById(R.id.userPassword);
+
+                if (urlEditText.getText().length() == 0 ||
+                        userNameEditText.getText().length() == 0 ||
+                        userPasswordEditText.getText().length() == 0) {
+                    dialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(false);
+                } else {
+                    dialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(true);
+                }
+            }
+
+            @Override
+            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {}
+            @Override
+            public void afterTextChanged(Editable editable) {}
+        };
+
+        dialog.setOnShowListener(new DialogInterface.OnShowListener() {
+            @Override
+            public void onShow(DialogInterface dialogInterface) {
+                EditText urlEditText = dialog.findViewById(R.id.url);
+                EditText userNameEditText = dialog.findViewById(R.id.userName);
+                EditText userPasswordEditText = dialog.findViewById(R.id.userPassword);
+
+                urlEditText.addTextChangedListener(addDialogTextWatcher);
+                userNameEditText.addTextChangedListener(addDialogTextWatcher);
+                userPasswordEditText.addTextChangedListener(addDialogTextWatcher);
+
+                if (urlEditText.getText().length() == 0 ||
+                        userNameEditText.getText().length() == 0 ||
+                        userPasswordEditText.getText().length() == 0) {
+                    dialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(false);
+                } else {
+                    dialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(true);
+                }
+            }
+        });
 
         dialog.show();
     }
