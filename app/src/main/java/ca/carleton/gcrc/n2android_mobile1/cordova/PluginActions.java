@@ -114,12 +114,14 @@ public class PluginActions {
                                 if (location != null) {
                                     Log.v(TAG, location.toString());
 
-                                    if (doc.has("nunaliit_mobile_needs_new_location") ||
+                                    if (doc.optBoolean("nunaliit_mobile_needs_new_location", false) ||
                                             alwaysAddLocationOnCreate) {
                                         updateDocumentGeometry(doc, location);
                                     }
                                     // This is a sanity check and is not displayed in app.
                                     updateDocumentLocation(doc, location);
+
+                                    doc.remove("nunaliit_mobile_needs_new_location");
                                 }
 
                                 createDocument(doc, docDb, callbackContext);
@@ -169,11 +171,13 @@ public class PluginActions {
                                 if (location != null) {
                                     Log.v(TAG, location.toString());
 
-                                    if (doc.has("nunaliit_mobile_needs_new_location") ||
+                                    if (doc.optBoolean("nunaliit_mobile_needs_new_location", false) ||
                                             alwaysAddLocationOnUpdate) {
                                         updateDocumentGeometry(doc, location);
                                         updateDocumentLocation(doc, location);
                                     }
+
+                                    doc.remove("nunaliit_mobile_needs_new_location");
                                 }
 
                                 CouchbaseDocInfo info = docDb.updateDocument(doc);
