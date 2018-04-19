@@ -47,6 +47,7 @@ After doing the above steps you should have the entrypoint script used by the An
 git fetch
 git pull origin master
 git submodule update
+cd nunaliit2 && mvn clean install
 ```
 
 ----
