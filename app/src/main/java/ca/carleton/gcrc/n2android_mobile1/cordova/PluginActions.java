@@ -39,6 +39,10 @@ public class PluginActions {
     private CordovaInterface cordovaInterface = null;
     private FusedLocationProviderClient fusedLocationProviderClient;
 
+    // Replace this once the locaton button has been added.
+    private boolean alwaysAddLocationOnCreate = true;
+    private boolean alwaysAddLocationOnUpdate = false;
+
     public PluginActions(CordovaInterface cordovaInterface, Context context){
         this.cordovaInterface = cordovaInterface;
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(context);
@@ -103,7 +107,6 @@ public class PluginActions {
             final DocumentDb docDb = getDocumentDb();
 
             try {
-
                 fusedLocationProviderClient.getLastLocation()
                         .addOnSuccessListener(new OnSuccessListener<Location>() {
                             @Override
@@ -111,17 +114,14 @@ public class PluginActions {
                                 if (location != null) {
                                     Log.v(TAG, location.toString());
 
-                                    try {
-                                        double latitude = location.getLatitude();
-                                        double longitude = location.getLongitude();
-
-                                        JSONObject locationObject = new JSONObject();
-                                        locationObject.put("wkt", "MULTIPOINT((" + longitude + " " + latitude + "))");
-                                        locationObject.put("nunaliit_type", "geometry");
-                                        doc.put("nunaliit_geom", locationObject);
-                                    } catch (JSONException je) {
-                                        // If you can't get a location, carry on.
+                                    if (doc.optBoolean("nunaliit_mobile_needs_new_location", false) ||
+                                            alwaysAddLocationOnCreate) {
+                                        updateDocumentGeometry(doc, location);
                                     }
+                                    // This is a sanity check and is not displayed in app.
+                                    updateDocumentLocation(doc, location);
+
+                                    doc.remove("nunaliit_mobile_needs_new_location");
                                 }
 
                                 createDocument(doc, docDb, callbackContext);
@@ -158,21 +158,65 @@ public class PluginActions {
         }
     }
 
-    public void couchbaseUpdateDocument(JSONObject doc, CallbackContext callbackContext) {
+    public void couchbaseUpdateDocument(final JSONObject doc, final CallbackContext callbackContext) {
         try {
-            DocumentDb docDb = getDocumentDb();
 
-            CouchbaseDocInfo info = docDb.updateDocument(doc);
+            final DocumentDb docDb = getDocumentDb();
 
-            JSONObject result = new JSONObject();
-            result.put("id", info.getId());
-            result.put("rev", info.getRev());
-            callbackContext.success(result);
+            fusedLocationProviderClient.getLastLocation()
+                    .addOnSuccessListener(new OnSuccessListener<Location>() {
+                        @Override
+                        public void onSuccess(Location location) {
+                            try {
+                                if (location != null) {
+                                    Log.v(TAG, location.toString());
 
-        } catch(Exception e) {
+                                    if (doc.optBoolean("nunaliit_mobile_needs_new_location", false) ||
+                                            alwaysAddLocationOnUpdate) {
+                                        updateDocumentGeometry(doc, location);
+                                        updateDocumentLocation(doc, location);
+                                    }
+
+                                    doc.remove("nunaliit_mobile_needs_new_location");
+                                }
+
+                                CouchbaseDocInfo info = docDb.updateDocument(doc);
+
+                                JSONObject result = new JSONObject();
+                                result.put("id", info.getId());
+                                result.put("rev", info.getRev());
+                                callbackContext.success(result);
+                            } catch (Exception ex) {
+                                callbackContext.error("Error while performing couchbaseCreateDocument(): "+ex.getMessage());
+                            }
+                        }
+                    })
+                    .addOnFailureListener(new OnFailureListener() {
+                        @Override
+                        public void onFailure(@NonNull Exception e) {
+                            try {
+                                CouchbaseDocInfo info = docDb.updateDocument(doc);
+
+                                JSONObject result = new JSONObject();
+                                result.put("id", info.getId());
+                                result.put("rev", info.getRev());
+                                callbackContext.success(result);
+                            } catch (Exception ex) {
+                                callbackContext.error("Error while performing couchbaseCreateDocument(): "+ex.getMessage());
+                            }
+                        }
+                    });
+
+        } catch (SecurityException se) {
+            callbackContext.error("Error while performing couchbaseCreateDocument(): "+se.getMessage());
+        } catch (JSONException je) {
+            callbackContext.error("Error while performing couchbaseCreateDocument(): "+je.getMessage());
+        } catch (Exception e) {
             callbackContext.error("Error while performing couchbaseCreateDocument(): "+e.getMessage());
         }
     }
+
+
 
     public void couchbaseDeleteDocument(JSONObject doc, CallbackContext callbackContext) {
         try {
@@ -396,5 +440,35 @@ public class PluginActions {
         }
 
         return service;
+    }
+
+    private JSONObject updateDocumentGeometry(JSONObject doc, Location location) {
+        try {
+            double latitude = location.getLatitude();
+            double longitude = location.getLongitude();
+
+            doc.remove("nunaliit_mobile_needs_new_location");
+            JSONObject locationObject = new JSONObject();
+            locationObject.put("wkt", "MULTIPOINT((" + longitude + " " + latitude + "))");
+            locationObject.put("nunaliit_type", "geometry");
+            doc.put("nunaliit_geom", locationObject);
+
+            return doc;
+        } catch (Exception e) {
+            return doc;
+        }
+    }
+
+    private JSONObject updateDocumentLocation(JSONObject doc, Location location) {
+        try {
+            double latitude = location.getLatitude();
+            double longitude = location.getLongitude();
+            doc.remove("nunaliit_mobile_needs_new_location");
+            doc.put("nunaliit_loc", longitude + "," + latitude);
+
+            return doc;
+        } catch (Exception e) {
+            return doc;
+        }
     }
 }
