@@ -44,12 +44,22 @@ repositories {
     google()
 }
 
-task copyNunaliit2Js(type: Copy) {
+//task buildNunaliit(type:Exec) {
+//  workingDir '../nunaliit2'
+//  commandLine 'mvn', 'clean', 'install'
+//}
+
+task buildNunaliit(type:Exec) {
+  workingDir '../nunaliit2'
+  commandLine 'echo', 'hello'
+}
+
+task copyNunaliit2Js(dependsOn: 'buildNunaliit', type: Copy) {
     from('../nunaliit2/nunaliit2-js/src/main/js/nunaliit2')
     into('src/main/assets/www/nunaliit2')
 }
 
-task copyNunaliit2JsExternal(type: Copy) {
+task copyNunaliit2JsExternal(dependsOn: 'buildNunaliit', type: Copy) {
     from('../nunaliit2/nunaliit2-js-external/src/main/js/js-external')
     into('src/main/assets/www/js-external')
 }
