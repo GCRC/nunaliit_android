@@ -1,3 +1,4 @@
 [submodule "nunaliit2"]
 	path = nunaliit2
 	url = https://github.com/GCRC/nunaliit.git
+	branch = nunaliit-for-android

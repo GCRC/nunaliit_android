@@ -86,6 +86,7 @@ var Layout = $n2.Class({
         var documentSource = config.documentSource;
 
         var $main = $('body');
+        $main.addClass('n2_cordova');
 
 		var headerId = $n2.getUniqueId();
         $('<div>')
