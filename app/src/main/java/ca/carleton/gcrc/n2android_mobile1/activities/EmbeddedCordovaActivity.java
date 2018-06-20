@@ -170,14 +170,20 @@ public class EmbeddedCordovaActivity extends CordovaActivity {
                     }
                 });
 
-        ToggleButton atlasEditToggle = navigationView.getHeaderView(0).findViewById(R.id.account_view_icon_button);
-        atlasEditToggle.setOnClickListener(new View.OnClickListener() {
+        final View atlasHeader = navigationView.getHeaderView(0).findViewById(R.id.atlas_healer_view_layout);
+        final ToggleButton atlasEditToggle = atlasHeader.findViewById(R.id.account_view_icon_button);
+
+        View.OnClickListener onClickListener = new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 isAtlasListExpanded = !isAtlasListExpanded;
+                atlasEditToggle.setChecked(isAtlasListExpanded);
                 updateMenuList();
             }
-        });
+        };
+
+        atlasEditToggle.setOnClickListener(onClickListener);
+        atlasHeader.setOnClickListener(onClickListener);
 
         LocalBroadcastManager lbm = LocalBroadcastManager.getInstance(this);
         lbm.registerReceiver(
