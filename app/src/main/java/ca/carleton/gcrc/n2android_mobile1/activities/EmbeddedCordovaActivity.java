@@ -25,6 +25,7 @@ import android.support.design.widget.NavigationView;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.content.LocalBroadcastManager;
+import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.widget.Toolbar;
 import android.text.Editable;
@@ -528,24 +529,31 @@ public class EmbeddedCordovaActivity extends CordovaActivity {
 
     @Override
     public void onBackPressed() {
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                appView.clearCache();
-                appView.clearHistory();
+        // Because of a limitation of CordovaActivity, we can't intercept all Back button events.
+        // By default, the web view navigates back and lands here when it reaches the last history item.
+        if (drawerLayout.isDrawerOpen(GravityCompat.START)) {
+            drawerLayout.closeDrawers();
+        } else {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    appView.clearCache();
+                    appView.clearHistory();
+                    // try backHistory instead
 
-                long currentTime = new Date().getTime();
+                    long currentTime = new Date().getTime();
 
-                if (timeSinceLastBackButton + 1000 < currentTime) {
-                    timeSinceLastBackButton = currentTime;
+                    if (timeSinceLastBackButton + 1000 < currentTime) {
+                        timeSinceLastBackButton = currentTime;
 
-                    appView.loadUrl("about:blank");
-                    appView.loadUrl(launchUrl);
-                } else {
-                    finish();
+                        appView.loadUrl("about:blank");
+                        appView.loadUrl(launchUrl);
+                    } else {
+                        finish();
+                    }
                 }
-            }
-        });
+            });
+        }
     }
 
     private void destroyWebView() {
