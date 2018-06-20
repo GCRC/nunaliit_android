@@ -116,6 +116,7 @@ public class PluginActions {
                                     // This is a sanity check and is not displayed in app.
                                     updateDocumentLocation(doc, location);
 
+                                    // Remove the needs new location flag from the document.
                                     doc.remove("nunaliit_mobile_needs_new_location");
                                 }
 
