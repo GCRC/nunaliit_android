@@ -7,25 +7,13 @@ import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaInterface;
 import org.apache.cordova.CordovaPlugin;
 import org.apache.cordova.CordovaWebView;
-import org.apache.cordova.CallbackContext;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.json.JSONTokener;
 
 import java.util.List;
 import java.util.Vector;
 import java.util.concurrent.ExecutorService;
-
-import ca.carleton.gcrc.n2android_mobile1.connection.Connection;
-import ca.carleton.gcrc.n2android_mobile1.connection.DocumentDb;
-import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseDocInfo;
-import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseLiteService;
-import ca.carleton.gcrc.n2android_mobile1.connection.ConnectionInfo;
-import ca.carleton.gcrc.n2android_mobile1.activities.EmbeddedCordovaActivity;
-import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseManager;
-import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseQuery;
-import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseQueryResults;
 
 /**
  * Created by jpfiset on 3/14/16.
