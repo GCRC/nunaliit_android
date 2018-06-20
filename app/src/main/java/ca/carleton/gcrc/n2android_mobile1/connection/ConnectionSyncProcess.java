@@ -351,6 +351,10 @@ public class ConnectionSyncProcess {
         String uploadPath = getNunaliitAttachmentPath(document);
         String uploadId = addNunaliitAttachments(document);
 
+        // Remove the nunaliit_mobile_attachments but keep it on the app. It will be removed
+        // when the document is synced down from the server.
+        document.remove("nunaliit_mobile_attachments");
+
         Response response = submissionClient.newCall(createDocumentUploadRequest(document, cookie)).execute();
         Log.v(TAG, response.body().string());
 
