@@ -394,7 +394,7 @@ public class ConnectionSyncProcess {
         String docString = document.toString();
 
         // Put the item in the submission database.
-        HttpUrl url = HttpUrl.parse(info.getUrl()).newBuilder().encodedPath("/servlet/submission/submissionDb").addPathSegment(document.getString("_id")).build();
+        HttpUrl url = HttpUrl.parse(info.getUrl()).newBuilder().encodedPath("/servlet/submission/submissionDb").addPathSegment(document.getString("_id")).addQueryParameter("deviceId", info.getDeviceId()).build();
         RequestBody body = RequestBody.create(JSON, docString);
         Request request = new Request.Builder()
                 .url(url)
