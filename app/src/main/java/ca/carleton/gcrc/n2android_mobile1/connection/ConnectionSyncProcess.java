@@ -132,7 +132,7 @@ public class ConnectionSyncProcess {
         int failedCount = 0;
         for (JSONObject doc : documents) {
             try {
-                boolean updated = updateDocumentDatabaseIfNeed(doc);
+                boolean updated = updateDocumentDatabaseIfNeeded(doc);
                 if (updated) {
                     ++updatedCount;
                 }
@@ -177,7 +177,7 @@ public class ConnectionSyncProcess {
         return docs;
     }
 
-    public boolean updateDocumentDatabaseIfNeed(JSONObject remoteDoc) throws Exception {
+    public boolean updateDocumentDatabaseIfNeeded(JSONObject remoteDoc) throws Exception {
         String docId = remoteDoc.getString("_id");
 
         JSONObject localDocument = documentDb.getDocument(docId);
