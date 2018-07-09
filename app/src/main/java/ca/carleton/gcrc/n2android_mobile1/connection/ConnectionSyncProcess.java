@@ -5,6 +5,7 @@ import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.webkit.MimeTypeMap;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -14,6 +15,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
@@ -56,6 +58,17 @@ public class ConnectionSyncProcess {
 
     private ConnectionSyncResult result = new ConnectionSyncResult();
 
+    private JSONObject submissionStatus;
+
+    private enum SubmissionStatus {
+        NotSubmitted,
+        WaitingForApproval,
+        Completed,
+        Declined,
+        Deleted,
+        Unknown
+    }
+
     public ConnectionSyncProcess(CouchbaseLiteService service, Connection connection) throws Exception {
         this.service = service;
         this.connection = connection;
@@ -72,6 +85,8 @@ public class ConnectionSyncProcess {
     public ConnectionSyncResult synchronize() throws Exception {
         Log.v(TAG, "Synchronization started");
 
+        submissionStatus = getSubmissionStatus();
+
         sendSyncProgressIntent(ConnectionManagementService.PROGRESS_SYNC_DOWNLOADING_DOCUMENTS);
 
         List<JSONObject> remoteDocs = fetchAllDocuments();
@@ -80,12 +95,14 @@ public class ConnectionSyncProcess {
         updateLocalDocumentsFromRemote(remoteDocs);
         sendSyncProgressIntent(ConnectionManagementService.PROGRESS_SYNC_UPDATING_REMOTE_DOCUMENTS);
 
-        updateRemoteDocuments(remoteDocs);
+        checkForDeletedDocuments(remoteDocs);
+
+        sendNewDocumentsToRemote(remoteDocs);
 
         return result;
     }
 
-    public List<JSONObject> fetchAllDocuments() throws Exception {
+    private List<JSONObject> fetchAllDocuments() throws Exception {
         List<JSONObject> remoteDocs = getDocsFromView("skeleton-docs");
 
         Log.v(TAG, "Synchronization received " + remoteDocs.size() + " skeleton document(s)");
@@ -117,7 +134,7 @@ public class ConnectionSyncProcess {
         return new ArrayList<>(subdocumentMap.values());
     }
 
-    public List<JSONObject> fetchDocumentsForSchemas(Collection<String> schemaList) throws Exception {
+    private List<JSONObject> fetchDocumentsForSchemas(Collection<String> schemaList) throws Exception {
         Log.v(TAG, "Fetching Subdocuments for schemas started");
 
         List<JSONObject> subdocuments = getDocsFromView("nunaliit-schema", schemaList);
@@ -127,10 +144,10 @@ public class ConnectionSyncProcess {
         return subdocuments;
     }
 
-    public void updateLocalDocumentsFromRemote(List<JSONObject> documents) throws Exception {
+    private void updateLocalDocumentsFromRemote(List<JSONObject> remoteDocuments) throws Exception {
         int updatedCount = 0;
         int failedCount = 0;
-        for (JSONObject doc : documents) {
+        for (JSONObject doc : remoteDocuments) {
             try {
                 boolean updated = updateDocumentDatabaseIfNeeded(doc);
                 if (updated) {
@@ -153,11 +170,11 @@ public class ConnectionSyncProcess {
         Log.v(TAG, "Synchronization complete");
     }
 
-    public List<JSONObject> getDocsFromView(String view) throws Exception {
+    private List<JSONObject> getDocsFromView(String view) throws Exception {
         return getDocsFromView(view, null);
     }
 
-    public List<JSONObject> getDocsFromView(String view, Collection<String> keys) throws Exception {
+    private List<JSONObject> getDocsFromView(String view, Collection<String> keys) throws Exception {
         CouchQuery query = new CouchQuery();
         if (keys != null && !keys.isEmpty()) {
             query.setKeys(keys);
@@ -177,30 +194,25 @@ public class ConnectionSyncProcess {
         return docs;
     }
 
-    public boolean updateDocumentDatabaseIfNeeded(JSONObject remoteDoc) throws Exception {
+    private boolean updateDocumentDatabaseIfNeeded(JSONObject remoteDoc) throws Exception {
         String docId = remoteDoc.getString("_id");
 
         JSONObject localDocument = documentDb.getDocument(docId);
         Revision revisionRecord = getRevisionRecord(docId);
 
-        boolean changedLocally = localDocument.has("_rev") && !(localDocument.getString("_rev").equals(revisionRecord.getLocalRevision()));
+        SubmissionStatus documentSubmissionStatus = getSubmissionStatusForDocument(localDocument);
 
-        // If the local document has changes.
-        if (!changedLocally) {
-            Log.v(TAG, docId + " is unchanged locally");
-        } else {
-            Log.v(TAG, docId + " is changed locally");
+        // If you are still waiting for Approval, wait until those changes are approved.
+        if (documentSubmissionStatus == SubmissionStatus.WaitingForApproval) {
+            return false;
         }
 
-        boolean changedRemote = !(remoteDoc.getString("_rev").equals(revisionRecord.getRemoteRevision()));
-        boolean isNewCommit = isNewCommit(localDocument, revisionRecord);
+        boolean isChangedLocally = localDocument.has("_rev") && !(localDocument.getString("_rev").equals(revisionRecord.getLocalRevision()));
+        boolean isChangedSinceLastSubmission = isNewCommit(localDocument, revisionRecord);
+        boolean isChangedRemote = !(remoteDoc.getString("_rev").equals(revisionRecord.getRemoteRevision()));
 
-        // Check to see if the remote document has changes.
-        if (!changedRemote) {
-            Log.v(TAG, docId + " is unchanged on remote");
-        } else {
-            Log.v(TAG, docId + " is changed on remote");
-        }
+        Log.v(TAG, docId + " is changed on local: " + isChangedLocally);
+        Log.v(TAG, docId + " is changed on remote: " + isChangedRemote);
 
         /*
             We only want to update the local copy with the remote copy IF:
@@ -212,15 +224,15 @@ public class ConnectionSyncProcess {
             You have committed your local changes and you have no made changes since your previous
             commit.
          */
-        boolean isUnchangedLocalVersion = !changedLocally || (changedLocally && !isNewCommit);
+        boolean isUnchangedLocalVersion = !isChangedLocally || !isChangedSinceLastSubmission;
 
-        if (changedRemote && isUnchangedLocalVersion) {
+        if (isChangedRemote && isUnchangedLocalVersion) {
             Revision revision = getRevisionRecord(docId);
             updateDocumentDatabase(remoteDoc, revision);
             return true;
         }
 
-        if (changedLocally && isNewCommit) {
+        if (isChangedLocally && isChangedSinceLastSubmission) {
             try {
                 updateRemoteDocument(localDocument);
                 result.setFilesRemoteUpdated(result.getFilesRemoteUpdated() + 1);
@@ -233,7 +245,7 @@ public class ConnectionSyncProcess {
         return false;
     }
 
-    public Revision getRevisionRecord(String docId) throws Exception {
+    private Revision getRevisionRecord(String docId) throws Exception {
         Revision revisionRecord = trackingDb.getRevisionFromDocId(docId);
         if( null == revisionRecord ){
             revisionRecord = new Revision();
@@ -248,7 +260,7 @@ public class ConnectionSyncProcess {
         return lastCommitVersion == null || !lastCommitVersion.equals(localDocument.getString("_rev"));
     }
 
-    public void updateDocumentDatabase(JSONObject doc, Revision revisionRecord) throws Exception {
+    private void updateDocumentDatabase(JSONObject doc, Revision revisionRecord) throws Exception {
         String docId = doc.getString("_id");
         String remoteRev = doc.optString("_rev", null);
 
@@ -278,7 +290,21 @@ public class ConnectionSyncProcess {
         trackingDb.updateRevision(revisionRecord);
     }
 
-    public void updateRemoteDocuments(List<JSONObject> remoteDocuments) {
+    private void checkForDeletedDocuments(List<JSONObject> remoteDocuments) throws Exception {
+        List<JSONObject> newLocalDocuments = getNewLocalDocuments(remoteDocuments);
+
+        for(JSONObject doc : newLocalDocuments) {
+            String docId = doc.getString("_id");
+
+            if (IsDocumentDeletedOnRemote(docId)) {
+                Log.d(TAG, "Deleting document: " + docId);
+                documentDb.deleteDocument(docId);
+                remoteDocuments.remove(doc);
+            }
+        }
+    }
+
+    private void sendNewDocumentsToRemote(List<JSONObject> remoteDocuments) {
         List<JSONObject> newLocalDocuments = getNewLocalDocuments(remoteDocuments);
 
         for(JSONObject doc : newLocalDocuments) {
@@ -298,11 +324,11 @@ public class ConnectionSyncProcess {
         }
     }
 
-    public List<JSONObject> getNewLocalDocuments(List<JSONObject> remoteDocuments) {
+    private List<JSONObject> getNewLocalDocuments(List<JSONObject> remoteDocuments) {
         try {
             List<JSONObject> localDocuments = documentDb.getAllDocuments();
 
-            HashMap<String, JSONObject> localDocumentsMap = new HashMap<String, JSONObject>();
+            HashMap<String, JSONObject> localDocumentsMap = new HashMap<>();
 
             for (JSONObject doc : localDocuments) {
                 localDocumentsMap.put (doc.getString("_id"), doc);
@@ -321,9 +347,10 @@ public class ConnectionSyncProcess {
         }
     }
 
-    public void updateRemoteDocument(JSONObject document) throws Exception {
+    private void updateRemoteDocument(JSONObject document) throws Exception {
 
         String docId = document.getString("_id");
+
         Revision revisionRecord = getRevisionRecord(docId);
         nunaliit.org.json.JSONObject couchDoc = JSONGlue.convertJSONObjectFromAndroidToUpstream(document);
 
@@ -340,7 +367,7 @@ public class ConnectionSyncProcess {
         trackingDb.updateRevision(revisionRecord);
     }
 
-    public void writeDocumentToSubmissionDatabase(JSONObject document) throws Exception {
+    private void writeDocumentToSubmissionDatabase(JSONObject document) throws Exception {
         ConnectionInfo info = connection.getConnectionInfo();
 
         Response loginResponse = submissionClient.newCall(createAuthRequest()).execute();
@@ -373,22 +400,23 @@ public class ConnectionSyncProcess {
         }
     }
 
+
+
     private Request createAuthRequest() throws Exception {
         ConnectionInfo info = connection.getConnectionInfo();
 
         // Auth
         HttpUrl loginUrl = HttpUrl.parse(info.getUrl()).newBuilder().encodedPath("/server/_session").build();
         FormBody formBody = new FormBody.Builder().add("name", info.getUser()).add("password", info.getPassword()).build();
-        Request loginRequest = new Request.Builder()
+
+        return new Request.Builder()
                 .url(loginUrl)
                 .post(formBody)
                 .header("Accept", "application/json")
                 .build();
-
-        return loginRequest;
     }
 
-    public Request createDocumentUploadRequest(JSONObject document, String authCookie) throws Exception {
+    private Request createDocumentUploadRequest(JSONObject document, String authCookie) throws Exception {
         ConnectionInfo info = connection.getConnectionInfo();
 
         String docString = document.toString();
@@ -396,16 +424,15 @@ public class ConnectionSyncProcess {
         // Put the item in the submission database.
         HttpUrl url = HttpUrl.parse(info.getUrl()).newBuilder().encodedPath("/servlet/submission/submissionDb").addPathSegment(document.getString("_id")).addQueryParameter("deviceId", info.getDeviceId()).build();
         RequestBody body = RequestBody.create(JSON, docString);
-        Request request = new Request.Builder()
+
+        return new Request.Builder()
                 .url(url)
                 .put(body)
                 .header("Cookie", authCookie)
                 .build();
-
-        return request;
     }
 
-    public Request createAttachmentRequest(String uploadId, String filepath, String authCookie) throws Exception {
+    private Request createAttachmentRequest(String uploadId, String filepath, String authCookie) throws Exception {
         ConnectionInfo info = connection.getConnectionInfo();
 
         MediaType mediaType = getMediaType(filepath);
@@ -432,16 +459,93 @@ public class ConnectionSyncProcess {
                 ).build();
 
         HttpUrl url = HttpUrl.parse(info.getUrl()).newBuilder().encodedPath("/servlet/upload/put").build();
-        Request request = new Request.Builder()
+
+        return new Request.Builder()
                 .url(url)
                 .post(requestBody)
                 .header("Cookie", authCookie)
                 .build();
-
-        return request;
     }
 
-    public MediaType getMediaType(String filepath) {
+    private SubmissionStatus getSubmissionStatusForDocument(JSONObject document) throws Exception {
+        String docId = document.getString("_id");
+
+        Map<String, JSONObject> submissionStatusRows = new HashMap<>();
+
+        JSONArray rows = submissionStatus.getJSONArray("rows");
+        for (int i=0;i<rows.length();i++) {
+            JSONObject record = rows.getJSONObject(i);
+            submissionStatusRows.put(record.getJSONObject("value").getString("docId"), record);
+        }
+
+        // Check to see if the document is deleted on the server.
+        if (IsDocumentDeletedOnRemote(docId)) return SubmissionStatus.Deleted;
+
+        JSONObject remoteStatusRecord = submissionStatusRows.get(docId);
+        if (remoteStatusRecord == null) {
+            return SubmissionStatus.NotSubmitted;
+        }
+
+        String status = remoteStatusRecord.getJSONObject("value").getString("state");
+
+        switch (status) {
+            case "waiting_for_approval":
+                return SubmissionStatus.WaitingForApproval;
+            case "completed":
+                return SubmissionStatus.Completed;
+            case "declined":
+                return SubmissionStatus.Declined;
+        }
+
+        return SubmissionStatus.Unknown;
+    }
+
+    private boolean IsDocumentDeletedOnRemote(String docId) throws Exception {
+        Request request = createDocumentStatusRequest(docId);
+        Response response = submissionClient.newCall(request).execute();
+
+        JSONObject jsonResult = new JSONObject(response.body().string());
+
+        return jsonResult.has("error") && jsonResult.has("reason") && jsonResult.optString("reason").equals("deleted");
+    }
+
+    private JSONObject getSubmissionStatus() throws Exception {
+        Response response = submissionClient.newCall(createSubmissionStatusRequest()).execute();
+        String body = response.body().string();
+        Log.v(TAG, body);
+
+        if (!response.isSuccessful()) {
+            throw new RuntimeException("Creating new database document failed: " + body);
+        }
+
+        return new JSONObject(body);
+    }
+
+    private Request createSubmissionStatusRequest() throws Exception {
+        ConnectionInfo info = connection.getConnectionInfo();
+
+        // Put the item in the submission database.
+        HttpUrl url = HttpUrl.parse(info.getUrl()).newBuilder().encodedPath("/servlet/submission/_submission-info-by-device-id").addQueryParameter("key", info.getDeviceId()).build();
+
+        return new Request.Builder()
+                .url(url)
+                .get()
+                .build();
+    }
+
+    private Request createDocumentStatusRequest(String documentId) throws Exception {
+        ConnectionInfo info = connection.getConnectionInfo();
+
+        // Put the item in the submission database.
+        HttpUrl url = HttpUrl.parse(info.getUrl()).newBuilder().encodedPath("/db/" + documentId).build();
+
+        return new Request.Builder()
+                .url(url)
+                .get()
+                .build();
+    }
+
+    private MediaType getMediaType(String filepath) {
         try {
             // Some of the documents are tagged with "null", once those documents are fixed, this
             // can be removed.
@@ -455,23 +559,23 @@ public class ConnectionSyncProcess {
         }
     }
 
-    public JSONObject removeNullAttachments(JSONObject document) {
-        if (document.optString("nunaliit_attachments", null).equals("null")) {
+    private JSONObject removeNullAttachments(JSONObject document) {
+        if (document.optString("nunaliit_attachments", "null").equals("null")) {
             document.remove("nunaliit_attachments");
         }
 
-        if (document.optString("nunaliit_mobile_attachments", null).equals("null")) {
+        if (document.optString("nunaliit_mobile_attachments", "null").equals("null")) {
             document.remove("nunaliit_mobile_attachments");
         }
 
         return document;
     }
 
-    public String getNunaliitAttachmentPath(JSONObject document) {
+    private String getNunaliitAttachmentPath(JSONObject document) {
         return document.optString("nunaliit_mobile_attachments", null);
     }
 
-    public String addNunaliitAttachments(JSONObject document) throws Exception {
+    private String addNunaliitAttachments(JSONObject document) throws Exception {
 
         String path = document.optString("nunaliit_mobile_attachments", null);
         if (path != null && !path.equals("null")) {
