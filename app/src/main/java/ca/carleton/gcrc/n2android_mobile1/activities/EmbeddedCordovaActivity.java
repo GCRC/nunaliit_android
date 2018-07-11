@@ -44,7 +44,6 @@ import org.apache.cordova.CordovaActivity;
 
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Vector;
 
@@ -534,24 +533,13 @@ public class EmbeddedCordovaActivity extends CordovaActivity {
 
     @Override
     public void onBackPressed() {
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                appView.clearCache();
-                appView.clearHistory();
-
-                long currentTime = new Date().getTime();
-
-                if (timeSinceLastBackButton + 1000 < currentTime) {
-                    timeSinceLastBackButton = currentTime;
-
-                    appView.loadUrl("about:blank");
-                    appView.loadUrl(launchUrl);
-                } else {
-                    finish();
-                }
-            }
-        });
+        // Because of a limitation of CordovaActivity, we can't intercept all Back button events.
+        // By default, the web view navigates back and lands here when it reaches the last history item.
+        if (drawerLayout.isDrawerOpen(navigationView)) {
+            drawerLayout.closeDrawers();
+        } else {
+            super.onBackPressed();
+        }
     }
 
     private void destroyWebView() {
