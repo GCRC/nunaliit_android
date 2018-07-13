@@ -6,7 +6,6 @@ import android.util.Log;
 import android.webkit.MimeTypeMap;
 
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.File;
@@ -58,7 +57,7 @@ public class ConnectionSyncProcess {
 
     private ConnectionSyncResult result = new ConnectionSyncResult();
 
-    private JSONObject submissionStatus;
+    private Map<String, SubmissionStatus> submissionStatusByDocId;
 
     private enum SubmissionStatus {
         NotSubmitted,
@@ -85,24 +84,49 @@ public class ConnectionSyncProcess {
     public ConnectionSyncResult synchronize() throws Exception {
         Log.v(TAG, "Synchronization started");
 
-        submissionStatus = getSubmissionStatus();
-
         sendSyncProgressIntent(ConnectionManagementService.PROGRESS_SYNC_DOWNLOADING_DOCUMENTS);
 
-        List<JSONObject> remoteDocs = fetchAllDocuments();
+        JSONObject submissionStatus = getSubmissionStatus();
+        submissionStatusByDocId = createSubmissionStatusMap(submissionStatus);
+
+        List<JSONObject> remoteDocs = fetchAllRemoteDocuments();
+
         sendSyncProgressIntent(ConnectionManagementService.PROGRESS_SYNC_UPDATING_LOCAL_DOCUMENTS);
 
-        updateLocalDocumentsFromRemote(remoteDocs);
+        /*
+            Step 1:
+
+            Check to see if the document exists on the mobile database and in the authoritative database.
+            If the document has previously existed in the authoritative database:
+            It has been deleted, delete your mobile copy (regardless of edits)
+        */
+        List<JSONObject> newLocalDocuments = getNewLocalDocuments(remoteDocs);
+        deleteLocalDocumentsPreviouslyDeletedOnRemote(newLocalDocuments);
+
+        /*
+            Step 2:
+
+            If the user has any edits to the document (or it is a new document)
+            on their mobile database, submit them them to the submission database.
+        */
+        List<JSONObject> prunedNewDocuments = getNewLocalDocuments(remoteDocs);
+        sendNewDocumentsToRemote(prunedNewDocuments);
+
         sendSyncProgressIntent(ConnectionManagementService.PROGRESS_SYNC_UPDATING_REMOTE_DOCUMENTS);
 
-        checkForDeletedDocuments(remoteDocs);
+        /*
+            Step 3:
 
-        sendNewDocumentsToRemote(remoteDocs);
+            If the document does not have any edits, is not in the `waiting_for_approval` state,
+            update the local document with the remote version.
+        */
+
+        updateAllDocumentsIfNeeded(remoteDocs);
 
         return result;
     }
 
-    private List<JSONObject> fetchAllDocuments() throws Exception {
+    private List<JSONObject> fetchAllRemoteDocuments() throws Exception {
         List<JSONObject> remoteDocs = getDocsFromView("skeleton-docs");
 
         Log.v(TAG, "Synchronization received " + remoteDocs.size() + " skeleton document(s)");
@@ -144,32 +168,6 @@ public class ConnectionSyncProcess {
         return subdocuments;
     }
 
-    private void updateLocalDocumentsFromRemote(List<JSONObject> remoteDocuments) throws Exception {
-        int updatedCount = 0;
-        int failedCount = 0;
-        for (JSONObject doc : remoteDocuments) {
-            try {
-                boolean updated = updateDocumentDatabaseIfNeeded(doc);
-                if (updated) {
-                    ++updatedCount;
-                }
-            } catch (Exception e) {
-                failedCount++;
-
-                Log.d(TAG, "Failure Updating Local Document: " + doc.optString("_id", ""));
-                e.printStackTrace();
-                Log.e(TAG, e.getLocalizedMessage());
-            }
-        }
-
-        result.setFilesClientUpdated(updatedCount);
-        result.setFilesFailedClientUpdated(failedCount);
-
-        Log.i(TAG, "Synchronization updated " + updatedCount + " documents");
-
-        Log.v(TAG, "Synchronization complete");
-    }
-
     private List<JSONObject> getDocsFromView(String view) throws Exception {
         return getDocsFromView(view, null);
     }
@@ -194,45 +192,72 @@ public class ConnectionSyncProcess {
         return docs;
     }
 
-    private boolean updateDocumentDatabaseIfNeeded(JSONObject remoteDoc) throws Exception {
+    private boolean shouldUpdateLocalDocument(JSONObject remoteDoc) throws Exception {
         String docId = remoteDoc.getString("_id");
 
         JSONObject localDocument = documentDb.getDocument(docId);
-        Revision revisionRecord = getRevisionRecord(docId);
 
         SubmissionStatus documentSubmissionStatus = getSubmissionStatusForDocument(localDocument);
 
-        // If you are still waiting for Approval, wait until those changes are approved.
         if (documentSubmissionStatus == SubmissionStatus.WaitingForApproval) {
             return false;
         }
 
-        boolean isChangedLocally = localDocument.has("_rev") && !(localDocument.getString("_rev").equals(revisionRecord.getLocalRevision()));
-        boolean isChangedSinceLastSubmission = isNewCommit(localDocument, revisionRecord);
-        boolean isChangedRemote = !(remoteDoc.getString("_rev").equals(revisionRecord.getRemoteRevision()));
+        boolean requiresUpdate = !isChangedOnLocal(localDocument) && (isChangedOnRemote(localDocument, remoteDoc) || documentSubmissionStatus == SubmissionStatus.Declined);
 
-        Log.v(TAG, docId + " is changed on local: " + isChangedLocally);
-        Log.v(TAG, docId + " is changed on remote: " + isChangedRemote);
+        Log.v(TAG, String.format("Local Document %s requires an update: %b", docId, requiresUpdate));
 
-        /*
-            We only want to update the local copy with the remote copy IF:
+        return requiresUpdate;
+    }
 
-            You have no local changes
+    private boolean shouldUpdateRemoteDocument(JSONObject remoteDoc) throws Exception {
+        String docId = remoteDoc.getString("_id");
+        JSONObject localDocument = documentDb.getDocument(docId);
 
-            - OR -
+        boolean requiresUpdate = isChangedOnLocal(localDocument) && isRequiresSubmission(localDocument);
 
-            You have committed your local changes and you have no made changes since your previous
-            commit.
-         */
-        boolean isUnchangedLocalVersion = !isChangedLocally || !isChangedSinceLastSubmission;
+        Log.v(TAG, String.format("Remote Document %s requires an update: %b", docId, requiresUpdate));
 
-        if (isChangedRemote && isUnchangedLocalVersion) {
-            Revision revision = getRevisionRecord(docId);
-            updateDocumentDatabase(remoteDoc, revision);
+        return requiresUpdate;
+    }
+
+    private void updateAllDocumentsIfNeeded(List<JSONObject> remoteDocuments) throws Exception {
+        int updatedCount = 0;
+        int failedCount = 0;
+        for (JSONObject doc : remoteDocuments) {
+            try {
+                boolean updated = updateDocumentIfNeeded(doc);
+                if (updated) {
+                    ++updatedCount;
+                }
+            } catch (Exception e) {
+                failedCount++;
+
+                Log.d(TAG, "Failure Updating Local Document: " + doc.optString("_id", ""));
+                e.printStackTrace();
+                Log.e(TAG, e.getLocalizedMessage());
+            }
+        }
+
+        result.setFilesClientUpdated(updatedCount);
+        result.setFilesFailedClientUpdated(failedCount);
+
+        Log.i(TAG, "Synchronization updated " + updatedCount + " documents");
+
+        Log.v(TAG, "Synchronization complete");
+    }
+
+    private boolean updateDocumentIfNeeded(JSONObject remoteDoc) throws Exception {
+        String docId = remoteDoc.getString("_id");
+
+        JSONObject localDocument = documentDb.getDocument(docId);
+
+        if (shouldUpdateLocalDocument(remoteDoc)) {
+            updateLocalDocument(remoteDoc);
             return true;
         }
 
-        if (isChangedLocally && isChangedSinceLastSubmission) {
+        if (shouldUpdateRemoteDocument(remoteDoc)) {
             try {
                 updateRemoteDocument(localDocument);
                 result.setFilesRemoteUpdated(result.getFilesRemoteUpdated() + 1);
@@ -245,6 +270,10 @@ public class ConnectionSyncProcess {
         return false;
     }
 
+    private Revision getRevisionRecord(JSONObject document) throws Exception {
+        return getRevisionRecord(document.getString("_id"));
+    }
+
     private Revision getRevisionRecord(String docId) throws Exception {
         Revision revisionRecord = trackingDb.getRevisionFromDocId(docId);
         if( null == revisionRecord ){
@@ -255,14 +284,84 @@ public class ConnectionSyncProcess {
         return revisionRecord;
     }
 
-    private boolean isNewCommit(JSONObject localDocument, Revision revisionRecord) throws JSONException {
+    private boolean isChangedOnRemote(JSONObject localDoc, JSONObject remoteDoc) throws Exception {
+        if (!Objects.equals(localDoc.getString("_id"), remoteDoc.getString("_id"))) {
+            throw new RuntimeException("The two documents must have the same document ID");
+        }
+
+        Revision revisionRecord = getRevisionRecord(localDoc);
+
+        return !(remoteDoc.getString("_rev").equals(revisionRecord.getRemoteRevision()));
+    }
+
+    private boolean isChangedOnLocal(JSONObject localDocument) throws Exception {
+        Revision revisionRecord = getRevisionRecord(localDocument);
+
+        return  localDocument.has("_rev") && !(localDocument.getString("_rev").equals(revisionRecord.getLocalRevision()));
+    }
+
+    private boolean isRequiresSubmission(JSONObject localDocument) throws Exception {
+        Revision revisionRecord = getRevisionRecord(localDocument);
+
         String lastCommitVersion = revisionRecord.getLastCommit();
         return lastCommitVersion == null || !lastCommitVersion.equals(localDocument.getString("_rev"));
     }
 
-    private void updateDocumentDatabase(JSONObject doc, Revision revisionRecord) throws Exception {
+    private void deleteLocalDocumentsPreviouslyDeletedOnRemote(List<JSONObject> localDocuments) throws Exception {
+        for(JSONObject doc : localDocuments) {
+            String docId = doc.getString("_id");
+
+            if (IsDocumentDeletedOnRemote(docId)) {
+                Log.d(TAG, "Deleting document: " + docId);
+                documentDb.deleteDocument(docId);
+            }
+        }
+    }
+
+    private void sendNewDocumentsToRemote(List<JSONObject> newDocuments) {
+        for(JSONObject doc : newDocuments) {
+            try {
+                if (isRequiresSubmission(doc)) {
+                    updateRemoteDocument(doc);
+                    result.setFilesRemoteUpdated(result.getFilesRemoteUpdated() + 1);
+                }
+            } catch (Exception e) {
+                result.setFilesFailedRemoteUpdated(result.getFilesFailedRemoteUpdated() + 1);
+
+                Log.d(TAG, "Failure Updating Remote Document: " + doc.optString("_id", ""));
+                Log.e(TAG, e.getLocalizedMessage());
+            }
+        }
+    }
+
+    private List<JSONObject> getNewLocalDocuments(List<JSONObject> remoteDocuments) {
+        try {
+            List<JSONObject> localDocuments = documentDb.getAllDocuments();
+
+            HashMap<String, JSONObject> localDocumentsMap = new HashMap<>();
+
+            for (JSONObject doc : localDocuments) {
+                localDocumentsMap.put(doc.getString("_id"), doc);
+            }
+
+            for (JSONObject doc : remoteDocuments) {
+                if (localDocumentsMap.containsKey(doc.getString("_id"))) {
+                    localDocumentsMap.remove(doc.getString("_id"));
+                }
+            }
+
+            return new ArrayList<>(localDocumentsMap.values());
+
+        } catch (Exception e) {
+            throw new RuntimeException("Unable to fetch local documents", e);
+        }
+    }
+
+    private void updateLocalDocument(JSONObject doc) throws Exception {
         String docId = doc.getString("_id");
         String remoteRev = doc.optString("_rev", null);
+
+        Revision revisionRecord = getRevisionRecord(doc);
 
         CouchbaseDocInfo info;
         if( documentDb.documentExists(docId) ) {
@@ -290,80 +389,24 @@ public class ConnectionSyncProcess {
         trackingDb.updateRevision(revisionRecord);
     }
 
-    private void checkForDeletedDocuments(List<JSONObject> remoteDocuments) throws Exception {
-        List<JSONObject> newLocalDocuments = getNewLocalDocuments(remoteDocuments);
+    private void updateRemoteDocument(JSONObject local) throws Exception {
 
-        for(JSONObject doc : newLocalDocuments) {
-            String docId = doc.getString("_id");
-
-            if (IsDocumentDeletedOnRemote(docId)) {
-                Log.d(TAG, "Deleting document: " + docId);
-                documentDb.deleteDocument(docId);
-                remoteDocuments.remove(doc);
-            }
-        }
-    }
-
-    private void sendNewDocumentsToRemote(List<JSONObject> remoteDocuments) {
-        List<JSONObject> newLocalDocuments = getNewLocalDocuments(remoteDocuments);
-
-        for(JSONObject doc : newLocalDocuments) {
-            try {
-                Revision revisionRecord = getRevisionRecord(doc.optString("_id", ""));
-
-                if (isNewCommit(doc, revisionRecord)) {
-                    updateRemoteDocument(doc);
-                    result.setFilesRemoteUpdated(result.getFilesRemoteUpdated() + 1);
-                }
-            } catch (Exception e) {
-                result.setFilesFailedRemoteUpdated(result.getFilesFailedRemoteUpdated() + 1);
-
-                Log.d(TAG, "Failure Updating Remote Document: " + doc.optString("_id", ""));
-                Log.e(TAG, e.getLocalizedMessage());
-            }
-        }
-    }
-
-    private List<JSONObject> getNewLocalDocuments(List<JSONObject> remoteDocuments) {
-        try {
-            List<JSONObject> localDocuments = documentDb.getAllDocuments();
-
-            HashMap<String, JSONObject> localDocumentsMap = new HashMap<>();
-
-            for (JSONObject doc : localDocuments) {
-                localDocumentsMap.put (doc.getString("_id"), doc);
-            }
-
-            for (JSONObject doc : remoteDocuments) {
-                if (localDocumentsMap.containsKey(doc.getString("_id"))) {
-                    localDocumentsMap.remove(doc.getString("_id"));
-                }
-            }
-
-            return new ArrayList<>(localDocumentsMap.values());
-
-        } catch (Exception e) {
-            throw new RuntimeException ("Unable to fetch local documents", e);
-        }
-    }
-
-    private void updateRemoteDocument(JSONObject document) throws Exception {
-
-        String docId = document.getString("_id");
+        String docId = local.getString("_id");
 
         Revision revisionRecord = getRevisionRecord(docId);
-        nunaliit.org.json.JSONObject couchDoc = JSONGlue.convertJSONObjectFromAndroidToUpstream(document);
+        nunaliit.org.json.JSONObject couchDoc = JSONGlue.convertJSONObjectFromAndroidToUpstream(local);
 
         if (!couchDb.documentExists(couchDoc)) {
-            document.remove("_rev");
+            local.remove("_rev");
         } else {
-            document.putOpt("_rev", revisionRecord.getRemoteRevision());
+            local.putOpt("_rev", revisionRecord.getRemoteRevision());
         }
-        writeDocumentToSubmissionDatabase(document);
+        writeDocumentToSubmissionDatabase(local);
 
         // The document has been committed. Save a reference to its last commit.
         JSONObject localDocument = documentDb.getDocument(docId);
         revisionRecord.setLastCommit(localDocument.getString("_rev"));
+        revisionRecord.setLocalRevision(localDocument.getString("_rev"));
         trackingDb.updateRevision(revisionRecord);
     }
 
@@ -470,34 +513,11 @@ public class ConnectionSyncProcess {
     private SubmissionStatus getSubmissionStatusForDocument(JSONObject document) throws Exception {
         String docId = document.getString("_id");
 
-        Map<String, JSONObject> submissionStatusRows = new HashMap<>();
-
-        JSONArray rows = submissionStatus.getJSONArray("rows");
-        for (int i=0;i<rows.length();i++) {
-            JSONObject record = rows.getJSONObject(i);
-            submissionStatusRows.put(record.getJSONObject("value").getString("docId"), record);
-        }
-
-        // Check to see if the document is deleted on the server.
-        if (IsDocumentDeletedOnRemote(docId)) return SubmissionStatus.Deleted;
-
-        JSONObject remoteStatusRecord = submissionStatusRows.get(docId);
-        if (remoteStatusRecord == null) {
+        if (submissionStatusByDocId.containsKey(docId)) {
+            return submissionStatusByDocId.get(docId);
+        } else {
             return SubmissionStatus.NotSubmitted;
         }
-
-        String status = remoteStatusRecord.getJSONObject("value").getString("state");
-
-        switch (status) {
-            case "waiting_for_approval":
-                return SubmissionStatus.WaitingForApproval;
-            case "completed":
-                return SubmissionStatus.Completed;
-            case "declined":
-                return SubmissionStatus.Declined;
-        }
-
-        return SubmissionStatus.Unknown;
     }
 
     private boolean IsDocumentDeletedOnRemote(String docId) throws Exception {
@@ -543,6 +563,43 @@ public class ConnectionSyncProcess {
                 .url(url)
                 .get()
                 .build();
+    }
+
+    private Map<String, SubmissionStatus> createSubmissionStatusMap(JSONObject submissionStatus) throws Exception {
+        Map<String, SubmissionStatus> submissionStatusMap = new HashMap<>();
+
+        JSONArray rows = submissionStatus.getJSONArray("rows");
+        for (int i=0;i<rows.length();i++) {
+            JSONObject record = rows.getJSONObject(i);
+            String docId = record.getJSONObject("value").getString("docId");
+            String state = record.getJSONObject("value").getString("state");
+
+            SubmissionStatus status = SubmissionStatus.Unknown;
+
+            switch (state) {
+                case "waiting_for_approval":
+                    status = SubmissionStatus.WaitingForApproval;
+                    break;
+                case "approved":
+                case "complete":
+                    status = SubmissionStatus.Completed;
+                    break;
+                case "denied":
+                    status = SubmissionStatus.Declined;
+                    break;
+            }
+
+            // If any of the documents are WaitingForApproval, return that.
+            if (submissionStatusMap.containsKey(docId)) {
+                if (submissionStatusMap.get(docId) != SubmissionStatus.WaitingForApproval) {
+                    submissionStatusMap.put(docId, status);
+                }
+            } else {
+                submissionStatusMap.put(docId, status);
+            }
+        }
+
+        return submissionStatusMap;
     }
 
     private MediaType getMediaType(String filepath) {
