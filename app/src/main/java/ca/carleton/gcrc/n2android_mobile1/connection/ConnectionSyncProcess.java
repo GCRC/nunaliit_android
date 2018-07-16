@@ -308,14 +308,20 @@ public class ConnectionSyncProcess {
     }
 
     private void deleteLocalDocumentsPreviouslyDeletedOnRemote(List<JSONObject> localDocuments) throws Exception {
+        int deleted = 0;
+
         for(JSONObject doc : localDocuments) {
             String docId = doc.getString("_id");
 
-            if (IsDocumentDeletedOnRemote(docId)) {
+            if (IsDocumentDeletedOnRemote(doc)) {
                 Log.d(TAG, "Deleting document: " + docId);
                 documentDb.deleteDocument(docId);
+
+                deleted++;
             }
         }
+
+        Log.v(TAG, String.format("Documents Deleted: %d", deleted));
     }
 
     private void sendNewDocumentsToRemote(List<JSONObject> newDocuments) {
@@ -386,6 +392,7 @@ public class ConnectionSyncProcess {
 
         revisionRecord.setRemoteRevision(remoteRev);
         revisionRecord.setLocalRevision(info.getRev());
+        revisionRecord.setLastCommit(info.getRev());
         trackingDb.updateRevision(revisionRecord);
     }
 
@@ -520,13 +527,12 @@ public class ConnectionSyncProcess {
         }
     }
 
-    private boolean IsDocumentDeletedOnRemote(String docId) throws Exception {
-        Request request = createDocumentStatusRequest(docId);
-        Response response = submissionClient.newCall(request).execute();
+    private boolean IsDocumentDeletedOnRemote(JSONObject doc) throws Exception {
+        SubmissionStatus submissionStatus = getSubmissionStatusForDocument(doc);
 
-        JSONObject jsonResult = new JSONObject(response.body().string());
+        boolean requiresDeletion = submissionStatus != SubmissionStatus.WaitingForApproval && !isRequiresSubmission(doc);
 
-        return jsonResult.has("error") && jsonResult.has("reason") && jsonResult.optString("reason").equals("deleted");
+        return requiresDeletion;
     }
 
     private JSONObject getSubmissionStatus() throws Exception {
