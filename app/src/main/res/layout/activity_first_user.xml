@@ -76,7 +76,7 @@
             android:layout_height="wrap_content"
             android:hint="@string/label_url"
             android:maxLines="1"
-            android:text="https://develop.gcrc.carleton.ca"
+            android:text=""
             android:inputType="textUri" />
 
         <EditText
@@ -85,7 +85,7 @@
             android:layout_height="wrap_content"
             android:hint="@string/label_user"
             android:maxLines="1"
-            android:text="thomas.eaton@mindsea.com"
+            android:text=""
             android:inputType="text" />
 
         <EditText
@@ -95,7 +95,7 @@
             android:ems="10"
             android:hint="@string/label_password"
             android:inputType="textPassword"
-            android:text="HelloWorld"
+            android:text=""
             android:maxLines="1" />
 
         <Space
