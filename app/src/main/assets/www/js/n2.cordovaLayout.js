@@ -74,6 +74,22 @@ var Layout = $n2.Class({
 		};
 
         this._display();
+
+        // Listen to the Create Document callback from the native app
+        window.document.addEventListener("deviceready", function() {
+            window.nunaliit2.cordovaPlugin.registerCallback('onCreateDocument',
+                function() {
+                    window.onCreateDocument = function() {
+                        d.send(DH, {
+                            type: 'editInitiate'
+                            ,doc: {}
+                        });
+                    };
+                }, function(error) {
+                    console.error('Error on cordova callback invocation: ', error);
+                });
+        });
+
     },
 
     _display: function(){
@@ -88,11 +104,9 @@ var Layout = $n2.Class({
         var $main = $('body');
         $main.addClass('n2_cordova');
 
-		var headerId = $n2.getUniqueId();
-        $('<div>')
-            .addClass('nunaliit_header')
-            .attr('id',headerId)
-            .appendTo($main);
+		// Let the content start at the top since there is no header on Cordova
+        $("<style type='text/css'> .nunaliit_content { top: 0 } </style>").appendTo("head");
+
         var $contentDiv = $('<div>')
             .addClass('nunaliit_content')
             .addClass('n2_content_contains_no_map')
@@ -112,7 +126,7 @@ var Layout = $n2.Class({
         // Install widgets
         {
             new $n2.widgetBasic.CreateDocumentWidget({
-                containerId: headerId
+                containerId: $n2.getUniqueId()
                 ,dispatchService: config.directory.dispatchService
                 ,authService: config.directory.authService
                 ,showAsLink: true
