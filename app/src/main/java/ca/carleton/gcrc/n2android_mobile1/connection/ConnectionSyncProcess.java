@@ -107,7 +107,7 @@ public class ConnectionSyncProcess {
             Step 2:
 
             If the user has any edits to the document (or it is a new document)
-            on their mobile database, submit them them to the submission database.
+            on their mobile database, submit them to the submission database.
         */
         List<JSONObject> prunedNewDocuments = getNewLocalDocuments(remoteDocs);
         sendNewDocumentsToRemote(prunedNewDocuments);
@@ -578,7 +578,7 @@ public class ConnectionSyncProcess {
         for (int i=0;i<rows.length();i++) {
             JSONObject record = rows.getJSONObject(i);
             String docId = record.getJSONObject("value").getString("docId");
-            String state = record.getJSONObject("value").getString("state");
+            String state = record.getJSONObject("value").optString("state", "");
 
             SubmissionStatus status = SubmissionStatus.Unknown;
 
