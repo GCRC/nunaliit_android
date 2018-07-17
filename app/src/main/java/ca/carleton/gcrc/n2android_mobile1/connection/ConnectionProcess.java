@@ -3,6 +3,8 @@ package ca.carleton.gcrc.n2android_mobile1.connection;
 import android.content.Context;
 import android.util.Log;
 
+import java.util.UUID;
+
 import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseLiteService;
 import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseManager;
 
@@ -31,7 +33,9 @@ public class ConnectionProcess {
 
             createLocalDatabases(info);
 
-            info = infoDb.createConnectionInfo(info);
+            info.setDeviceId(UUID.randomUUID().toString());
+
+            infoDb.createConnectionInfo(info);
 
             ConnectionSyncProcess sync = new ConnectionSyncProcess(service, connection);
             ConnectionSyncResult syncResult = sync.synchronize();

@@ -111,6 +111,14 @@ public class ConnectionInfoDb extends CouchbaseDb {
                     info.setLocalTrackingDbName(localTrackingDb);
                 }
             }
+
+            // device id
+            {
+                String deviceId = jsonConnInfo.optString("deviceId", null);
+                if ( deviceId != null ) {
+                    info.setDeviceId(deviceId);
+                }
+            }
         }
 
         return info;
@@ -172,6 +180,11 @@ public class ConnectionInfoDb extends CouchbaseDb {
         {
             String localTrackingDb = info.getLocalTrackingDbName();
             jsonConnInfo.put("localTrackingDb", localTrackingDb);
+        }
+
+        {
+            String deviceId = info.getDeviceId();
+            jsonConnInfo.put("deviceId", deviceId);
         }
 
         return jsonObj;
