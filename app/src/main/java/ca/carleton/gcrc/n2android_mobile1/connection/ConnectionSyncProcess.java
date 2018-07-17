@@ -429,7 +429,7 @@ public class ConnectionSyncProcess {
     }
 
     private void fetchAttachments(JSONObject document) throws Exception {
-        if (document.has("remote_attachments")) {
+        if (document.has("nunaliit_authoritative_attachments")) {
             JSONObject attachments = document.getJSONObject("nunaliit_authoritative_attachments");
             document.putOpt("_attachments", attachments);
             document.remove("nunaliit_authoritative_attachments");
