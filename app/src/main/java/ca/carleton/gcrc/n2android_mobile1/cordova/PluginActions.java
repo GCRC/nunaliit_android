@@ -446,6 +446,16 @@ public class PluginActions {
             JSONObject locationObject = new JSONObject();
             locationObject.put("wkt", "MULTIPOINT((" + longitude + " " + latitude + "))");
             locationObject.put("nunaliit_type", "geometry");
+
+            JSONArray bbox = new JSONArray();
+            bbox.put(longitude);
+            bbox.put(latitude);
+            bbox.put(longitude);
+            bbox.put(latitude);
+
+            locationObject.put("simplified", new JSONObject("{\"reported_resolution\":0.00001,\"original\":\"nunaliit2_geom_2_original\",\n\"resolutions\":{\n\"nunaliit2_geom_2_res\":0.00001\n}}"));
+            locationObject.put("bbox", bbox);
+
             doc.put("nunaliit_geom", locationObject);
 
             return doc;
