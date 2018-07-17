@@ -424,15 +424,15 @@ public class ConnectionSyncProcess {
         if (doc.has("_attachments")) {
             JSONObject attachments = doc.getJSONObject("_attachments");
             doc.remove("_attachments");
-            doc.putOpt("remote_attachments", attachments);
+            doc.putOpt("nunaliit_authoritative_attachments", attachments);
         }
     }
 
     private void fetchAttachments(JSONObject document) throws Exception {
         if (document.has("remote_attachments")) {
-            JSONObject attachments = document.getJSONObject("remote_attachments");
+            JSONObject attachments = document.getJSONObject("nunaliit_authoritative_attachments");
             document.putOpt("_attachments", attachments);
-            document.remove("remote_attachments");
+            document.remove("nunaliit_authoritative_attachments");
         }
     }
 
