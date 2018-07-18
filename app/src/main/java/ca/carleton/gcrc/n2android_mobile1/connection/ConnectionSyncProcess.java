@@ -378,14 +378,15 @@ public class ConnectionSyncProcess {
             }
 
             // If there is an _attachments, the document will not be updated.
-            doc.remove("_attachments");
+            saveAttachments(doc);
+
             info = documentDb.updateDocument(doc);
         } else {
             // When creating a document, no revision should be set
             doc.remove("_rev");
 
             // If there is an _attachments, the document will not be created.
-            doc.remove("_attachments");
+            saveAttachments(doc);
 
             info = documentDb.createDocument(doc);
         }
@@ -403,6 +404,8 @@ public class ConnectionSyncProcess {
         Revision revisionRecord = getRevisionRecord(docId);
         nunaliit.org.json.JSONObject couchDoc = JSONGlue.convertJSONObjectFromAndroidToUpstream(local);
 
+        fetchAttachments(local);
+
         if (!couchDb.documentExists(couchDoc)) {
             local.remove("_rev");
         } else {
@@ -417,7 +420,23 @@ public class ConnectionSyncProcess {
         trackingDb.updateRevision(revisionRecord);
     }
 
-    private void writeDocumentToSubmissionDatabase(JSONObject document) throws Exception {
+    private void saveAttachments(JSONObject doc) throws Exception {
+        if (doc.has("_attachments")) {
+            JSONObject attachments = doc.getJSONObject("_attachments");
+            doc.remove("_attachments");
+            doc.putOpt("nunaliit_authoritative_attachments", attachments);
+        }
+    }
+
+    private void fetchAttachments(JSONObject document) throws Exception {
+        if (document.has("nunaliit_authoritative_attachments")) {
+            JSONObject attachments = document.getJSONObject("nunaliit_authoritative_attachments");
+            document.putOpt("_attachments", attachments);
+            document.remove("nunaliit_authoritative_attachments");
+        }
+    }
+
+    public void writeDocumentToSubmissionDatabase(JSONObject document) throws Exception {
         ConnectionInfo info = connection.getConnectionInfo();
 
         Response loginResponse = submissionClient.newCall(createAuthRequest()).execute();
