@@ -60,8 +60,6 @@ public class ConnectionSyncProcess {
 
     private Map<String, SubmissionStatus> submissionStatusByDocId;
 
-    private List<JSONObject> remoteDocuments;
-
     private enum SubmissionStatus {
         NotSubmitted,
         WaitingForApproval,
@@ -92,8 +90,7 @@ public class ConnectionSyncProcess {
         JSONObject submissionStatus = getSubmissionStatus();
         submissionStatusByDocId = createSubmissionStatusMap(submissionStatus);
 
-        remoteDocuments = fetchAllRemoteDocuments();
-        List<JSONObject> localDocs = documentDb.getAllDocuments();
+        List<JSONObject> remoteDocuments = fetchAllRemoteDocuments();
 
         sendSyncProgressIntent(ConnectionManagementService.PROGRESS_SYNC_UPDATING_LOCAL_DOCUMENTS);
 
@@ -200,7 +197,7 @@ public class ConnectionSyncProcess {
     }
 
     private List<JSONObject> fetchAllRemoteDocuments() throws Exception {
-        List<JSONObject> remoteDocs = getDocsFromView("skeleton-docs");
+        List<JSONObject> remoteDocs = getDocsFromView();
 
         Log.v(TAG, "Synchronization received " + remoteDocs.size() + " skeleton document(s)");
 
@@ -241,8 +238,8 @@ public class ConnectionSyncProcess {
         return subdocuments;
     }
 
-    private List<JSONObject> getDocsFromView(String view) throws Exception {
-        return getDocsFromView(view, null);
+    private List<JSONObject> getDocsFromView() throws Exception {
+        return getDocsFromView("skeleton-docs", null);
     }
 
     private List<JSONObject> getDocsFromView(String view, Collection<String> keys) throws Exception {
@@ -385,8 +382,6 @@ public class ConnectionSyncProcess {
     }
 
     private boolean sendDeleteRequestToRemote(JSONObject documentToDelete) throws Exception {
-        SubmissionStatus documentStatus = getSubmissionStatusForDocument(documentToDelete);
-
         // You cannot submit a document without a _rev.
         if (getRevisionRecord(documentToDelete).getRemoteRevision() == null) {
             return false;
@@ -557,7 +552,7 @@ public class ConnectionSyncProcess {
         }
     }
 
-    public void writeDocumentToSubmissionDatabase(JSONObject document) throws Exception {
+    private void writeDocumentToSubmissionDatabase(JSONObject document) throws Exception {
         String cookie = getNunaliitCookie();
 
         document = removeNullAttachments(document);
