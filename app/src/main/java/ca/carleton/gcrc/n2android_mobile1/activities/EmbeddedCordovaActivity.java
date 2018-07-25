@@ -702,13 +702,20 @@ public class EmbeddedCordovaActivity extends CordovaActivity {
                 int remoteSuccess = intent.getIntExtra(Nunaliit.EXTRA_SYNC_REMOTE_SUCCESS, 0);
                 int remoteTotal = intent.getIntExtra(Nunaliit.EXTRA_SYNC_REMOTE_TOTAL, 0);
 
+                int documentsLocalDeleted = intent.getIntExtra(Nunaliit.EXTRA_SYNC_DOCUMENT_LOCAL_DELETE, 0);
+                int documentRequestedDelete = intent.getIntExtra(Nunaliit.EXTRA_SYNC_DOCUMENT_REQUEST_DELETE, 0);
+
                 Dialog innerDialog = (Dialog) dialogInterface;
 
                 TextView clientResult = innerDialog.findViewById(R.id.sync_client_update_result);
                 TextView remoteResult = innerDialog.findViewById(R.id.sync_remote_update_result);
+                TextView totalDeletedResult = innerDialog.findViewById(R.id.sync_total_documents_deleted_result);
+                TextView requestedDeletedResult = innerDialog.findViewById(R.id.sync_requested_documents_deleted_result);
 
                 clientResult.setText(String.format(getString(R.string.sync_client_update), clientSuccess, clientTotal));
                 remoteResult.setText(String.format(getString(R.string.sync_remote_update), remoteSuccess, remoteTotal));
+                totalDeletedResult.setText(String.format("Documents Deleted: %d", documentsLocalDeleted));
+                requestedDeletedResult.setText(String.format("Document Delete Requests: %d", documentRequestedDelete));
             }
         });
 

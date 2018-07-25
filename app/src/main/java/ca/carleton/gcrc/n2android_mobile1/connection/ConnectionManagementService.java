@@ -307,6 +307,9 @@ public class ConnectionManagementService extends IntentService {
             result.putExtra(Nunaliit.EXTRA_SYNC_REMOTE_SUCCESS, syncResult.getFilesRemoteUpdated());
             result.putExtra(Nunaliit.EXTRA_SYNC_REMOTE_TOTAL, syncResult.getFilesRemoteUpdated() + syncResult.getFilesFailedRemoteUpdated());
 
+            result.putExtra(Nunaliit.EXTRA_SYNC_DOCUMENT_LOCAL_DELETE, syncResult.getFilesDeletedLocal());
+            result.putExtra(Nunaliit.EXTRA_SYNC_DOCUMENT_REQUEST_DELETE, syncResult.getFilesDeleteRequest());
+
             LocalBroadcastManager.getInstance(this).sendBroadcast(result);
 
             ServiceSupport.createToast(

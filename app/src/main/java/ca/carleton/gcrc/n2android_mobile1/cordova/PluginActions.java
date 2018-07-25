@@ -217,7 +217,8 @@ public class PluginActions {
         try {
             DocumentDb docDb = getDocumentDb();
 
-            CouchbaseDocInfo info = docDb.deleteDocument(doc);
+            doc.put("nunaliit_mobile_deleted", true);
+            CouchbaseDocInfo info = docDb.updateDocument(doc);
 
             JSONObject result = new JSONObject();
             result.put("id", info.getId());

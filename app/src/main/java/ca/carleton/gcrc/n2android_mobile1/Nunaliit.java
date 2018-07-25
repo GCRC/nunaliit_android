@@ -21,4 +21,7 @@ public class Nunaliit {
     public static final String EXTRA_SYNC_REMOTE_TOTAL = "ca.carleton.gcrc.EXTRA_SYNC_REMOTE_TOTAL";
 
     public static final String EXTRA_SYNC_PROGRESS_STATE = "ca.carleton.gcrc.EXTRA_SYNC_PROGRESS_STATE";
+
+    public static final String EXTRA_SYNC_DOCUMENT_LOCAL_DELETE = "ca.carleton.gcrc.EXTRA_SYNC_DOCUMENT_LOCAL_DELETE";
+    public static final String EXTRA_SYNC_DOCUMENT_REQUEST_DELETE = "ca.carleton.gcrc.EXTRA_SYNC_DOCUMENT_REQUEST_DELETE";
 }

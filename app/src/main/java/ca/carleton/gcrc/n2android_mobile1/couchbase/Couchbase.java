@@ -50,4 +50,15 @@ public class Couchbase {
 
         return value;
     }
+
+    static public Boolean optBoolean(Map<String, Object> map, String key) {
+        Boolean value = null;
+
+        Object obj = opt(map, key);
+        if( null != obj && obj instanceof Boolean ){
+            value = (Boolean) obj;
+        }
+
+        return value;
+    }
 }

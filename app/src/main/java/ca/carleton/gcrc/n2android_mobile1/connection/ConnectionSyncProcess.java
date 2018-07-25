@@ -1,6 +1,7 @@
 package ca.carleton.gcrc.n2android_mobile1.connection;
 
 import android.content.Intent;
+import android.support.annotation.NonNull;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.webkit.MimeTypeMap;
@@ -59,6 +60,8 @@ public class ConnectionSyncProcess {
 
     private Map<String, SubmissionStatus> submissionStatusByDocId;
 
+    private List<JSONObject> remoteDocuments;
+
     private enum SubmissionStatus {
         NotSubmitted,
         WaitingForApproval,
@@ -89,7 +92,8 @@ public class ConnectionSyncProcess {
         JSONObject submissionStatus = getSubmissionStatus();
         submissionStatusByDocId = createSubmissionStatusMap(submissionStatus);
 
-        List<JSONObject> remoteDocs = fetchAllRemoteDocuments();
+        remoteDocuments = fetchAllRemoteDocuments();
+        List<JSONObject> localDocs = documentDb.getAllDocuments();
 
         sendSyncProgressIntent(ConnectionManagementService.PROGRESS_SYNC_UPDATING_LOCAL_DOCUMENTS);
 
@@ -100,30 +104,99 @@ public class ConnectionSyncProcess {
             If the document has previously existed in the authoritative database:
             It has been deleted, delete your mobile copy (regardless of edits)
         */
-        List<JSONObject> newLocalDocuments = getNewLocalDocuments(remoteDocs);
-        deleteLocalDocumentsPreviouslyDeletedOnRemote(newLocalDocuments);
+
+        int deletedOnLocal = 0;
+        int deletedSubmitted = 0;
+
+        List<JSONObject> newLocalDocuments = getNewLocalDocuments(remoteDocuments);
+        deletedOnLocal += deleteLocalDocumentsPreviouslyDeletedOnRemote(newLocalDocuments);
+
 
         /*
             Step 2:
 
+            Delete documents that have been deleted on the local and have not been deleted
+            on the remote.
+         */
+
+        // Check all locals documents that don't have remote revisions and remove them.
+        List<JSONObject> documentsPendingDeletion = getDocumentsPendingDeletion();
+
+        // Deleted Document flow
+        for (JSONObject deletedDocument : documentsPendingDeletion) {
+            // If the document only exists on mobile, delete it.
+            if (!hasBeenCommitedToRemote(deletedDocument)) {
+                deleteDocumentOnMobile(deletedDocument);
+                deletedOnLocal += 1;
+                continue;
+            }
+
+            if (getRevisionRecord(deletedDocument).getRemoteRevision() == null) {
+                Log.v(TAG, "Can't delete a document without a revision record.");
+                continue;
+            }
+
+            if (!hasDeleteBeenSubmitted(deletedDocument)) {
+                deletedSubmitted += sendDeleteRequestToRemote(deletedDocument) ? 1 : 0;
+            } else {
+                SubmissionStatus deletionSubmissionStatus = getSubmissionStatusForDocument(deletedDocument);
+
+                if (deletionSubmissionStatus == SubmissionStatus.Completed) {
+                    deleteDocumentOnMobile(deletedDocument);
+                    deletedOnLocal += 1;
+                } else if (deletionSubmissionStatus == SubmissionStatus.Declined) {
+                    removeDeletedFlag(deletedDocument);
+                }
+            }
+        }
+
+        result.setFilesDeletedLocal(deletedOnLocal);
+        result.setFilesDeleteRequest(deletedSubmitted);
+
+        /*
+            Step 3:
+
             If the user has any edits to the document (or it is a new document)
             on their mobile database, submit them to the submission database.
         */
-        List<JSONObject> prunedNewDocuments = getNewLocalDocuments(remoteDocs);
+
+        List<JSONObject> prunedNewDocuments = getNewLocalDocuments(remoteDocuments);
         sendNewDocumentsToRemote(prunedNewDocuments);
 
         sendSyncProgressIntent(ConnectionManagementService.PROGRESS_SYNC_UPDATING_REMOTE_DOCUMENTS);
 
         /*
-            Step 3:
+            Step 4:
 
             If the document does not have any edits, is not in the `waiting_for_approval` state,
             update the local document with the remote version.
         */
 
-        updateAllDocumentsIfNeeded(remoteDocs);
+        updateAllDocumentsIfNeeded(remoteDocuments);
 
         return result;
+    }
+
+    private boolean hasFlagDeleted(JSONObject localDocument) throws Exception {
+        return localDocument.optBoolean("nunaliit_mobile_deleted", false);
+    }
+
+    private void removeDeletedFlag(JSONObject localDocument) throws Exception {
+        localDocument.put("nunaliit_mobile_deleted", false);
+        localDocument.put("nunaliit_mobile_delete_submitted", false);
+        documentDb.updateDocument(localDocument);
+    }
+
+    private boolean hasDeleteBeenSubmitted(JSONObject document) throws Exception {
+        return document.optBoolean("nunaliit_mobile_delete_submitted", false);
+    }
+
+    private boolean hasBeenCommitedToRemote(JSONObject document) throws Exception {
+        return getRevisionRecord(document).getLastCommit() != null;
+    }
+
+    private void deleteDocumentOnMobile(JSONObject document) throws Exception {
+        documentDb.deleteDocument(document);
     }
 
     private List<JSONObject> fetchAllRemoteDocuments() throws Exception {
@@ -252,6 +325,10 @@ public class ConnectionSyncProcess {
 
         JSONObject localDocument = documentDb.getDocument(docId);
 
+        if (localDocument.optBoolean("nunaliit_mobile_deleted", false)) {
+            return false;
+        }
+
         if (shouldUpdateLocalDocument(remoteDoc)) {
             updateLocalDocument(remoteDoc);
             return true;
@@ -307,7 +384,27 @@ public class ConnectionSyncProcess {
         return lastCommitVersion == null || !lastCommitVersion.equals(localDocument.getString("_rev"));
     }
 
-    private void deleteLocalDocumentsPreviouslyDeletedOnRemote(List<JSONObject> localDocuments) throws Exception {
+    private boolean sendDeleteRequestToRemote(JSONObject documentToDelete) throws Exception {
+        SubmissionStatus documentStatus = getSubmissionStatusForDocument(documentToDelete);
+
+        // You cannot submit a document without a _rev.
+        if (getRevisionRecord(documentToDelete).getRemoteRevision() == null) {
+            return false;
+        }
+
+        String cookie = getNunaliitCookie();
+
+        Response deleteResponse = submissionClient.newCall(createDocumentDeleteRequest(documentToDelete, cookie)).execute();
+        String body = deleteResponse.body().string();
+
+        documentToDelete.put("nunaliit_mobile_delete_submitted", true);
+        documentDb.updateDocument(documentToDelete);
+
+        Log.v(TAG, body);
+        return true;
+    }
+
+    private int deleteLocalDocumentsPreviouslyDeletedOnRemote(List<JSONObject> localDocuments) throws Exception {
         int deleted = 0;
 
         for(JSONObject doc : localDocuments) {
@@ -315,13 +412,15 @@ public class ConnectionSyncProcess {
 
             if (IsDocumentDeletedOnRemote(doc)) {
                 Log.d(TAG, "Deleting document: " + docId);
-                documentDb.deleteDocument(docId);
+                deleteDocumentOnMobile(doc);
 
                 deleted++;
             }
         }
 
         Log.v(TAG, String.format("Documents Deleted: %d", deleted));
+
+        return deleted;
     }
 
     private void sendNewDocumentsToRemote(List<JSONObject> newDocuments) {
@@ -356,11 +455,33 @@ public class ConnectionSyncProcess {
                 }
             }
 
-            return new ArrayList<>(localDocumentsMap.values());
+            List<JSONObject> newLocalDocuments = new ArrayList<>(localDocumentsMap.values());
+            List<JSONObject> filteredUndeletedDocuments = new ArrayList<>();
+
+            for(JSONObject doc: newLocalDocuments) {
+                if (!doc.optBoolean("nunaliit_mobile_deleted", false)) {
+                    filteredUndeletedDocuments.add(doc);
+                }
+            }
+
+            return filteredUndeletedDocuments;
 
         } catch (Exception e) {
             throw new RuntimeException("Unable to fetch local documents", e);
         }
+    }
+
+    private List<JSONObject> getDocumentsPendingDeletion() throws Exception {
+        List<JSONObject> documentsPendingDeletion = new ArrayList<>();
+        List<JSONObject> localDocuments = documentDb.getAllDocuments();
+
+        for (JSONObject localDocument: localDocuments) {
+            if (hasFlagDeleted(localDocument)) {
+                documentsPendingDeletion.add(localDocument);
+            }
+        }
+
+        return documentsPendingDeletion;
     }
 
     private void updateLocalDocument(JSONObject doc) throws Exception {
@@ -437,11 +558,7 @@ public class ConnectionSyncProcess {
     }
 
     public void writeDocumentToSubmissionDatabase(JSONObject document) throws Exception {
-        ConnectionInfo info = connection.getConnectionInfo();
-
-        Response loginResponse = submissionClient.newCall(createAuthRequest()).execute();
-        String cookie = loginResponse.header("Set-Cookie");
-        cookie += "; NunaliitAuth=" + info.getUser();
+        String cookie = getNunaliitCookie();
 
         document = removeNullAttachments(document);
         String uploadPath = getNunaliitAttachmentPath(document);
@@ -450,6 +567,10 @@ public class ConnectionSyncProcess {
         // Remove the nunaliit_mobile_attachments but keep it on the app. It will be removed
         // when the document is synced down from the server.
         document.remove("nunaliit_mobile_attachments");
+
+        // Delete the deleted flags so it will sync with remote with no conflicts.
+        document.remove("nunaliit_mobile_deleted");
+        document.remove("nunaliit_mobile_delete_submitted");
 
         Response response = submissionClient.newCall(createDocumentUploadRequest(document, cookie)).execute();
         Log.v(TAG, response.body().string());
@@ -485,6 +606,14 @@ public class ConnectionSyncProcess {
                 .build();
     }
 
+    @NonNull
+    private String getNunaliitCookie() throws Exception {
+        Response loginResponse = submissionClient.newCall(createAuthRequest()).execute();
+        String cookie = loginResponse.header("Set-Cookie");
+        cookie += "; NunaliitAuth=" + connection.getConnectionInfo().getUser();
+        return cookie;
+    }
+
     private Request createDocumentUploadRequest(JSONObject document, String authCookie) throws Exception {
         ConnectionInfo info = connection.getConnectionInfo();
 
@@ -497,6 +626,23 @@ public class ConnectionSyncProcess {
         return new Request.Builder()
                 .url(url)
                 .put(body)
+                .header("Cookie", authCookie)
+                .build();
+    }
+
+    private Request createDocumentDeleteRequest(JSONObject document, String authCookie) throws Exception {
+        ConnectionInfo info = connection.getConnectionInfo();
+
+        // Put the item in the submission database.
+        HttpUrl url = HttpUrl.parse(info.getUrl()).newBuilder().encodedPath("/servlet/submission/submissionDb")
+                .addPathSegment(document.getString("_id"))
+                .addQueryParameter("deviceId", info.getDeviceId())
+                .addQueryParameter("rev", getRevisionRecord(document).getRemoteRevision())
+                .build();
+
+        return new Request.Builder()
+                .url(url)
+                .delete()
                 .header("Cookie", authCookie)
                 .build();
     }
@@ -549,9 +695,7 @@ public class ConnectionSyncProcess {
     private boolean IsDocumentDeletedOnRemote(JSONObject doc) throws Exception {
         SubmissionStatus submissionStatus = getSubmissionStatusForDocument(doc);
 
-        boolean requiresDeletion = submissionStatus != SubmissionStatus.WaitingForApproval && !isRequiresSubmission(doc);
-
-        return requiresDeletion;
+        return submissionStatus != SubmissionStatus.WaitingForApproval && !isRequiresSubmission(doc);
     }
 
     private JSONObject getSubmissionStatus() throws Exception {
@@ -571,18 +715,6 @@ public class ConnectionSyncProcess {
 
         // Put the item in the submission database.
         HttpUrl url = HttpUrl.parse(info.getUrl()).newBuilder().encodedPath("/servlet/submission/_submission-info-by-device-id").addQueryParameter("key", info.getDeviceId()).build();
-
-        return new Request.Builder()
-                .url(url)
-                .get()
-                .build();
-    }
-
-    private Request createDocumentStatusRequest(String documentId) throws Exception {
-        ConnectionInfo info = connection.getConnectionInfo();
-
-        // Put the item in the submission database.
-        HttpUrl url = HttpUrl.parse(info.getUrl()).newBuilder().encodedPath("/db/" + documentId).build();
 
         return new Request.Builder()
                 .url(url)
