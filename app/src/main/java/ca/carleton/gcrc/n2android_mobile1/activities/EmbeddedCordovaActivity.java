@@ -714,8 +714,8 @@ public class EmbeddedCordovaActivity extends CordovaActivity {
 
                 clientResult.setText(String.format(getString(R.string.sync_client_update), clientSuccess, clientTotal));
                 remoteResult.setText(String.format(getString(R.string.sync_remote_update), remoteSuccess, remoteTotal));
-                totalDeletedResult.setText(String.format("Documents Deleted: %d", documentsLocalDeleted));
-                requestedDeletedResult.setText(String.format("Document Delete Requests: %d", documentRequestedDelete));
+                totalDeletedResult.setText(String.format(getString(R.string.sync_local_delete), documentsLocalDeleted));
+                requestedDeletedResult.setText(String.format(getString(R.string.sync_remote_delete), documentRequestedDelete));
             }
         });
 
