@@ -129,7 +129,9 @@ public class ConnectionSyncProcess {
             }
 
             if (getRevisionRecord(deletedDocument).getRemoteRevision() == null) {
-                Log.v(TAG, "Can't delete a document without a revision record.");
+                Log.v(TAG, "No need to keep around documents that have not been synced" +
+                        "on remote - Delete them on local (they might be re-synced later.");
+                deleteDocumentOnMobile(deletedDocument);
                 continue;
             }
 
