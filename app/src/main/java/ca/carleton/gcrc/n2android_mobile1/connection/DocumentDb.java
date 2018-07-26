@@ -71,7 +71,10 @@ public class DocumentDb extends CouchbaseDb {
                     }
                 }
 
-                emitter.emit(id, value);
+                Boolean deleted = Couchbase.optBoolean(document, "nunaliit_mobile_deleted", false);
+                if (!deleted) {
+                    emitter.emit(id, value);
+                }
             }
         };
     };

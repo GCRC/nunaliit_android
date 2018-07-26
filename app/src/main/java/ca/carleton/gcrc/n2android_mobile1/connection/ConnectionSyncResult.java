@@ -11,6 +11,10 @@ public class ConnectionSyncResult {
     private int filesFailedClientUpdated;
     private int filesFailedRemoteUpdated;
 
+    private int filesDeletedLocal;
+    private int filesDeletedRemote;
+    private int filesDeleteRequest;
+
     public int getFilesClientUpdated() {
         return filesClientUpdated;
     }
@@ -41,5 +45,21 @@ public class ConnectionSyncResult {
 
     public void setFilesFailedRemoteUpdated(int filesFailedRemoteUpdated) {
         this.filesFailedRemoteUpdated = filesFailedRemoteUpdated;
+    }
+
+    public int getFilesDeletedLocal() {
+        return filesDeletedLocal;
+    }
+
+    public void setFilesDeletedLocal(int filesDeletedLocal) {
+        this.filesDeletedLocal = filesDeletedLocal;
+    }
+
+    public int getFilesDeleteRequest() {
+        return filesDeleteRequest;
+    }
+
+    public void setFilesDeleteRequest(int filesDeleteRequest) {
+        this.filesDeleteRequest = filesDeleteRequest;
     }
 }
