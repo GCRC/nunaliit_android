@@ -144,7 +144,9 @@ public class ConnectionSyncProcess {
                     deleteDocumentOnMobile(deletedDocument);
                     deletedOnLocal += 1;
                 } else if (deletionSubmissionStatus == SubmissionStatus.Declined) {
-                    removeDeletedFlag(deletedDocument);
+                    // The user deleted their local copy.
+                    // Refetch the document from the remote in the next step.
+                    deleteDocumentOnMobile(deletedDocument);
                 }
             }
         }
@@ -324,7 +326,7 @@ public class ConnectionSyncProcess {
 
         JSONObject localDocument = documentDb.getDocument(docId);
 
-        if (localDocument.optBoolean("nunaliit_mobile_deleted", false)) {
+        if (hasFlagDeleted(localDocument)) {
             return false;
         }
 
@@ -456,7 +458,7 @@ public class ConnectionSyncProcess {
             List<JSONObject> filteredUndeletedDocuments = new ArrayList<>();
 
             for(JSONObject doc: newLocalDocuments) {
-                if (!doc.optBoolean("nunaliit_mobile_deleted", false)) {
+                if (!hasFlagDeleted(doc)) {
                     filteredUndeletedDocuments.add(doc);
                 }
             }
