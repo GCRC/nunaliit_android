@@ -57,6 +57,8 @@ Possible pitfalls:
 
 - If the app runs but the webview fails to load the nunaliit2 interface, you may have skipped steps above.
 
+- If Android Studio gives warnings such as `Warning: License for package Android SDK Build-Tools 27.0.3 not accepted.`, you will need to download the version that is missing. Go to the menu **Android Studio > Preferences** and open **Appearance & Behaviour > System Settings > Android SDK**. Check off the missing versions and click **OK**.
+
 ## Adding plugins
 
 Plugins must be added manually and cannot use the CLI. To do so:
