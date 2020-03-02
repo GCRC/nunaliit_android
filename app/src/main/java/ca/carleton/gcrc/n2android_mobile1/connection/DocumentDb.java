@@ -4,8 +4,11 @@ import com.couchbase.lite.Database;
 import com.couchbase.lite.Emitter;
 import com.couchbase.lite.Mapper;
 
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import ca.carleton.gcrc.n2android_mobile1.couchbase.Couchbase;
 import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseDb;
@@ -17,6 +20,8 @@ import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseView;
 public class DocumentDb extends CouchbaseDb {
 
     public static final CouchbaseView viewInfo = new CouchbaseView(){
+        private final Set<String> schemaExclusionFilter = new HashSet<>(Arrays.asList("schema", "navigation", "module", "atlas",
+                "help", "layerDefinition", "email_template", "user_agreement"));
         @Override
         public String getName() { return "info"; }
 
@@ -28,7 +33,7 @@ public class DocumentDb extends CouchbaseDb {
             return mapper;
         }
 
-        private Mapper mapper = new Mapper(){
+        private final Mapper mapper = new Mapper(){
             @Override
             public void map(Map<String, Object> document, Emitter emitter) {
                 Map<String,Object> value = new HashMap<String,Object>();
@@ -43,12 +48,9 @@ public class DocumentDb extends CouchbaseDb {
                     String rev = Couchbase.optString(document, "_rev");
                     value.put("rev", rev);
                 }
-
-                {
-                    String schemaName = Couchbase.optString(document, "nunaliit_schema");
-                    if( null != schemaName ){
-                        value.put("schema", schemaName);
-                    }
+                String schemaName = Couchbase.optString(document, "nunaliit_schema");
+                if( null != schemaName ){
+                    value.put("schema", schemaName);
                 }
 
                 {
@@ -72,7 +74,7 @@ public class DocumentDb extends CouchbaseDb {
                 }
 
                 Boolean deleted = Couchbase.optBoolean(document, "nunaliit_mobile_deleted", false);
-                if (!deleted) {
+                if (!deleted && !schemaExclusionFilter.contains(schemaName)) {
                     emitter.emit(id, value);
                 }
             }
@@ -91,7 +93,7 @@ public class DocumentDb extends CouchbaseDb {
             return mapper;
         }
 
-        private Mapper mapper = new Mapper(){
+        private final Mapper mapper = new Mapper(){
             @Override
             public void map(Map<String, Object> document, Emitter emitter) {
                 Object schema = document.get("nunaliit_schema");
@@ -115,7 +117,7 @@ public class DocumentDb extends CouchbaseDb {
             return mapper;
         }
 
-        private Mapper mapper = new Mapper(){
+        private final Mapper mapper = new Mapper(){
             @Override
             public void map(Map<String, Object> document, Emitter emitter) {
                 Object type = document.get("nunaliit_type");
@@ -142,7 +144,7 @@ public class DocumentDb extends CouchbaseDb {
             return mapper;
         }
 
-        private Mapper mapper = new Mapper(){
+        private final Mapper mapper = new Mapper(){
             @Override
             public void map(Map<String, Object> document, Emitter emitter) {
                 Object type = document.get("nunaliit_type");
