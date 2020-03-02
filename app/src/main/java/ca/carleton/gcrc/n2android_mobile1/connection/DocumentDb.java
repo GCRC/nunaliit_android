@@ -26,7 +26,7 @@ public class DocumentDb extends CouchbaseDb {
         public String getName() { return "info"; }
 
         @Override
-        public String getVersion() { return "1"; }
+        public String getVersion() { return "2"; }
 
         @Override
         public Mapper getMapper() {
