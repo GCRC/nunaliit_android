@@ -351,6 +351,18 @@ public class EmbeddedCordovaActivity extends CordovaActivity {
         CordovaNunaliitPlugin.javascriptEventCallback("onCreateDocument");
     }
 
+    public void onSearchDocuments(View view) {
+        // Call search documents through the Cordova bridge
+        String searchText = "";
+        View searchTextView = findViewById(R.id.searchText);
+        if (searchTextView instanceof EditText) {
+            EditText editText = (EditText) searchTextView;
+            searchText = editText.getText().toString();
+        }
+        Log.d(TAG, "Searching for: " + searchText);
+        CordovaNunaliitPlugin.javascriptEventCallback("onSearchDocuments");
+    }
+
     public CouchbaseLiteService getCouchDbService(){
         return mService;
     }
@@ -476,8 +488,6 @@ public class EmbeddedCordovaActivity extends CordovaActivity {
                 synchronizeAtlasMenuItem.setIcon(R.drawable.ic_sync_black);
             }
         }
-
-
     }
 
     private void synchronizeConnection(ConnectionInfo connInfo) {

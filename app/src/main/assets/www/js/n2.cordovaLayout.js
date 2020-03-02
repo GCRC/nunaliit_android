@@ -90,6 +90,20 @@ var Layout = $n2.Class({
                 });
         });
 
+        // Listen to the Search Documents callback from the native app
+        window.document.addEventListener("deviceready", function() {
+            window.nunaliit2.cordovaPlugin.registerCallback('onSearchDocuments',
+                function() {
+                    window.onSearchDocuments = function() {
+                        d.send(DH, {
+                            type: 'searchInitiate',
+                            searchLine: 'island'
+                        });
+                    };
+                }, function(error) {
+                    console.error('Error on cordova callback invocation: ', error);
+                });
+        });
     },
 
     _display: function(){
