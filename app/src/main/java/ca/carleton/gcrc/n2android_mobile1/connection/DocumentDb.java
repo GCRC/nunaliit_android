@@ -38,39 +38,36 @@ public class DocumentDb extends CouchbaseDb {
             public void map(Map<String, Object> document, Emitter emitter) {
                 Map<String,Object> value = new HashMap<String,Object>();
 
-                String id = null;
-                {
-                    id = Couchbase.optString(document, "_id");
-                    value.put("id", id);
-                }
+                String id = Couchbase.optString(document, "_id");
+                value.put("id", id);
 
-                {
-                    String rev = Couchbase.optString(document, "_rev");
-                    value.put("rev", rev);
-                }
+                String rev = Couchbase.optString(document, "_rev");
+                value.put("rev", rev);
+
                 String schemaName = Couchbase.optString(document, "nunaliit_schema");
-                if( null != schemaName ){
+                if (null != schemaName) {
                     value.put("schema", schemaName);
                 }
 
-                {
-                    Map<String, Object> created = Couchbase.optMap(document, "nunaliit_created");
-                    if( null != created ){
-                        Number time = Couchbase.optNumber(created, "time");
-                        if( null != time ){
-                            value.put("createdTime",time.longValue());
-                        }
+                Map<String, Object> created = Couchbase.optMap(document, "nunaliit_created");
+                if (null != created) {
+                    Number time = Couchbase.optNumber(created, "time");
+                    if (null != time) {
+                        value.put("createdTime", time.longValue());
                     }
                 }
 
-                {
-                    Map<String, Object> lastUpdated = Couchbase.optMap(document, "nunaliit_last_updated");
-                    if( null != lastUpdated ){
-                        Number time = Couchbase.optNumber(lastUpdated, "time");
-                        if( null != time ){
-                            value.put("updatedTime", time.longValue());
-                        }
+                Map<String, Object> lastUpdated = Couchbase.optMap(document, "nunaliit_last_updated");
+                if (null != lastUpdated) {
+                    Number time = Couchbase.optNumber(lastUpdated, "time");
+                    if (null != time) {
+                        value.put("updatedTime", time.longValue());
                     }
+                }
+
+                Map<String, Object> nunaliitGeom = Couchbase.optMap(document, "nunaliit_geom");
+                if (nunaliitGeom != null) {
+                    //TODO: extract lat lon into fields using regex
                 }
 
                 Boolean deleted = Couchbase.optBoolean(document, "nunaliit_mobile_deleted", false);

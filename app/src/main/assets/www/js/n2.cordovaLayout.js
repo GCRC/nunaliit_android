@@ -91,19 +91,19 @@ var Layout = $n2.Class({
         });
 
         // Listen to the Search Documents callback from the native app
-        window.document.addEventListener("deviceready", function() {
-            window.nunaliit2.cordovaPlugin.registerCallback('onSearchDocuments',
-                function() {
-                    window.onSearchDocuments = function() {
-                        d.send(DH, {
-                            type: 'searchInitiate',
-                            searchLine: 'island'
-                        });
-                    };
-                }, function(error) {
-                    console.error('Error on cordova callback invocation: ', error);
-                });
-        });
+        // window.document.addEventListener("deviceready", function() {
+        //     window.nunaliit2.cordovaPlugin.registerCallback('onSearchDocuments',
+        //         function() {
+        //             window.onSearchDocuments = function() {
+        //                 d.send(DH, {
+        //                     type: 'searchInitiate',
+        //                     searchLine: 'island'
+        //                 });
+        //             };
+        //         }, function(error) {
+        //             console.error('Error on cordova callback invocation: ', error);
+        //         });
+        // });
     },
 
     _display: function(){
@@ -201,6 +201,11 @@ var Layout = $n2.Class({
             this.atlasDesign.queryView({
                 viewName: 'info'
                 ,onSuccess: function(rows){
+                    $n2.log('SARAH: before sort: ' + JSON.stringify(rows));
+                    _this._sortByUpdatedTime(rows, false);
+
+                    $n2.log('SARAH: after sort: ' + JSON.stringify(rows));
+
                     var docIds = [];
                     for(var i=0,e=rows.length; i<e; ++i){
                         var row = rows[i];
@@ -208,6 +213,9 @@ var Layout = $n2.Class({
                         docIds.push(docId);
                     };
                     $n2.log('Atlas contains '+docIds.length+' document(s)');
+
+                    //SARAH: sort them
+
                     _this._sendDispatchMessage({
                         type: 'selected'
                         ,docIds: docIds
@@ -248,7 +256,48 @@ var Layout = $n2.Class({
 	    if( 'unselected' === m.type ){
 		    this._displayAllDocuments();
 	    };
-	}
+	},
+
+	_sortByUpdatedTime: function(rows, ascending) {
+        if (ascending) {
+            rows.sort(function(a, b) {
+                return parseInt(a.value.updatedTime) - parseInt(b.value.updatedTime);
+            });
+        } else {
+            rows.sort(function(a, b) {
+                return parseInt(b.value.updatedTime) - parseInt(a.value.updatedTime);
+            });
+        }
+    },
+
+    _sortByDistanceToCurrentLocation: function(rows, ascending) {
+        if (ascending) {
+            rows.sort(function(a, b) {
+
+            });
+        } else {
+            rows.sort(function(a, b) {
+
+            });
+        }
+    },
+
+    _getDistanceFromLatLonInKm: function (lat1, lon1, lat2, lon2) {
+        var R = 6371; // Radius of the earth in km
+        var dLat = this._deg2rad(lat2 - lat1);  // deg2rad below
+        var dLon = this._deg2rad(lon2 - lon1);
+        var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(this._deg2rad(lat1)) * Math.cos(this._deg2rad(lat2)) *
+            Math.sin(dLon / 2) * Math.sin(dLon / 2);
+
+        var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+        return R * c; // Distance in km
+    },
+
+    _deg2rad: function (deg) {
+        return deg * (Math.PI / 180)
+    }
 });
 
 // ===========================================================

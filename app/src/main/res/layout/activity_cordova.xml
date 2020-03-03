@@ -15,45 +15,30 @@
         android:orientation="vertical">
 
         <android.support.v7.widget.Toolbar
-                android:id="@+id/cordova_toolbar"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:background="?attr/colorPrimary"
-                android:elevation="4dp"
-                theme="@style/ThemeOverlay.AppCompat.ActionBar"
-                app:popupTheme="@style/ThemeOverlay.AppCompat.Light">
+            android:id="@+id/cordova_toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            android:background="?attr/colorPrimary"
+            android:elevation="4dp"
+            theme="@style/ThemeOverlay.AppCompat.ActionBar"
+            app:popupTheme="@style/ThemeOverlay.AppCompat.Light">
 
             <Button
-                    android:layout_width="70dp"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="right"
-                    android:id="@+id/create_document"
-                    android:textSize="28sp"
-                    android:fontFamily="sans-serif-light"
-                    android:background="@null"
-                    android:layout_alignParentEnd="true"
-                    android:layout_alignParentRight="true"
-                    android:textColor="#FFF"
-                    android:text="+"
-                    android:onClick="onCreateDocument"/>
+                android:layout_width="70dp"
+                android:layout_height="wrap_content"
+                android:layout_gravity="right"
+                android:id="@+id/create_document"
+                android:textSize="28sp"
+                android:fontFamily="sans-serif-light"
+                android:background="@null"
+                android:layout_alignParentEnd="true"
+                android:layout_alignParentRight="true"
+                android:textColor="#FFF"
+                android:text="+"
+                android:onClick="onCreateDocument"/>
 
         </android.support.v7.widget.Toolbar>
-        <LinearLayout
-                android:orientation="horizontal"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content" android:background="#FFFFFF">
-            <EditText
-                    android:layout_width="303dp"
-                    android:layout_height="wrap_content"
-                    android:inputType="textPersonName"
-                    android:ems="10"
-                    android:id="@+id/searchText" android:layout_weight="1" android:hint="@string/search"/>
-            <Button
-                    android:text="?"
-                    android:layout_width="1dp"
-                    android:layout_height="wrap_content" android:id="@+id/buttonSearch" android:layout_weight="1"
-                    android:onClick="onSearchDocuments"/>
-        </LinearLayout>
+
         <LinearLayout
             android:id="@+id/content_container"
             android:layout_width="match_parent"
@@ -72,7 +57,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="48dp"
                     android:layout_gravity="center" />
-                
+
                 <android.support.v4.widget.Space
                     android:layout_width="match_parent"
                     android:layout_height="10dp" />
@@ -95,12 +80,11 @@
                     android:onClick="onSyncInBackgroundClicked"
                     />
 
-            </LinearLayout><![CDATA[
+            </LinearLayout>
 
 
-            />
+/>
 
-        ]]>
         </LinearLayout>
     </LinearLayout>
 
