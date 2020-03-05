@@ -46,7 +46,7 @@ public class PluginActions {
 
     public void echo(String message, CallbackContext callbackContext) {
         if (message != null && message.length() > 0) {
-            callbackContext.success(message);
+            callbackContext.success(message + " (server)");
         } else {
             callbackContext.error("Expected one non-empty string argument.");
         }
@@ -379,7 +379,46 @@ public class PluginActions {
             callbackContext.success(result);
 
         } catch(Exception e) {
-            callbackContext.error("Error while performing couchbasePerformQuery(): "+e.getMessage());
+            callbackContext.error("Error while performing couchbasePerformQuery(): " + e.getMessage());
+        }
+    }
+
+    /**
+     * Gets the last known location from the device API and returns result to client side callback.
+     *
+     * @param callbackContext The JavaScript callback context.
+     */
+    public void getCurrentLocation(final CallbackContext callbackContext) {
+        try {
+            fusedLocationProviderClient.getLastLocation()
+                    .addOnSuccessListener(new OnSuccessListener<Location>() {
+                        @Override
+                        public void onSuccess(Location location) {
+
+                            JSONObject result = new JSONObject();
+                            if (location != null) {
+                                Log.v(TAG, "SARAH: location is " + location.getLongitude() + ", " + location.getLatitude());
+                                try {
+                                    result.put("lon", location.getLongitude());
+                                    result.put("lat", location.getLatitude());
+                                }
+                                catch (JSONException e) {
+                                    callbackContext.error("Error while performing getCurrentLocation(): " + e.getMessage());
+                                }
+                            }
+                            callbackContext.success(result);
+                        }
+                    })
+                    .addOnFailureListener(new OnFailureListener() {
+                        @Override
+                        public void onFailure(@NonNull Exception e) {
+                            callbackContext.error("Error while performing getCurrentLocation(): " + e.getMessage());
+                        }
+                    });
+
+        }
+        catch (SecurityException se) {
+            callbackContext.error("Error while performing getCurrentLocation(): " + se.getMessage());
         }
     }
 

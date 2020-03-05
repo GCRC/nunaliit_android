@@ -1,5 +1,6 @@
 package ca.carleton.gcrc.n2android_mobile1.connection;
 
+import ca.carleton.gcrc.utils.GeometryUtils;
 import com.couchbase.lite.Database;
 import com.couchbase.lite.Emitter;
 import com.couchbase.lite.Mapper;
@@ -67,7 +68,14 @@ public class DocumentDb extends CouchbaseDb {
 
                 Map<String, Object> nunaliitGeom = Couchbase.optMap(document, "nunaliit_geom");
                 if (nunaliitGeom != null) {
-                    //TODO: extract lat lon into fields using regex
+                    String wkt = Couchbase.optString(nunaliitGeom, "wkt");
+                    if (wkt != null) {
+                        Map<String, String> coords = GeometryUtils.extractLatLon(wkt);
+                        if (coords != null) {
+                            value.put("lon", coords.get("lon"));
+                            value.put("lat", coords.get("lat"));
+                        }
+                    }
                 }
 
                 Boolean deleted = Couchbase.optBoolean(document, "nunaliit_mobile_deleted", false);

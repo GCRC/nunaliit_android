@@ -90,6 +90,21 @@ var Layout = $n2.Class({
                 });
         });
 
+        // window.document.addEventListener("deviceready", function() {
+        //     window.nunaliit2.cordovaPlugin.registerCallback('onSearchDocuments',
+        //         function() {
+        //             cordova.searchbar.show();
+        //         // window.onSearchDocuments = function() {
+        //         //         d.send(DH, {
+        //         //             type: 'searchInitiate',
+        //         //             searchLine: 'island'
+        //         //         });
+        //         //     };
+        //         }, function(error) {
+        //             console.error('Error on cordova callback invocation: ', error);
+        //         });
+        // });
+
         // Listen to the Search Documents callback from the native app
         // window.document.addEventListener("deviceready", function() {
         //     window.nunaliit2.cordovaPlugin.registerCallback('onSearchDocuments',
@@ -197,10 +212,46 @@ var Layout = $n2.Class({
     _displayAllDocuments: function(){
         var _this = this;
 
+        $n2.cordovaPlugin.echo({
+            msg: 'client msg',
+            onSuccess: function (msg) {
+                if ('client msg (server)' === msg) {
+                    $n2.log('SARAH: echo success: ' + msg);
+                } else {
+                    $n2.log('SARAH: echo error: Unexpected message (' + msg + ')');
+                }
+            },
+            onError: function (err) {
+                $n2.log('SARAH: echo error: ' + err);
+            }
+        });
+
+        var currentLatitude;
+        var currentLongitude;
+        $n2.cordovaPlugin.getCurrentLocation({
+            onSuccess: function(result) {
+                if (result.hasOwnProperty("lon") && result.hasOwnProperty("lat")) {
+                    currentLatitude = result.lat;
+                    currentLongitude = result.lon;
+                }
+
+                if (currentLongitude && currentLatitude) {
+                    $n2.log("SARAH: current location: " + currentLongitude + ", " + currentLatitude);
+                }
+                else {
+                    $n2.log("SARAH: current location unavailable");
+                }
+            },
+            onError: function(err) {
+                $n2.log('SARAH: Error getting current location: ' + err);
+            }
+        })
+
         if( this.atlasDesign ){
             this.atlasDesign.queryView({
                 viewName: 'info'
                 ,onSuccess: function(rows){
+
                     $n2.log('SARAH: before sort: ' + JSON.stringify(rows));
                     _this._sortByUpdatedTime(rows, false);
 
@@ -259,6 +310,18 @@ var Layout = $n2.Class({
 	},
 
 	_sortByUpdatedTime: function(rows, ascending) {
+        if (ascending) {
+            rows.sort(function(a, b) {
+                return parseInt(a.value.updatedTime) - parseInt(b.value.updatedTime);
+            });
+        } else {
+            rows.sort(function(a, b) {
+                return parseInt(b.value.updatedTime) - parseInt(a.value.updatedTime);
+            });
+        }
+    },
+
+    _sortByLocation: function(rows, ascending) {
         if (ascending) {
             rows.sort(function(a, b) {
                 return parseInt(a.value.updatedTime) - parseInt(b.value.updatedTime);

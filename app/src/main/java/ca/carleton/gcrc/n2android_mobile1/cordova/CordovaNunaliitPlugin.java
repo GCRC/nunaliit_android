@@ -204,6 +204,15 @@ public class CordovaNunaliitPlugin extends CordovaPlugin {
             });
             return true;
         }
+        else if ("getCurrentLocation".equals(action)) {
+            threadPool.execute(new PluginRunnable(actions, args, callbackContext) {
+                @Override
+                public void pluginRun() throws Exception {
+                    getActions().getCurrentLocation(getCallbackContext());
+                }
+            });
+            return true;
+        }
 
         return false;  // Returning false results in a "MethodNotFound" error.
     }
