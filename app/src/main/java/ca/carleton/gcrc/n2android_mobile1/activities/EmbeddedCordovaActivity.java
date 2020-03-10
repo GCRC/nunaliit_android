@@ -348,11 +348,17 @@ public class EmbeddedCordovaActivity extends CordovaActivity {
 
     public void onCreateDocument(View view) {
         // Call create document through the Cordova bridge
+        Log.v(TAG, "SARAH: Java onCreateDocument");
         CordovaNunaliitPlugin.javascriptEventCallback("onCreateDocument");
     }
 
-    public void onSearchDocuments(View view) {
+    public void onSortDocuments(View view) {
+        Log.v(TAG, "SARAH: Java onSortDocuments");
+        CordovaNunaliitPlugin.javascriptEventCallback("onSortDocuments");
+    }
 
+    public void onSearchDocuments(View view) {
+        Log.v(TAG, "SARAH: Java onSearchDocuments");
         CordovaNunaliitPlugin.javascriptEventCallback("onSearchDocuments");
 
         // Call search documents through the Cordova bridge

@@ -388,42 +388,42 @@ public class PluginActions {
      *
      * @param callbackContext The JavaScript callback context.
      */
-    public void getCurrentLocation(final CallbackContext callbackContext) {
-        try {
-            fusedLocationProviderClient.getLastLocation()
-                    .addOnSuccessListener(new OnSuccessListener<Location>() {
-                        @Override
-                        public void onSuccess(Location location) {
-
-                            JSONObject result = new JSONObject();
-                            if (location != null) {
-                                Log.v(TAG, "SARAH: location is " + location.getLongitude() + ", " + location.getLatitude());
-                                try {
-                                    result.put("lon", location.getLongitude());
-                                    result.put("lat", location.getLatitude());
-                                }
-                                catch (JSONException e) {
-                                    callbackContext.error("Error while performing getCurrentLocation(): " + e.getMessage());
-                                }
-                            }
-                            else {
-                                Log.v(TAG, "SARAH: location is null");
-                            }
-                            callbackContext.success(result);
-                        }
-                    })
-                    .addOnFailureListener(new OnFailureListener() {
-                        @Override
-                        public void onFailure(@NonNull Exception e) {
-                            callbackContext.error("Error while performing getCurrentLocation(): " + e.getMessage());
-                        }
-                    });
-
-        }
-        catch (SecurityException se) {
-            callbackContext.error("Error while performing getCurrentLocation(): " + se.getMessage());
-        }
-    }
+//    public void getCurrentLocation(final CallbackContext callbackContext) {
+//        try {
+//            fusedLocationProviderClient.getLastLocation()
+//                    .addOnSuccessListener(new OnSuccessListener<Location>() {
+//                        @Override
+//                        public void onSuccess(Location location) {
+//
+//                            JSONObject result = new JSONObject();
+//                            if (location != null) {
+//                                Log.v(TAG, "SARAH: location is " + location.getLongitude() + ", " + location.getLatitude());
+//                                try {
+//                                    result.put("lon", location.getLongitude());
+//                                    result.put("lat", location.getLatitude());
+//                                }
+//                                catch (JSONException e) {
+//                                    callbackContext.error("Error while performing getCurrentLocation(): " + e.getMessage());
+//                                }
+//                            }
+//                            else {
+//                                Log.v(TAG, "SARAH: location is null");
+//                            }
+//                            callbackContext.success(result);
+//                        }
+//                    })
+//                    .addOnFailureListener(new OnFailureListener() {
+//                        @Override
+//                        public void onFailure(@NonNull Exception e) {
+//                            callbackContext.error("Error while performing getCurrentLocation(): " + e.getMessage());
+//                        }
+//                    });
+//
+//        }
+//        catch (SecurityException se) {
+//            callbackContext.error("Error while performing getCurrentLocation(): " + se.getMessage());
+//        }
+//    }
 
     private DocumentDb getDocumentDb() throws Exception {
         ConnectionInfo connInfo = retrieveConnection();
@@ -436,8 +436,8 @@ public class PluginActions {
         }
         CouchbaseManager couchbaseManager = couchbaseService.getCouchbaseManager();
         Connection connection = new Connection(couchbaseManager, connInfo);
-        DocumentDb docDb = connection.getLocalDocumentDb();
-        return docDb;
+
+        return connection.getLocalDocumentDb();
     }
 
     public ConnectionInfo retrieveConnection(){
