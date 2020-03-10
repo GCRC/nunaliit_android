@@ -406,6 +406,9 @@ public class PluginActions {
                                     callbackContext.error("Error while performing getCurrentLocation(): " + e.getMessage());
                                 }
                             }
+                            else {
+                                Log.v(TAG, "SARAH: location is null");
+                            }
                             callbackContext.success(result);
                         }
                     })

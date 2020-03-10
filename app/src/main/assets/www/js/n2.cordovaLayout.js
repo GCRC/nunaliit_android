@@ -48,6 +48,12 @@ var Layout = $n2.Class({
 
     displayControl: null,
 
+    currentLatitude: null,
+
+    currentLongitude: null,
+
+    currentLocationAvailable: null,
+
     initialize: function(opts_){
         var opts = $n2.extend({
             config: null
@@ -89,6 +95,28 @@ var Layout = $n2.Class({
                     console.error('Error on cordova callback invocation: ', error);
                 });
         });
+
+        // Fetch current latitude and longitude from device.
+        window.document.addEventListener("deviceready", function () {
+            $n2.cordovaPlugin.getCurrentLocation({
+                onSuccess: function (result) {
+                    if (result.hasOwnProperty("lon") && result.hasOwnProperty("lat")) {
+                        _this.currentLatitude = result.lat;
+                        _this.currentLongitude = result.lon;
+                    }
+
+                    if (_this.currentLongitude && _this.currentLatitude) {
+                        $n2.log("SARAH: current location: " + _this.currentLongitude + ", " + _this.currentLatitude);
+                        _this.currentLocationAvailable = true;
+                    } else {
+                        $n2.log("SARAH: current location unavailable");
+                    }
+                },
+                onError: function (err) {
+                    $n2.log('SARAH: Error getting current location: ' + err);
+                }
+            })
+        })
 
         // window.document.addEventListener("deviceready", function() {
         //     window.nunaliit2.cordovaPlugin.registerCallback('onSearchDocuments',
@@ -226,26 +254,36 @@ var Layout = $n2.Class({
             }
         });
 
-        var currentLatitude;
-        var currentLongitude;
-        $n2.cordovaPlugin.getCurrentLocation({
-            onSuccess: function(result) {
-                if (result.hasOwnProperty("lon") && result.hasOwnProperty("lat")) {
-                    currentLatitude = result.lat;
-                    currentLongitude = result.lon;
-                }
+        // var currentLocationAvailable = false;
+        // var currentLatitude;
+        // var currentLongitude;
+        // $n2.cordovaPlugin.getCurrentLocation({
+        //     onSuccess: function(result) {
+        //         if (result.hasOwnProperty("lon") && result.hasOwnProperty("lat")) {
+        //             currentLatitude = result.lat;
+        //             currentLongitude = result.lon;
+        //         }
+        //
+        //         if (currentLongitude && currentLatitude) {
+        //             $n2.log("SARAH: current location: " + currentLongitude + ", " + currentLatitude);
+        //             currentLocationAvailable = true;
+        //         }
+        //         else {
+        //             $n2.log("SARAH: current location unavailable");
+        //         }
+        //     },
+        //     onError: function(err) {
+        //         $n2.log('SARAH: Error getting current location: ' + err);
+        //     }
+        // })
 
-                if (currentLongitude && currentLatitude) {
-                    $n2.log("SARAH: current location: " + currentLongitude + ", " + currentLatitude);
-                }
-                else {
-                    $n2.log("SARAH: current location unavailable");
-                }
-            },
-            onError: function(err) {
-                $n2.log('SARAH: Error getting current location: ' + err);
-            }
-        })
+        //SARAH: for testing, I can't seem to get a location from the emulator...
+        if (!this.currentLocationAvailable) {
+            this.currentLatitude = 45.426;
+            this.currentLongitude = -75.687;
+            this.currentLocationAvailable = true;
+            $n2.log("SARAH: pretend location: " + this.currentLongitude + ", " + this.currentLatitude);
+        }
 
         if( this.atlasDesign ){
             this.atlasDesign.queryView({
@@ -253,7 +291,8 @@ var Layout = $n2.Class({
                 ,onSuccess: function(rows){
 
                     $n2.log('SARAH: before sort: ' + JSON.stringify(rows));
-                    _this._sortByUpdatedTime(rows, false);
+                    // _this._sortByUpdatedTime(rows, false);
+                    _this._sortByDistanceToCurrentLocation(rows, false);
 
                     $n2.log('SARAH: after sort: ' + JSON.stringify(rows));
 
@@ -321,27 +360,29 @@ var Layout = $n2.Class({
         }
     },
 
-    _sortByLocation: function(rows, ascending) {
-        if (ascending) {
-            rows.sort(function(a, b) {
-                return parseInt(a.value.updatedTime) - parseInt(b.value.updatedTime);
-            });
+    _sortByDistanceToCurrentLocation: function (rows, ascending) {
+        if (this.currentLocationAvailable) {
+            var _this = this;
+            if (ascending) {
+                $n2.log("SARAH: current.coords: " + this.currentLongitude + ", " + this.currentLatitude);
+                rows.sort(function (a, b) {
+                    $n2.log("SARAH: a.coords: " + a.lon + ", " + a.lat + " b.coords: " + b.lon + ", " + b.lat);
+                    var distanceA = _this._getDistanceFromLatLonInKm(a.lat, a.lon, _this.currentLatitude, _this.currentLongitude);
+                    var distanceB = _this._getDistanceFromLatLonInKm(b.lat, b.lon, _this.currentLatitude, _this.currentLongitude);
+
+                    return distanceA - distanceB;
+                });
+            } else {
+                rows.sort(function (a, b) {
+                    $n2.log("SARAH: a.coords: " + a.lon + ", " + a.lat + " b.coords: " + b.lon + ", " + b.lat);
+                    var distanceA = _this._getDistanceFromLatLonInKm(a.lat, a.lon, _this.currentLatitude, _this.currentLongitude);
+                    var distanceB = _this._getDistanceFromLatLonInKm(b.lat, b.lon, _this.currentLatitude, _this.currentLongitude);
+
+                    return distanceB - distanceA;
+                });
+            }
         } else {
-            rows.sort(function(a, b) {
-                return parseInt(b.value.updatedTime) - parseInt(a.value.updatedTime);
-            });
-        }
-    },
-
-    _sortByDistanceToCurrentLocation: function(rows, ascending) {
-        if (ascending) {
-            rows.sort(function(a, b) {
-
-            });
-        } else {
-            rows.sort(function(a, b) {
-
-            });
+            $n2.log("SARAH: current location unavailable, can't sort by proximity")
         }
     },
 
