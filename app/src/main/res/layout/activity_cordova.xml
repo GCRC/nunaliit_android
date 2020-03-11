@@ -46,7 +46,7 @@
                     android:background="@null"
                     android:layout_alignParentEnd="true"
                     android:textColor="#FFF"
-                    android:text=">"
+                    android:text="&#9661;"
                     android:onClick="onSortDocuments"
                     android:layout_marginEnd="5dp"/>
 
@@ -61,7 +61,7 @@
                     android:background="@null"
                     android:layout_alignParentEnd="true"
                     android:textColor="#FFF"
-                    android:text="S"
+                    android:text="&#9906;"
                     android:onClick="onSearchDocuments"
                     android:layout_marginEnd="5dp"/>
 
