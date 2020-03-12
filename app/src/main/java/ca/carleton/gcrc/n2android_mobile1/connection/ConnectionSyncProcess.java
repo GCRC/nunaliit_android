@@ -5,22 +5,6 @@ import android.support.annotation.NonNull;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.webkit.MimeTypeMap;
-
-import org.json.JSONArray;
-import org.json.JSONObject;
-
-import java.io.File;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.UUID;
-import java.util.Vector;
-
 import ca.carleton.gcrc.couch.client.CouchDb;
 import ca.carleton.gcrc.couch.client.CouchDesignDocument;
 import ca.carleton.gcrc.couch.client.CouchQuery;
@@ -29,6 +13,8 @@ import ca.carleton.gcrc.n2android_mobile1.JSONGlue;
 import ca.carleton.gcrc.n2android_mobile1.Nunaliit;
 import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseDocInfo;
 import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseLiteService;
+import com.couchbase.lite.Document;
+import com.couchbase.lite.UnsavedRevision;
 import okhttp3.FormBody;
 import okhttp3.Headers;
 import okhttp3.HttpUrl;
@@ -38,6 +24,24 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.UUID;
+import java.util.Vector;
 
 import static com.couchbase.lite.replicator.RemoteRequest.JSON;
 
@@ -47,16 +51,16 @@ import static com.couchbase.lite.replicator.RemoteRequest.JSON;
 public class ConnectionSyncProcess {
     protected final String TAG = this.getClass().getSimpleName();
 
-    private Connection connection;
-    private CouchbaseLiteService service;
-    private CouchDb couchDb;
-    private CouchDesignDocument atlasDesign;
-    private DocumentDb documentDb;
-    private TrackingDb trackingDb;
+    private final Connection connection;
+    private final CouchbaseLiteService service;
+    private final CouchDb couchDb;
+    private final CouchDesignDocument atlasDesign;
+    private final DocumentDb localDocumentDb;
+    private final TrackingDb trackingDb;
 
-    private OkHttpClient submissionClient;
+    private final OkHttpClient submissionClient;
 
-    private ConnectionSyncResult result = new ConnectionSyncResult();
+    private final ConnectionSyncResult result = new ConnectionSyncResult();
 
     private Map<String, SubmissionStatus> submissionStatusByDocId;
 
@@ -76,7 +80,7 @@ public class ConnectionSyncProcess {
         couchDb = connection.getRemoteCouchDb();
         atlasDesign = couchDb.getDesignDocument("atlas");
 
-        documentDb = connection.getLocalDocumentDb();
+        localDocumentDb = connection.getLocalDocumentDb();
         trackingDb = connection.getLocalTrackingDb();
 
         submissionClient = new OkHttpClient();
@@ -185,7 +189,7 @@ public class ConnectionSyncProcess {
     private void removeDeletedFlag(JSONObject localDocument) throws Exception {
         localDocument.put("nunaliit_mobile_deleted", false);
         localDocument.put("nunaliit_mobile_delete_submitted", false);
-        documentDb.updateDocument(localDocument);
+        localDocumentDb.updateDocument(localDocument);
     }
 
     private boolean hasDeleteBeenSubmitted(JSONObject document) throws Exception {
@@ -197,11 +201,18 @@ public class ConnectionSyncProcess {
     }
 
     private void deleteDocumentOnMobile(JSONObject document) throws Exception {
-        documentDb.deleteDocument(document);
+        localDocumentDb.deleteDocument(document);
     }
 
+    /**
+     * Gets all skeleton docs, then all documents for schemas found in skeleton docs.
+     *
+     * @return
+     * @throws Exception
+     */
     private List<JSONObject> fetchAllRemoteDocuments() throws Exception {
-        List<JSONObject> remoteDocs = getDocsFromView();
+        // seleton-docs view
+        List<JSONObject> remoteDocs = fetchSkeletonDocs();
 
         Log.v(TAG, "Synchronization received " + remoteDocs.size() + " skeleton document(s)");
 
@@ -222,11 +233,18 @@ public class ConnectionSyncProcess {
             }
         }
 
+        // Get all docs for those schemas.
         List<JSONObject> subdocsForSchema = fetchDocumentsForSchemas(schemaIdSet);
 
         for(JSONObject subdoc : subdocsForSchema) {
             String id = subdoc.getString("_id");
             subdocumentMap.put(id, subdoc);
+
+            if (subdoc.has("_attachments")) {
+                Log.v(TAG, "SARAH: doc has _attachments: " + subdoc.getString("_attachments"));
+                JSONObject attachments = subdoc.getJSONObject("_attachments");
+            }
+
         }
 
         return new ArrayList<>(subdocumentMap.values());
@@ -242,7 +260,7 @@ public class ConnectionSyncProcess {
         return subdocuments;
     }
 
-    private List<JSONObject> getDocsFromView() throws Exception {
+    private List<JSONObject> fetchSkeletonDocs() throws Exception {
         return getDocsFromView("skeleton-docs", null);
     }
 
@@ -269,7 +287,7 @@ public class ConnectionSyncProcess {
     private boolean shouldUpdateLocalDocument(JSONObject remoteDoc) throws Exception {
         String docId = remoteDoc.getString("_id");
 
-        JSONObject localDocument = documentDb.getDocument(docId);
+        JSONObject localDocument = localDocumentDb.getDocument(docId);
 
         SubmissionStatus documentSubmissionStatus = getSubmissionStatusForDocument(localDocument);
 
@@ -286,7 +304,7 @@ public class ConnectionSyncProcess {
 
     private boolean shouldUpdateRemoteDocument(JSONObject remoteDoc) throws Exception {
         String docId = remoteDoc.getString("_id");
-        JSONObject localDocument = documentDb.getDocument(docId);
+        JSONObject localDocument = localDocumentDb.getDocument(docId);
 
         boolean requiresUpdate = isChangedOnLocal(localDocument) && isRequiresSubmission(localDocument);
 
@@ -304,6 +322,8 @@ public class ConnectionSyncProcess {
                 if (updated) {
                     ++updatedCount;
                 }
+
+                syncAttachmentsToLocal(doc);
             } catch (Exception e) {
                 failedCount++;
 
@@ -324,7 +344,7 @@ public class ConnectionSyncProcess {
     private boolean updateDocumentIfNeeded(JSONObject remoteDoc) throws Exception {
         String docId = remoteDoc.getString("_id");
 
-        JSONObject localDocument = documentDb.getDocument(docId);
+        JSONObject localDocument = localDocumentDb.getDocument(docId);
 
         if (hasFlagDeleted(localDocument)) {
             return false;
@@ -397,7 +417,7 @@ public class ConnectionSyncProcess {
         String body = deleteResponse.body().string();
 
         documentToDelete.put("nunaliit_mobile_delete_submitted", true);
-        documentDb.updateDocument(documentToDelete);
+        localDocumentDb.updateDocument(documentToDelete);
 
         Log.v(TAG, body);
         return true;
@@ -440,7 +460,7 @@ public class ConnectionSyncProcess {
 
     private List<JSONObject> getNewLocalDocuments(List<JSONObject> remoteDocuments) {
         try {
-            List<JSONObject> localDocuments = documentDb.getAllDocuments();
+            List<JSONObject> localDocuments = localDocumentDb.getAllDocuments();
 
             HashMap<String, JSONObject> localDocumentsMap = new HashMap<>();
 
@@ -472,7 +492,7 @@ public class ConnectionSyncProcess {
 
     private List<JSONObject> getDocumentsPendingDeletion() throws Exception {
         List<JSONObject> documentsPendingDeletion = new ArrayList<>();
-        List<JSONObject> localDocuments = documentDb.getAllDocuments();
+        List<JSONObject> localDocuments = localDocumentDb.getAllDocuments();
 
         for (JSONObject localDocument: localDocuments) {
             if (hasFlagDeleted(localDocument)) {
@@ -490,25 +510,25 @@ public class ConnectionSyncProcess {
         Revision revisionRecord = getRevisionRecord(doc);
 
         CouchbaseDocInfo info;
-        if( documentDb.documentExists(docId) ) {
-            JSONObject existingDoc = documentDb.getDocument(docId);
+        if( localDocumentDb.documentExists(docId) ) {
+            JSONObject existingDoc = localDocumentDb.getDocument(docId);
             String existingRev = existingDoc.optString("_rev",null);
             if( null != existingRev ){
                 doc.put("_rev",existingRev);
             }
 
-            // If there is an _attachments, the document will not be updated.
+            // If there is an _attachments, the document will not be updated. //SARAH: what?
             saveAttachments(doc);
 
-            info = documentDb.updateDocument(doc);
+            info = localDocumentDb.updateDocument(doc);
         } else {
             // When creating a document, no revision should be set
             doc.remove("_rev");
 
-            // If there is an _attachments, the document will not be created.
+            // If there is an _attachments, the document will not be created. //SARAH: what?
             saveAttachments(doc);
 
-            info = documentDb.createDocument(doc);
+            info = localDocumentDb.createDocument(doc);
         }
 
         revisionRecord.setRemoteRevision(remoteRev);
@@ -534,7 +554,7 @@ public class ConnectionSyncProcess {
         writeDocumentToSubmissionDatabase(local);
 
         // The document has been committed. Save a reference to its last commit.
-        JSONObject localDocument = documentDb.getDocument(docId);
+        JSONObject localDocument = localDocumentDb.getDocument(docId);
         revisionRecord.setLastCommit(localDocument.getString("_rev"));
         revisionRecord.setLocalRevision(localDocument.getString("_rev"));
         trackingDb.updateRevision(revisionRecord);
@@ -543,8 +563,52 @@ public class ConnectionSyncProcess {
     private void saveAttachments(JSONObject doc) throws Exception {
         if (doc.has("_attachments")) {
             JSONObject attachments = doc.getJSONObject("_attachments");
-            doc.remove("_attachments");
+//            doc.remove("_attachments");
             doc.putOpt("nunaliit_authoritative_attachments", attachments);
+        }
+    }
+
+    /**
+     *   "_attachments": {
+     *     "VID_20200312_100942_thumb.jpg": {
+     *       "content_type": "image/jpeg",
+     *       "revpos": 9,
+     *       "digest": "md5-jcksLcpfCDC1ZaizFFryHw==",
+     *       "length": 5935,
+     *       "stub": true
+     *     },
+     *     ...
+     *  }
+     * @param remoteDoc
+     * @throws Exception
+     */
+    private void syncAttachmentsToLocal(JSONObject remoteDoc) throws Exception {
+        if (remoteDoc.has("_attachments")) {
+            JSONObject attachments = remoteDoc.getJSONObject("_attachments");
+            String docId = remoteDoc.getString("_id");
+            Log.v(TAG, "SARAH: synching attachments for: " + docId);
+            Iterator<String> keys = attachments.keys();
+            String key;
+            JSONObject att;
+            ByteArrayOutputStream outputStream;
+            while (keys.hasNext()) {
+                key = keys.next();
+                att = attachments.getJSONObject(key);
+
+                outputStream = new ByteArrayOutputStream(att.getInt("length"));
+                couchDb.downloadAttachment(docId, key, outputStream);
+
+                InputStream inputStream = new ByteArrayInputStream(outputStream.toByteArray());
+                Document localDoc = localDocumentDb.getCouchbaseDocument(docId);
+                UnsavedRevision newRev = localDoc.getCurrentRevision().createRevision();
+                //SARAH: for now, using key name. JP suggested using digest instead (see #52)
+                newRev.setAttachment(key, att.optString("content_type", "unknown"), inputStream);
+                newRev.save();
+
+                outputStream.flush();
+                outputStream.close();
+                inputStream.close();
+            }
         }
     }
 

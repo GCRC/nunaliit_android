@@ -201,6 +201,10 @@ public class CouchbaseDb {
         }
     }
 
+    public Document getCouchbaseDocument(String docId) {
+        return database.getDocument(docId);
+    }
+
     public JSONObject getDocument(String docId) throws Exception {
         try {
             Document doc = database.getDocument(docId);

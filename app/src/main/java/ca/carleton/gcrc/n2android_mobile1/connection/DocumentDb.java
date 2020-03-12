@@ -21,8 +21,8 @@ import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseView;
 public class DocumentDb extends CouchbaseDb {
 
     public static final CouchbaseView viewInfo = new CouchbaseView(){
-        private final Set<String> schemaExclusionFilter = new HashSet<>(Arrays.asList("schema", "navigation", "module", "atlas",
-                "help", "layerDefinition", "email_template", "user_agreement"));
+        private final Set<String> schemaExclusionFilter = new HashSet<>(Arrays.asList("schema", "navigation", "module",
+                "atlas", "help", "layerDefinition", "email_template", "user_agreement", "translationRequest"));
         @Override
         public String getName() { return "info"; }
 
@@ -37,7 +37,7 @@ public class DocumentDb extends CouchbaseDb {
         private final Mapper mapper = new Mapper(){
             @Override
             public void map(Map<String, Object> document, Emitter emitter) {
-                Map<String,Object> value = new HashMap<String,Object>();
+                Map<String,Object> value = new HashMap<>();
 
                 String id = Couchbase.optString(document, "_id");
                 value.put("id", id);
