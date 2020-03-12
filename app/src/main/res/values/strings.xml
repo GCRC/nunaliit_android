@@ -6,7 +6,6 @@
     <string name="atlas_manage">Remove Atlas</string>
     <string name="atlas_manage_cancel">Finish Removing Atlases</string>
     <string name="atlas_add">Add Atlas</string>
-    <string name="search">Search</string>
 
     <string name="add_connection">Add Connection</string>
     <string name="connection">Connection</string>

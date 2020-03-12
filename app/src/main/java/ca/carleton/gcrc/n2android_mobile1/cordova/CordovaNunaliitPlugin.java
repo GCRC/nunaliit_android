@@ -2,7 +2,6 @@ package ca.carleton.gcrc.n2android_mobile1.cordova;
 
 import android.app.Activity;
 import android.util.Log;
-
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaInterface;
 import org.apache.cordova.CordovaPlugin;
@@ -205,21 +204,12 @@ public class CordovaNunaliitPlugin extends CordovaPlugin {
             });
             return true;
         }
-//        else if ("getCurrentLocation".equals(action)) {
-//            threadPool.execute(new PluginRunnable(actions, args, callbackContext) {
-//                @Override
-//                public void pluginRun() throws Exception {
-//                    getActions().getCurrentLocation(getCallbackContext());
-//                }
-//            });
-//            return true;
-//        }
 
         return false;  // Returning false results in a "MethodNotFound" error.
     }
 
     /**
-    * Use the Cordova bridge to invoke the callback.
+    * Use the Cordova bridge to invoke the callback. Handles all registered JavaScript callbacks from Nunaliit.
     */
     public static void javascriptEventCallback(String name) {
         if (!javaScriptCallbacks.isEmpty() && javaScriptCallbacks.contains(name) && sWebView != null) {

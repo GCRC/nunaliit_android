@@ -374,33 +374,6 @@
     }
 
     // ==================================================================
-    function getCurrentLocation(opts_) {
-        var opts = $n2.extend({
-            onSuccess: function (result) {
-            },
-            onError: function (err) {
-            }
-        }, opts_);
-
-        cordova.exec(
-            // success
-            function (result) {
-                opts.onSuccess(result);
-            },
-            // error
-            function (err) {
-                opts.onError(err);
-            },
-            // service
-            SERVICE,
-            // action
-            'getCurrentLocation',
-            // Arguments
-            []
-        );
-    }
-
-    // ==================================================================
     $n2.cordovaPlugin = {
         echo: echo
         ,getConnectionInfo: getConnectionInfo
@@ -415,7 +388,6 @@
         ,couchbaseGetAllDocuments: couchbaseGetAllDocuments
         ,couchbasePerformQuery: couchbasePerformQuery
         ,registerCallback: registerCallback
-        ,getCurrentLocation: getCurrentLocation
     };
 
 })(nunaliit2);

@@ -264,13 +264,6 @@ cordova.define('cordova/plugin_list', function(require, exports, module) {
             "clobbers": [
                 "window.cordova.plugins.fileOpener2"
             ]
-        },
-        // {
-        //     "file": "plugins/net.spantree.searchbar/www/searchbar.js",
-        //     "id": "net.spantree.searchbar.SearchBar",
-        //     "clobbers": [
-        //         "cordova.searchbar"
-        //     ]
-        // },
+        }
     ];
 });

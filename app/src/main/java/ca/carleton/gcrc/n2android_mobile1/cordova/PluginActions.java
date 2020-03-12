@@ -5,20 +5,6 @@ import android.content.Context;
 import android.location.Location;
 import android.support.annotation.NonNull;
 import android.util.Log;
-
-import com.google.android.gms.location.FusedLocationProviderClient;
-import com.google.android.gms.location.LocationServices;
-import com.google.android.gms.tasks.OnFailureListener;
-import com.google.android.gms.tasks.OnSuccessListener;
-
-import org.apache.cordova.CallbackContext;
-import org.apache.cordova.CordovaInterface;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import java.util.List;
-
 import ca.carleton.gcrc.n2android_mobile1.activities.EmbeddedCordovaActivity;
 import ca.carleton.gcrc.n2android_mobile1.connection.Connection;
 import ca.carleton.gcrc.n2android_mobile1.connection.ConnectionInfo;
@@ -28,6 +14,17 @@ import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseLiteService;
 import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseManager;
 import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseQuery;
 import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseQueryResults;
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
+import org.apache.cordova.CallbackContext;
+import org.apache.cordova.CordovaInterface;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.util.List;
 
 /**
  * Created by jpfiset on 4/5/16.
@@ -382,48 +379,6 @@ public class PluginActions {
             callbackContext.error("Error while performing couchbasePerformQuery(): " + e.getMessage());
         }
     }
-
-    /**
-     * Gets the last known location from the device API and returns result to client side callback.
-     *
-     * @param callbackContext The JavaScript callback context.
-     */
-//    public void getCurrentLocation(final CallbackContext callbackContext) {
-//        try {
-//            fusedLocationProviderClient.getLastLocation()
-//                    .addOnSuccessListener(new OnSuccessListener<Location>() {
-//                        @Override
-//                        public void onSuccess(Location location) {
-//
-//                            JSONObject result = new JSONObject();
-//                            if (location != null) {
-//                                Log.v(TAG, "SARAH: location is " + location.getLongitude() + ", " + location.getLatitude());
-//                                try {
-//                                    result.put("lon", location.getLongitude());
-//                                    result.put("lat", location.getLatitude());
-//                                }
-//                                catch (JSONException e) {
-//                                    callbackContext.error("Error while performing getCurrentLocation(): " + e.getMessage());
-//                                }
-//                            }
-//                            else {
-//                                Log.v(TAG, "SARAH: location is null");
-//                            }
-//                            callbackContext.success(result);
-//                        }
-//                    })
-//                    .addOnFailureListener(new OnFailureListener() {
-//                        @Override
-//                        public void onFailure(@NonNull Exception e) {
-//                            callbackContext.error("Error while performing getCurrentLocation(): " + e.getMessage());
-//                        }
-//                    });
-//
-//        }
-//        catch (SecurityException se) {
-//            callbackContext.error("Error while performing getCurrentLocation(): " + se.getMessage());
-//        }
-//    }
 
     private DocumentDb getDocumentDb() throws Exception {
         ConnectionInfo connInfo = retrieveConnection();
