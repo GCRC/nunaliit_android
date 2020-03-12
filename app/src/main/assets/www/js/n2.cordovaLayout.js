@@ -93,7 +93,6 @@ var Layout = $n2.Class({
             window.nunaliit2.cordovaPlugin.registerCallback('onCreateDocument',
                 function () {
                     window.onCreateDocument = function () {
-                        $n2.log("SARAH: onCreateDocument function called");
                         d.send(DH, {
                             type: 'editInitiate'
                             , doc: {}
@@ -109,7 +108,6 @@ var Layout = $n2.Class({
                 function () {
                     // cordova.searchbar.show();
                     window.onSortDocuments = function () {
-                        $n2.log("SARAH: onSortDocuments function called");
                         d.send(DH, {
                             type: 'sortInitiate'
                         });
@@ -125,7 +123,6 @@ var Layout = $n2.Class({
             window.nunaliit2.cordovaPlugin.registerCallback('onSearchDocuments',
                 function () {
                     window.onSearchDocuments = function () {
-                        $n2.log("SARAH: onSearchDocuments function called");
                         //TODO: show search box
                         d.send(DH, {
                             type: 'searchInitiate',
@@ -140,7 +137,7 @@ var Layout = $n2.Class({
         document.addEventListener("deviceready", evt => {
                 navigator.geolocation.getCurrentPosition(
                     position => {
-                        $n2.log("SARAH: position callback: " + position.coords.longitude + ", " + position.coords.latitude);
+                        $n2.log("Current position callback rx'd: " + position.coords.longitude + ", " + position.coords.latitude);
                         _this.currentLatitude = position.coords.latitude;
                         _this.currentLongitude = position.coords.longitude;
                         _this.currentLocationAvailable = true;
@@ -150,7 +147,7 @@ var Layout = $n2.Class({
                         });
                     },
                     positionError => {
-                        $n2.log("SARAH: error code: " + positionError.code + " msg: " + positionError.message);
+                        $n2.log("Current position callback error: code: " + positionError.code + " msg: " + positionError.message);
                     })
             },
             false);
@@ -249,24 +246,24 @@ var Layout = $n2.Class({
     _displayAllDocuments: function(){
         var _this = this;
 
-        //SARAH: for testing, I can't seem to get a location from the emulator...
-        if (!this.currentLocationAvailable) {
-            this.currentLatitude = 45.426;
-            this.currentLongitude = -75.687;
-            this.currentLocationAvailable = true;
-            $n2.log("SARAH: pretend location: " + this.currentLongitude + ", " + this.currentLatitude);
-        }
+        // For testing, can't seem to get a location from the emulator...
+        // if (!this.currentLocationAvailable) {
+        //     this.currentLatitude = 45.426;
+        //     this.currentLongitude = -75.687;
+        //     this.currentLocationAvailable = true;
+        //     $n2.log("TEST: using pretend location: " + this.currentLongitude + ", " + this.currentLatitude);
+        // }
 
         if( this.atlasDesign ){
             this.atlasDesign.queryView({
                 viewName: 'info'
                 ,onSuccess: function(rows){
 
-                    $n2.log('SARAH: before sort: ' + JSON.stringify(rows));
+                    // $n2.log('TRACE: before sort: ' + JSON.stringify(rows));
 
                     _this._sortDocuments(rows);
 
-                    $n2.log('SARAH: after sort: ' + JSON.stringify(rows));
+                    // $n2.log('TRACE: after sort: ' + JSON.stringify(rows));
 
                     var docIds = [];
                     for(var i=0,e=rows.length; i<e; ++i){
@@ -316,7 +313,6 @@ var Layout = $n2.Class({
 	    if( 'unselected' === m.type ){
 		    this._displayAllDocuments();
 	    } else if (m.type === 'sortInitiate') {
-	        $n2.log("SARAH: sortInitiate received");
 	        this._showSortDialog();
         } else if (m.type === 'refreshListView') {
 	        this._displayAllDocuments();
@@ -327,7 +323,7 @@ var Layout = $n2.Class({
         var localStorage = $n2.storage.getLocalStorage();
         var sortBy = localStorage.getItem(SORT_BY_KEY);
         var sortOrder = localStorage.getItem(SORT_ORDER_KEY);
-        $n2.log("SARAH: sortBy: " + sortBy + ", sortOrder: " + sortOrder);
+        $n2.log("sortBy: " + sortBy + ", sortOrder: " + sortOrder);
 
         var ascending = true;
         if (sortOrder === SORT_ORDER_DESC) {
@@ -356,11 +352,11 @@ var Layout = $n2.Class({
 
     _sortByProximity: function (rows, ascending) {
         if (this.currentLocationAvailable) {
-            $n2.log("SARAH: current.coords: " + this.currentLongitude + ", " + this.currentLatitude);
+            $n2.log("Sort by proximity, current location: " + this.currentLongitude + ", " + this.currentLatitude);
             var _this = this;
             if (ascending) {
                 rows.sort(function (a, b) {
-                    //$n2.log("SARAH: a.coords: " + a.value.lon + ", " + a.value.lat + " b.coords: " + b.value.lon + ", " + b.value.lat);
+                    //$n2.log("a.coords: " + a.value.lon + ", " + a.value.lat + " b.coords: " + b.value.lon + ", " + b.value.lat);
                     var distanceA = _this._getDistanceFromLatLonInKm(a.value.lat, a.value.lon, _this.currentLatitude, _this.currentLongitude);
                     var distanceB = _this._getDistanceFromLatLonInKm(b.value.lat, b.value.lon, _this.currentLatitude, _this.currentLongitude);
 
@@ -368,7 +364,7 @@ var Layout = $n2.Class({
                 });
             } else {
                 rows.sort(function (a, b) {
-                    //$n2.log("SARAH: a.coords: " + a.value.lon + ", " + a.value.lat + " b.coords: " + b.value.lon + ", " + b.value.lat);
+                    //$n2.log("a.coords: " + a.value.lon + ", " + a.value.lat + " b.coords: " + b.value.lon + ", " + b.value.lat);
                     var distanceA = _this._getDistanceFromLatLonInKm(a.value.lat, a.value.lon, _this.currentLatitude, _this.currentLongitude);
                     var distanceB = _this._getDistanceFromLatLonInKm(b.value.lat, b.value.lon, _this.currentLatitude, _this.currentLongitude);
 
@@ -376,7 +372,7 @@ var Layout = $n2.Class({
                 });
             }
         } else {
-            $n2.log("SARAH: current location unavailable, can't sort by proximity")
+            $n2.log("Current location unavailable, can't sort by proximity")
         }
     },
 
@@ -421,7 +417,6 @@ var Layout = $n2.Class({
         var _this = this;
         var sortBy = localStorage.getItem(SORT_BY_KEY);
         var sortOrder = localStorage.getItem(SORT_ORDER_KEY);
-        $n2.log("SARAH: sortBy: " + sortBy + ", sortOrder: " + sortOrder);
 
         var dialogId = $n2.getUniqueId();
         var sortBySelectId = $n2.getUniqueId();
@@ -441,31 +436,24 @@ var Layout = $n2.Class({
             + '</div>');
         // Add to 'Sort by' options
         var $sortBySelect = $dialog.find('#' + sortBySelectId);
-        $n2.log("SARAH: add sort by items to " + $sortBySelect.attr('id') + " (" + sortBySelectId + ")");
-        $n2.log("SARAH: " + (sortBy === SORT_BY_PROXIMITY ? 'prox' : 'not prox'));
         // $sortBySelect.append($('<option' + (sortBy === SORT_BY_DESCRIPTION ? ' selected' : '') + '>' + SORT_BY_DESCRIPTION + '</option>'));
         $sortBySelect.append($('<option' + (sortBy === SORT_BY_UPDATED ? ' selected' : '') + '>' + SORT_BY_UPDATED + '</option>'));
         $sortBySelect.append($('<option' + (sortBy === SORT_BY_PROXIMITY ? ' selected' : '') + '>' + SORT_BY_PROXIMITY + '</option>'));
 
         var $sortOrderSelect = $dialog.find('#' + sortOrderSelectId);
-        $n2.log("SARAH: add sort order items to " + $sortOrderSelect.attr('id') + " (" + sortOrderSelectId + ")");
         $sortOrderSelect.append($('<option' + (sortOrder === SORT_ORDER_ASC ? ' selected' : '') + '>' + SORT_ORDER_ASC + '</option>'));
         $sortOrderSelect.append($('<option' + (sortOrder === SORT_ORDER_DESC ? ' selected' : '') + '>' + SORT_ORDER_DESC + '</option>'));
-
-        $n2.log("SARAH: oustide dialogId: " + dialogId + ", sortBySelectId: " + sortBySelectId + ", sortOrderSelectId: " + sortOrderSelectId);
 
         $dialog.find('button')
             .first() // OK button
             .button({icons: {primary: 'ui-icon-check'}})
             .click(function () {
-                $n2.log("SARAH: inside dialogId: " + dialogId + ", sortBySelectId: " + sortBySelectId + ", sortOrderSelectId: " + sortOrderSelectId);
                 var $dialog = $('#' + dialogId);
                 var $sortBySelect = $dialog.find('#' + sortBySelectId);
                 var $sortOrderSelect = $dialog.find('#' + sortOrderSelectId);
                 var sortBy = $sortBySelect.val();
                 var sortOrder = $sortOrderSelect.val();
 
-                $n2.log('SARAH: selected sortBy: ' + sortBy + ', sortOrder: ' + sortOrder);
                 var localStorage = $n2.storage.getLocalStorage();
                 localStorage.setItem('sortBy', sortBy);
                 localStorage.setItem('sortOrder', sortOrder);
@@ -481,7 +469,6 @@ var Layout = $n2.Class({
             .next() // Cancel button
             .button({icons: {primary: 'ui-icon-cancel'}})
             .click(function () {
-                $n2.log("SARAH: cancel clicked");
                 var $dialog = $('#' + dialogId);
                 $dialog.dialog('close');
                 return false;
