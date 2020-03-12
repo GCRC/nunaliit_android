@@ -243,6 +243,12 @@ var Layout = $n2.Class({
         this._displayAllDocuments();
     },
 
+    /**
+     * Queries the "info" view and shows a list of these documents. Sorting of documents is based on selections made
+     * in the sort options dialog.
+     *
+     * @private
+     */
     _displayAllDocuments: function(){
         var _this = this;
 
@@ -319,6 +325,13 @@ var Layout = $n2.Class({
         }
 	},
 
+    /**
+     * Sorts the documents in rows, using fields set in objects in the "info" view (see DocumentDb.java for info view).
+     * The sort by and sort order options are taken from local storage, if available.
+     *
+     * @param rows Documents containing fields specified in the "info" view.
+     * @private
+     */
     _sortDocuments: function(rows) {
         var localStorage = $n2.storage.getLocalStorage();
         var sortBy = localStorage.getItem(SORT_BY_KEY);
@@ -338,6 +351,13 @@ var Layout = $n2.Class({
         }
     },
 
+    /**
+     * Sort documents by "updatedTime".  Document objects should have fields specified in the "info" view.
+     *
+     * @param rows Documents containing fields specified in the "info" view.
+     * @param ascending Whether to sort in ascending order.
+     * @private
+     */
 	_sortByUpdatedTime: function(rows, ascending) {
         if (ascending) {
             rows.sort(function(a, b) {
@@ -350,6 +370,14 @@ var Layout = $n2.Class({
         }
     },
 
+    /**
+     * Sort documents by distance to the device's current location.  Document objects should have fields specified in
+     * the "info" view.
+     *
+     * @param rows Documents containing fields specified in the "info" view.
+     * @param ascending Whether to sort in ascending order.
+     * @private
+     */
     _sortByProximity: function (rows, ascending) {
         if (this.currentLocationAvailable) {
             $n2.log("Sort by proximity, current location: " + this.currentLongitude + ", " + this.currentLatitude);
@@ -377,6 +405,7 @@ var Layout = $n2.Class({
     },
 
     /**
+     * Calculates distance between two points, in kilometres.
      *
      * @param lat1 First coordinate latitude
      * @param lon1 First coordinate longitude
@@ -409,10 +438,24 @@ var Layout = $n2.Class({
         return R * c; // Distance in km
     },
 
+    /**
+     * Converts from degrees to radians.
+     *
+     * @param deg Degrees value.
+     * @returns {number} Value converted to radians.
+     * @private
+     */
     _deg2rad: function (deg) {
         return deg * (Math.PI / 180)
     },
 
+    /**
+     * Shows the sorting options dialog. User makes selections, on clicking "OK" the options are saved to local storage.
+     * The dialog closes and the list is refreshed. Clicking "Cancel" makes no changes to sort options and does not
+     * refresh the list.
+     *
+     * @private
+     */
     _showSortDialog: function () {
         var _this = this;
         var sortBy = localStorage.getItem(SORT_BY_KEY);
