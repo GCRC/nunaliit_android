@@ -22,7 +22,7 @@ public class DocumentDb extends CouchbaseDb {
 
     public static final CouchbaseView viewInfo = new CouchbaseView(){
         private final Set<String> schemaExclusionFilter = new HashSet<>(Arrays.asList("schema", "navigation", "module", "atlas",
-                "help", "layerDefinition", "email_template", "user_agreement"));
+                "help", "layerDefinition", "email_template", "user_agreement", "translationRequest"));
         @Override
         public String getName() { return "info"; }
 
