@@ -39,14 +39,6 @@ import android.widget.FrameLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ToggleButton;
-
-import org.apache.cordova.CordovaActivity;
-
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Vector;
-
 import ca.carleton.gcrc.n2android_mobile1.Nunaliit;
 import ca.carleton.gcrc.n2android_mobile1.R;
 import ca.carleton.gcrc.n2android_mobile1.connection.ConnectionInfo;
@@ -57,6 +49,12 @@ import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseLiteService;
 import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseManager;
 import ca.carleton.gcrc.utils.AtlasPictureSingleton;
 import okhttp3.HttpUrl;
+import org.apache.cordova.CordovaActivity;
+
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Vector;
 
 /**
  * Created by jpfiset on 3/9/16.
@@ -351,6 +349,24 @@ public class EmbeddedCordovaActivity extends CordovaActivity {
         CordovaNunaliitPlugin.javascriptEventCallback("onCreateDocument");
     }
 
+    /**
+     * Cordova button click passthrough to JavaScript function to sort documents.
+     *
+     * @param view Android UI view.
+     */
+    public void onSortDocuments(View view) {
+        CordovaNunaliitPlugin.javascriptEventCallback("onSortDocuments");
+    }
+
+    /**
+     * Cordova button click passthrough to JavaScript function to search documents.
+     *
+     * @param view Android UI view.
+     */
+    public void onSearchDocuments(View view) {
+        CordovaNunaliitPlugin.javascriptEventCallback("onSearchDocuments");
+    }
+
     public CouchbaseLiteService getCouchDbService(){
         return mService;
     }
@@ -476,8 +492,6 @@ public class EmbeddedCordovaActivity extends CordovaActivity {
                 synchronizeAtlasMenuItem.setIcon(R.drawable.ic_sync_black);
             }
         }
-
-
     }
 
     private void synchronizeConnection(ConnectionInfo connInfo) {

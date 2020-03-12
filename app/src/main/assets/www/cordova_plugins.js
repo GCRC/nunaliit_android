@@ -47,9 +47,6 @@ cordova.define('cordova/plugin_list', function(require, exports, module) {
                 "CameraPopoverHandle"
             ]
         },
-
-
-
         {
             "file": "plugins/org.apache.cordova.file/www/DirectoryEntry.js",
             "id": "org.apache.cordova.file.DirectoryEntry",
@@ -194,8 +191,6 @@ cordova.define('cordova/plugin_list', function(require, exports, module) {
             ]
         },
 
-
-
         {
             "file": "plugins/org.apache.cordova.mediacapture/www/CaptureAudioOptions.js",
             "id": "org.apache.cordova.mediacapture.CaptureAudioOptions",
@@ -249,9 +244,6 @@ cordova.define('cordova/plugin_list', function(require, exports, module) {
             "file": "plugins/org.apache.cordova.mediacapture/www/helpers.js",
             "id": "org.apache.cordova.mediacapture.helpers"
         },
-
-
-
         {
             "file": "plugins/org.apache.cordova.media/www/Media.js",
             "id": "org.apache.cordova.media.Media",
@@ -266,15 +258,12 @@ cordova.define('cordova/plugin_list', function(require, exports, module) {
                 "window.MediaError"
             ]
         },
-
-
-
         {
             "file": "plugins/io.github.pwlin.cordova.plugins.fileopener2/www/plugins.FileOpener2.js",
             "id": "io.github.pwlin.cordova.plugins.fileopener2.FileOpener2",
             "clobbers": [
                 "window.cordova.plugins.fileOpener2"
             ]
-        },
+        }
     ];
 });

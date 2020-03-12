@@ -5,20 +5,6 @@ import android.content.Context;
 import android.location.Location;
 import android.support.annotation.NonNull;
 import android.util.Log;
-
-import com.google.android.gms.location.FusedLocationProviderClient;
-import com.google.android.gms.location.LocationServices;
-import com.google.android.gms.tasks.OnFailureListener;
-import com.google.android.gms.tasks.OnSuccessListener;
-
-import org.apache.cordova.CallbackContext;
-import org.apache.cordova.CordovaInterface;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import java.util.List;
-
 import ca.carleton.gcrc.n2android_mobile1.activities.EmbeddedCordovaActivity;
 import ca.carleton.gcrc.n2android_mobile1.connection.Connection;
 import ca.carleton.gcrc.n2android_mobile1.connection.ConnectionInfo;
@@ -28,6 +14,17 @@ import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseLiteService;
 import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseManager;
 import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseQuery;
 import ca.carleton.gcrc.n2android_mobile1.couchbase.CouchbaseQueryResults;
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
+import org.apache.cordova.CallbackContext;
+import org.apache.cordova.CordovaInterface;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.util.List;
 
 /**
  * Created by jpfiset on 4/5/16.
@@ -46,7 +43,7 @@ public class PluginActions {
 
     public void echo(String message, CallbackContext callbackContext) {
         if (message != null && message.length() > 0) {
-            callbackContext.success(message);
+            callbackContext.success(message + " (server)");
         } else {
             callbackContext.error("Expected one non-empty string argument.");
         }
@@ -379,7 +376,7 @@ public class PluginActions {
             callbackContext.success(result);
 
         } catch(Exception e) {
-            callbackContext.error("Error while performing couchbasePerformQuery(): "+e.getMessage());
+            callbackContext.error("Error while performing couchbasePerformQuery(): " + e.getMessage());
         }
     }
 
@@ -394,8 +391,8 @@ public class PluginActions {
         }
         CouchbaseManager couchbaseManager = couchbaseService.getCouchbaseManager();
         Connection connection = new Connection(couchbaseManager, connInfo);
-        DocumentDb docDb = connection.getLocalDocumentDb();
-        return docDb;
+
+        return connection.getLocalDocumentDb();
     }
 
     public ConnectionInfo retrieveConnection(){

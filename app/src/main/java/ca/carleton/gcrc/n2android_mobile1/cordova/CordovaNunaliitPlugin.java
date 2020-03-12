@@ -2,7 +2,6 @@ package ca.carleton.gcrc.n2android_mobile1.cordova;
 
 import android.app.Activity;
 import android.util.Log;
-
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaInterface;
 import org.apache.cordova.CordovaPlugin;
@@ -11,7 +10,9 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.Vector;
 import java.util.concurrent.ExecutorService;
 
@@ -20,11 +21,11 @@ import java.util.concurrent.ExecutorService;
  */
 public class CordovaNunaliitPlugin extends CordovaPlugin {
 
-    final protected String TAG = this.getClass().getSimpleName();
+    protected static final String TAG = CordovaNunaliitPlugin.class.getSimpleName();
 
     private CordovaInterface cordovaInterface = null;
     private PluginActions actions = null;
-    private static String sEventCallback = null;
+    private static Set<String> javaScriptCallbacks = new HashSet<>();
     private static CordovaWebView sWebView;
 
     @Override
@@ -47,7 +48,6 @@ public class CordovaNunaliitPlugin extends CordovaPlugin {
     @Override
     public void onDestroy() {
         super.onDestroy();
-        sEventCallback = null;
         sWebView = null;
     }
 
@@ -59,7 +59,6 @@ public class CordovaNunaliitPlugin extends CordovaPlugin {
     @Override
     public boolean execute(String action, JSONArray args, CallbackContext callbackContext) throws JSONException {
         Log.v(TAG, "Action: " + action);
-
 
         ExecutorService threadPool = this.cordovaInterface.getThreadPool();
 
@@ -197,9 +196,10 @@ public class CordovaNunaliitPlugin extends CordovaPlugin {
             threadPool.execute(new PluginRunnable(actions, args, callbackContext) {
                 @Override
                 public void pluginRun() throws Exception {
-                    sEventCallback = getArguments().getString(0);
-                    Log.d(TAG, "Register callback was called for: " + sEventCallback);
-                    getCallbackContext().success(sEventCallback);
+                    String callbackString = getArguments().getString(0);
+                    javaScriptCallbacks.add(callbackString);
+                    Log.d(TAG, "Register callback was called for: " + callbackString);
+                    getCallbackContext().success(callbackString);
                 }
             });
             return true;
@@ -209,11 +209,12 @@ public class CordovaNunaliitPlugin extends CordovaPlugin {
     }
 
     /**
-    * Use the Cordova bridge to invoke the callback.
+    * Use the Cordova bridge to invoke the callback. Handles all registered JavaScript callbacks from Nunaliit.
     */
     public static void javascriptEventCallback(String name) {
-        if (sEventCallback != null && !sEventCallback.isEmpty() && sWebView != null) {
-            String snippet = "javascript:" + sEventCallback + "(" + name + ")";
+        if (!javaScriptCallbacks.isEmpty() && javaScriptCallbacks.contains(name) && sWebView != null) {
+            Log.i(TAG, "javascriptEventCallback for: " + name);
+            String snippet = "javascript:" + name + "(" + name + ")";
             sWebView.sendJavascript(snippet);
         }
     }

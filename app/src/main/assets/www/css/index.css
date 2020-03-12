@@ -101,3 +101,13 @@
         opacity: 0;
     }
 }
+
+.sortOptionsDialogPadding {
+    padding: 3px 3px;
+}
+
+.sortOptionsDialogButtonDiv {
+    display: flex;
+    justify-content: flex-end;
+    width: 100%;
+}

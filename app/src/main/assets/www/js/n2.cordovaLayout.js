@@ -35,6 +35,13 @@ POSSIBILITY OF SUCH DAMAGE.
 var _loc = function(str,args){ return $n2.loc(str,'nunaliit2-cordova',args); };
 var DH = 'n2.cordovaLayout';
 
+var SORT_BY_KEY = "sortBy";
+var SORT_ORDER_KEY = "sortOrder";
+var SORT_BY_UPDATED = "Last Updated";
+var SORT_BY_PROXIMITY = "Proximity";
+var SORT_ORDER_ASC = "Ascending";
+var SORT_ORDER_DESC = "Descending";
+
 // ===========================================================
 var Layout = $n2.Class({
 
@@ -48,6 +55,12 @@ var Layout = $n2.Class({
 
     displayControl: null,
 
+    currentLatitude: null,
+
+    currentLongitude: null,
+
+    currentLocationAvailable: null,
+
     initialize: function(opts_){
         var opts = $n2.extend({
             config: null
@@ -58,11 +71,11 @@ var Layout = $n2.Class({
         this.config = opts.config;
         if( typeof this.config !== 'object' ){
             throw 'n2.cordovaLayout.Layout.initialize() config must be specified';
-        };
+        }
         this.atlasDesign = this.config.atlasDesign;
 		if( this.config.directory ){
 			this.dispatchService = this.config.directory.dispatchService;
-		};
+		}
 
 		// dispatcher
 		var d = this.dispatchService;
@@ -71,25 +84,75 @@ var Layout = $n2.Class({
 		        _this._handle(m, addr, dispatcher);
 		    };
 			d.register(DH,'unselected',f);
-		};
-
-        this._display();
+			d.register(DH, 'sortInitiate', f);
+			d.register(DH, 'refreshListView', f);
+		}
 
         // Listen to the Create Document callback from the native app
-        window.document.addEventListener("deviceready", function() {
+        document.addEventListener("deviceready", function () {
             window.nunaliit2.cordovaPlugin.registerCallback('onCreateDocument',
-                function() {
-                    window.onCreateDocument = function() {
+                function () {
+                    window.onCreateDocument = function () {
                         d.send(DH, {
                             type: 'editInitiate'
-                            ,doc: {}
+                            , doc: {}
                         });
                     };
-                }, function(error) {
+                }, function (error) {
                     console.error('Error on cordova callback invocation: ', error);
                 });
         });
 
+        document.addEventListener("deviceready", function () {
+            window.nunaliit2.cordovaPlugin.registerCallback('onSortDocuments',
+                function () {
+                    // cordova.searchbar.show();
+                    window.onSortDocuments = function () {
+                        d.send(DH, {
+                            type: 'sortInitiate'
+                        });
+                    };
+                }, function (error) {
+                    console.error('Error on cordova callback invocation: ', error);
+                });
+
+        });
+
+        // Listen to the Search Documents callback from the native app
+        document.addEventListener("deviceready", function () {
+            window.nunaliit2.cordovaPlugin.registerCallback('onSearchDocuments',
+                function () {
+                    window.onSearchDocuments = function () {
+                        //TODO: show search box
+                        d.send(DH, {
+                            type: 'searchInitiate',
+                            searchLine: 'island'
+                        });
+                    };
+                }, function (error) {
+                    console.error('Error on cordova callback invocation: ', error);
+                });
+        });
+
+        document.addEventListener("deviceready", evt => {
+                navigator.geolocation.getCurrentPosition(
+                    position => {
+                        $n2.log("Current position callback rx'd: " + position.coords.longitude + ", " + position.coords.latitude);
+                        _this.currentLatitude = position.coords.latitude;
+                        _this.currentLongitude = position.coords.longitude;
+                        _this.currentLocationAvailable = true;
+                        // Need to refresh list to trigger sorting since the callback could be called after we've displayed the list.
+                        d.send(DH, {
+                            type: 'refreshListView'
+                        });
+                    },
+                    positionError => {
+                        $n2.log("Current position callback error: code: " + positionError.code + " msg: " + positionError.message);
+                    })
+            },
+            false);
+
+        this._display();
     },
 
     _display: function(){
@@ -131,13 +194,13 @@ var Layout = $n2.Class({
                 ,authService: config.directory.authService
                 ,showAsLink: true
             });
-        };
+        }
 
         // Editor
         if( config.couchEditor ){
 		    config.couchEditor.setPanelName(this.sidePanelName);
 		    config.couchEditor.setSchemas( $n2.couchEdit.Constants.ALL_SCHEMAS );
-        };
+        }
 
         // Display
         var displayFormat = 'classic';
@@ -152,7 +215,7 @@ var Layout = $n2.Class({
         this._sendSynchronousMessage(msg);
         if( msg.isAvailable ){
             displayHandlerAvailable = true;
-        };
+        }
 
         if( displayHandlerAvailable ){
             this._sendDispatchMessage({
@@ -171,7 +234,7 @@ var Layout = $n2.Class({
             });
         } else {
             drawCanvas(searchInfo, mapInfo, canvasInfo);
-        };
+        }
     },
 
     _registerDisplayControl: function(displayControl){
@@ -180,20 +243,42 @@ var Layout = $n2.Class({
         this._displayAllDocuments();
     },
 
+    /**
+     * Queries the "info" view and shows a list of these documents. Sorting of documents is based on selections made
+     * in the sort options dialog.
+     *
+     * @private
+     */
     _displayAllDocuments: function(){
         var _this = this;
+
+        // For testing, can't seem to get a location from the emulator...
+        // if (!this.currentLocationAvailable) {
+        //     this.currentLatitude = 45.426;
+        //     this.currentLongitude = -75.687;
+        //     this.currentLocationAvailable = true;
+        //     $n2.log("TEST: using pretend location: " + this.currentLongitude + ", " + this.currentLatitude);
+        // }
 
         if( this.atlasDesign ){
             this.atlasDesign.queryView({
                 viewName: 'info'
                 ,onSuccess: function(rows){
+
+                    // $n2.log('TRACE: before sort: ' + JSON.stringify(rows));
+
+                    _this._sortDocuments(rows);
+
+                    // $n2.log('TRACE: after sort: ' + JSON.stringify(rows));
+
                     var docIds = [];
                     for(var i=0,e=rows.length; i<e; ++i){
                         var row = rows[i];
                         var docId = row.value.id; // just cute to test value
                         docIds.push(docId);
-                    };
+                    }
                     $n2.log('Atlas contains '+docIds.length+' document(s)');
+
                     _this._sendDispatchMessage({
                         type: 'selected'
                         ,docIds: docIds
@@ -205,7 +290,7 @@ var Layout = $n2.Class({
             });
         } else {
             this._displayWelcomeMessage();
-        };
+        }
     },
 
     _displayWelcomeMessage: function() {
@@ -220,21 +305,230 @@ var Layout = $n2.Class({
 		var d = this.dispatchService;
 		if( d ){
 			d.send(DH,m);
-		};
+		}
 	},
 
 	_sendSynchronousMessage: function(m){
 		var d = this.dispatchService;
 		if( d ){
 			d.synchronousCall(DH,m);
-		};
+		}
 	},
 
 	_handle: function(m, addr, dispatcher){
 	    if( 'unselected' === m.type ){
 		    this._displayAllDocuments();
-	    };
-	}
+	    } else if (m.type === 'sortInitiate') {
+	        this._showSortDialog();
+        } else if (m.type === 'refreshListView') {
+	        this._displayAllDocuments();
+        }
+	},
+
+    /**
+     * Sorts the documents in rows, using fields set in objects in the "info" view (see DocumentDb.java for info view).
+     * The sort by and sort order options are taken from local storage, if available.
+     *
+     * @param rows Documents containing fields specified in the "info" view.
+     * @private
+     */
+    _sortDocuments: function(rows) {
+        var localStorage = $n2.storage.getLocalStorage();
+        var sortBy = localStorage.getItem(SORT_BY_KEY);
+        var sortOrder = localStorage.getItem(SORT_ORDER_KEY);
+        $n2.log("sortBy: " + sortBy + ", sortOrder: " + sortOrder);
+
+        var ascending = true;
+        if (sortOrder === SORT_ORDER_DESC) {
+            ascending = false;
+        }
+
+        // Default sort by last updated time.
+        if (!sortBy || sortBy === SORT_BY_UPDATED) {
+            this._sortByUpdatedTime(rows, ascending);
+        } else if (sortBy === SORT_BY_PROXIMITY) {
+            this._sortByProximity(rows, ascending);
+        }
+    },
+
+    /**
+     * Sort documents by "updatedTime".  Document objects should have fields specified in the "info" view.
+     *
+     * @param rows Documents containing fields specified in the "info" view.
+     * @param ascending Whether to sort in ascending order.
+     * @private
+     */
+	_sortByUpdatedTime: function(rows, ascending) {
+        if (ascending) {
+            rows.sort(function(a, b) {
+                return parseInt(a.value.updatedTime) - parseInt(b.value.updatedTime);
+            });
+        } else {
+            rows.sort(function(a, b) {
+                return parseInt(b.value.updatedTime) - parseInt(a.value.updatedTime);
+            });
+        }
+    },
+
+    /**
+     * Sort documents by distance to the device's current location.  Document objects should have fields specified in
+     * the "info" view.
+     *
+     * @param rows Documents containing fields specified in the "info" view.
+     * @param ascending Whether to sort in ascending order.
+     * @private
+     */
+    _sortByProximity: function (rows, ascending) {
+        if (this.currentLocationAvailable) {
+            $n2.log("Sort by proximity, current location: " + this.currentLongitude + ", " + this.currentLatitude);
+            var _this = this;
+            if (ascending) {
+                rows.sort(function (a, b) {
+                    //$n2.log("a.coords: " + a.value.lon + ", " + a.value.lat + " b.coords: " + b.value.lon + ", " + b.value.lat);
+                    var distanceA = _this._getDistanceFromLatLonInKm(a.value.lat, a.value.lon, _this.currentLatitude, _this.currentLongitude);
+                    var distanceB = _this._getDistanceFromLatLonInKm(b.value.lat, b.value.lon, _this.currentLatitude, _this.currentLongitude);
+
+                    return distanceA - distanceB;
+                });
+            } else {
+                rows.sort(function (a, b) {
+                    //$n2.log("a.coords: " + a.value.lon + ", " + a.value.lat + " b.coords: " + b.value.lon + ", " + b.value.lat);
+                    var distanceA = _this._getDistanceFromLatLonInKm(a.value.lat, a.value.lon, _this.currentLatitude, _this.currentLongitude);
+                    var distanceB = _this._getDistanceFromLatLonInKm(b.value.lat, b.value.lon, _this.currentLatitude, _this.currentLongitude);
+
+                    return distanceB - distanceA;
+                });
+            }
+        } else {
+            $n2.log("Current location unavailable, can't sort by proximity")
+        }
+    },
+
+    /**
+     * Calculates distance between two points, in kilometres.
+     *
+     * @param lat1 First coordinate latitude
+     * @param lon1 First coordinate longitude
+     * @param lat2 Second coordinate latitude
+     * @param lon2 Second coordinate longitude
+     * @returns The distance between coords 1 and coords 2, in kilometres.
+     * @private
+     */
+    _getDistanceFromLatLonInKm: function (lat1, lon1, lat2, lon2) {
+        if ((!lat1 || !lon1) && (lat2 && lon2)) {
+            // coords 1 are undefined
+            return Number.MAX_SAFE_INTEGER;
+        } else if ((lat1 && lon1) && (!lat2 || !lon2)) {
+            // coords 2 are undefined
+            return Number.MAX_SAFE_INTEGER;
+        } else if ((!lat1 || !lon1) && (!lat2 || !lon2)) {
+            // Both sets of coords are undefined, so they are equal
+            return 0;
+        }
+
+        var R = 6371; // Radius of the earth in km
+        var dLat = this._deg2rad(lat2 - lat1);  // deg2rad below
+        var dLon = this._deg2rad(lon2 - lon1);
+        var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(this._deg2rad(lat1)) * Math.cos(this._deg2rad(lat2)) *
+            Math.sin(dLon / 2) * Math.sin(dLon / 2);
+
+        var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+        return R * c; // Distance in km
+    },
+
+    /**
+     * Converts from degrees to radians.
+     *
+     * @param deg Degrees value.
+     * @returns {number} Value converted to radians.
+     * @private
+     */
+    _deg2rad: function (deg) {
+        return deg * (Math.PI / 180)
+    },
+
+    /**
+     * Shows the sorting options dialog. User makes selections, on clicking "OK" the options are saved to local storage.
+     * The dialog closes and the list is refreshed. Clicking "Cancel" makes no changes to sort options and does not
+     * refresh the list.
+     *
+     * @private
+     */
+    _showSortDialog: function () {
+        var _this = this;
+        var sortBy = localStorage.getItem(SORT_BY_KEY);
+        var sortOrder = localStorage.getItem(SORT_ORDER_KEY);
+
+        var dialogId = $n2.getUniqueId();
+        var sortBySelectId = $n2.getUniqueId();
+        var sortOrderSelectId = $n2.getUniqueId();
+        var $dialog = $('<div id="' + dialogId + '">'
+            + '<div class="sortOptionsDialogPadding">'
+            + '<label for="' + sortBySelectId + '">' + _loc('Sort by:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;') + '</label>'
+            + '<select id="' + sortBySelectId + '"></select>'
+            + '</div>'
+            + '<br/>'
+            + '<div class="sortOptionsDialogPadding">'
+            + '<label for="' + sortOrderSelectId + '">' + _loc('Sort order:&nbsp;&nbsp;') + '</label>'
+            + '<select id="' + sortOrderSelectId + '"></select>'
+            + '</div>'
+            + '<br/>'
+            + '<div class="sortOptionsDialogButtonDiv"><button>' + _loc('OK') + '</button>&nbsp;&nbsp;<button>' + _loc('Cancel') + '</button></div>'
+            + '</div>');
+        // Add to 'Sort by' options
+        var $sortBySelect = $dialog.find('#' + sortBySelectId);
+        // $sortBySelect.append($('<option' + (sortBy === SORT_BY_DESCRIPTION ? ' selected' : '') + '>' + SORT_BY_DESCRIPTION + '</option>'));
+        $sortBySelect.append($('<option' + (sortBy === SORT_BY_UPDATED ? ' selected' : '') + '>' + SORT_BY_UPDATED + '</option>'));
+        $sortBySelect.append($('<option' + (sortBy === SORT_BY_PROXIMITY ? ' selected' : '') + '>' + SORT_BY_PROXIMITY + '</option>'));
+
+        var $sortOrderSelect = $dialog.find('#' + sortOrderSelectId);
+        $sortOrderSelect.append($('<option' + (sortOrder === SORT_ORDER_ASC ? ' selected' : '') + '>' + SORT_ORDER_ASC + '</option>'));
+        $sortOrderSelect.append($('<option' + (sortOrder === SORT_ORDER_DESC ? ' selected' : '') + '>' + SORT_ORDER_DESC + '</option>'));
+
+        $dialog.find('button')
+            .first() // OK button
+            .button({icons: {primary: 'ui-icon-check'}})
+            .click(function () {
+                var $dialog = $('#' + dialogId);
+                var $sortBySelect = $dialog.find('#' + sortBySelectId);
+                var $sortOrderSelect = $dialog.find('#' + sortOrderSelectId);
+                var sortBy = $sortBySelect.val();
+                var sortOrder = $sortOrderSelect.val();
+
+                var localStorage = $n2.storage.getLocalStorage();
+                localStorage.setItem('sortBy', sortBy);
+                localStorage.setItem('sortOrder', sortOrder);
+
+                $dialog.dialog('close');
+
+                _this.dispatchService.send(DH, {
+                    type: 'refreshListView'
+                });
+
+                return false;
+            })
+            .next() // Cancel button
+            .button({icons: {primary: 'ui-icon-cancel'}})
+            .click(function () {
+                var $dialog = $('#' + dialogId);
+                $dialog.dialog('close');
+                return false;
+            });
+
+        var dialogOptions = {
+            autoOpen: true,
+            title: _loc('Sort Documents'),
+            modal: true,
+            close: function (event, ui) {
+                var diag = $(event.target);
+                diag.dialog('destroy');
+                diag.remove();
+            }
+        };
+        $dialog.dialog(dialogOptions);
+    }
 });
 
 // ===========================================================
